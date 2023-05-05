@@ -11,7 +11,7 @@ set(ENUM_TO_STRING_H ${CMAKE_CURRENT_BINARY_DIR}/generated/vulkan_enum_to_string
 set(ENUM_TO_STRING_CPP ${CMAKE_CURRENT_BINARY_DIR}/generated/vulkan_enum_to_string.cpp)
 add_custom_command(
     OUTPUT ${ENUM_TO_STRING_H} ${ENUM_TO_STRING_CPP}
-    COMMAND py ${CMAKE_CURRENT_SOURCE_DIR}/vulkan_enum_to_string.py ${VULKAN_INCLUDE_DIR}/vulkan/vulkan_core.h ${CMAKE_CURRENT_BINARY_DIR}/generated/
+    COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/vulkan_enum_to_string.py ${VULKAN_INCLUDE_DIR}/vulkan/vulkan_core.h ${CMAKE_CURRENT_BINARY_DIR}/generated/
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/vulkan_enum_to_string.py ${VULKAN_INCLUDE_DIR}/vulkan/vulkan_core.h
     COMMENT "Generate enums"
 )

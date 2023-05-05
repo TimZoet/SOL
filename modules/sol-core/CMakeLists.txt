@@ -90,7 +90,6 @@ set(DEPS_PRIVATE
 )
 
 set(INCS_PUBLIC
-    ${CMAKE_SOURCE_DIR}/external/VulkanMemoryAllocator/include
 )
 
 set(INCS_PRIVATE
@@ -123,9 +122,4 @@ install_target(
     TYPE ${TYPE}
     VERSION ${SOL_VERSION}
     HEADERS "${HEADERS}"
-)
-
-install(
-    FILES ${CMAKE_SOURCE_DIR}/external/VulkanMemoryAllocator/include/VulkanMemoryAllocator/vk_mem_alloc.h
-    DESTINATION include/VulkanMemoryAllocator
 )
