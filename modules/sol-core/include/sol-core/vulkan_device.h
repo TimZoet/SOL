@@ -53,6 +53,8 @@ namespace sol
              * \brief If true, makes all queues thread safe on construction.
              */
             bool threadSafeQueues = false;
+
+            [[nodiscard]] bool validate() const noexcept;
         };
 
         using SettingsPtr = std::unique_ptr<Settings>;

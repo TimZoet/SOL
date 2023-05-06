@@ -11,6 +11,7 @@
 // Modue includes.
 ////////////////////////////////////////////////////////////////
 
+#include "sol-error/settings_validation_error.h"
 #include "sol-error/vulkan_error_handler.h"
 
 ////////////////////////////////////////////////////////////////
@@ -62,8 +63,17 @@ namespace sol
         return std::make_shared<VulkanDevice>(std::make_unique<Settings>(std::move(settings)), device);
     }
 
+    bool VulkanDevice::Settings::validate() const noexcept
+    {
+        if (!physicalDevice) return false;
+
+        return true;
+    }
+
     VkDevice VulkanDevice::createImpl(const Settings& settings)
     {
+        if (!settings.validate()) throw SettingsValidationError("Could not create VulkanDevice. Settings not valid.");
+
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
         for (uint32_t i = 0; i < settings.queues.size(); i++)
         {

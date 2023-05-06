@@ -7,6 +7,7 @@ set(SRC_DIR "src")
 
 set(HEADERS
     ${INCLUDE_DIR}/fwd.h
+    ${INCLUDE_DIR}/settings_validation_error
     ${INCLUDE_DIR}/sol_error.h
     ${INCLUDE_DIR}/vulkan_error.h
     ${INCLUDE_DIR}/vulkan_error_handler.h
@@ -16,6 +17,7 @@ set(HEADERS
 )
 
 set(SOURCES
+    ${SRC_DIR}/settings_validation_error.cpp
     ${SRC_DIR}/sol_error.cpp
     ${SRC_DIR}/vulkan_error.cpp
     ${SRC_DIR}/vulkan_error_handler.cpp
