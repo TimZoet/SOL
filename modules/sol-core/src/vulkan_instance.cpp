@@ -11,6 +11,7 @@
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
+#include "sol-error/settings_validation_error.h"
 #include "sol-error/vulkan_error_handler.h"
 #include "sol-error/vulkan_missing_validation_layer_error.h"
 
@@ -56,8 +57,17 @@ namespace sol
         return std::make_shared<VulkanInstance>(std::make_unique<Settings>(std::move(settings)), instance, messenger);
     }
 
+    bool VulkanInstance::Settings::validate() const noexcept
+    {
+        if (applicationName.empty()) return false;
+
+        return true;
+    }
+
     std::pair<VkInstance, VkDebugUtilsMessengerEXT> VulkanInstance::createImpl(const Settings& settings)
     {
+        if (!settings.validate()) throw SettingsValidationError("Could not create VulkanInstance. Settings not valid.");
+
         // Prepare application info.
         VkApplicationInfo appInfo{};
         appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;

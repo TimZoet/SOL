@@ -83,12 +83,7 @@ namespace sol
         /**
          * \brief Implicit conversion to handle.
          */
-        operator auto() const { return object->get(); }
-
-        /**
-         * \brief Implicit conversion to bool.
-         */
-        operator bool() const noexcept { return object != nullptr; }
+        operator auto() const { return object ? object->get() : VK_NULL_HANDLE; }
 
     private:
         T* object = nullptr;

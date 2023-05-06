@@ -63,6 +63,8 @@ namespace sol
              * \brief List of required validation layers.
              */
             std::vector<std::string> validationLayers;
+
+            [[nodiscard]] bool validate() const noexcept;
         };
 
         using SettingsPtr = std::unique_ptr<Settings>;

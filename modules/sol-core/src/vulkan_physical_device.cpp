@@ -10,6 +10,7 @@
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
+#include "sol-error/settings_validation_error.h"
 #include "sol-error/vulkan_error_handler.h"
 #include "sol-error/vulkan_no_devices_error.h"
 
@@ -57,9 +58,19 @@ namespace sol
           std::make_unique<Settings>(std::move(settings)), device, indices, details);
     }
 
+    bool VulkanPhysicalDevice::Settings::validate() const noexcept
+    {
+        if (!instance) return false;
+
+        return true;
+    }
+
     std::tuple<VkPhysicalDevice, std::vector<VulkanQueueFamily>, std::optional<VulkanSwapchainSupportDetails>>
       VulkanPhysicalDevice::createImpl(const Settings& settings)
     {
+        if (!settings.validate())
+            throw SettingsValidationError("Could not create VulkanPhysicalDevice. Settings not valid.");
+
         // Get number of devices.
         uint32_t deviceCount = 0;
         handleVulkanError(vkEnumeratePhysicalDevices(settings.instance, &deviceCount, nullptr));

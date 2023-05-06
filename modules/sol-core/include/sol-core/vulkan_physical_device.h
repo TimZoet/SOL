@@ -68,6 +68,8 @@ namespace sol
              * \brief Function to filter devices by their queue families. Should return true if device fulfills requirements.
              */
             std::function<bool(const std::vector<VulkanQueueFamily>&)> queueFamilyFilter;
+
+            [[nodiscard]] bool validate() const noexcept;
         };
 
         using SettingsPtr = std::unique_ptr<Settings>;
