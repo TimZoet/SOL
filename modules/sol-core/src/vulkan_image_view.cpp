@@ -19,10 +19,17 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    VulkanImageView::VulkanImageView(SettingsPtr settingsPtr, const VkImageView vkImageView) :
-        settings(std::move(settingsPtr)), imageView(vkImageView)
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    VulkanImageView::VulkanImageView(const Settings& set, const VkImageView vkImageView) :
+        settings(set), imageView(vkImageView)
     {
     }
+#else
+    VulkanImageView::VulkanImageView(const Settings& set, const VkImageView vkImageView) :
+        image(&set.image()), imageView(vkImageView)
+    {
+    }
+#endif
 
     VulkanImageView::~VulkanImageView() noexcept { vkDestroyImageView(getDevice().get(), imageView, nullptr); }
 
@@ -30,16 +37,16 @@ namespace sol
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    VulkanImageViewPtr VulkanImageView::create(Settings settings)
+    VulkanImageViewPtr VulkanImageView::create(const Settings& settings)
     {
         auto view = createImpl(settings);
-        return std::make_unique<VulkanImageView>(std::make_unique<Settings>(settings), view);
+        return std::make_unique<VulkanImageView>(settings, view);
     }
 
-    VulkanImageViewSharedPtr VulkanImageView::createShared(Settings settings)
+    VulkanImageViewSharedPtr VulkanImageView::createShared(const Settings& settings)
     {
         auto view = createImpl(settings);
-        return std::make_shared<VulkanImageView>(std::make_unique<Settings>(settings), view);
+        return std::make_shared<VulkanImageView>(settings, view);
     }
 
     VkImageView VulkanImageView::createImpl(const Settings& settings)
@@ -73,15 +80,31 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    const VulkanImageView::Settings& VulkanImageView::getSettings() const noexcept { return *settings; }
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    const VulkanImageView::Settings& VulkanImageView::getSettings() const noexcept { return settings; }
+#endif
 
-    VulkanDevice& VulkanImageView::getDevice() noexcept { return settings->image().getDevice(); }
+    VulkanDevice& VulkanImageView::getDevice() noexcept { return getImage().getDevice(); }
 
-    const VulkanDevice& VulkanImageView::getDevice() const noexcept { return settings->image().getDevice(); }
+    const VulkanDevice& VulkanImageView::getDevice() const noexcept { return getImage().getDevice(); }
 
     const VkImageView& VulkanImageView::get() const noexcept { return imageView; }
 
-    VulkanImage& VulkanImageView::getImage() noexcept { return settings->image(); }
+    VulkanImage& VulkanImageView::getImage() noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.image();
+#else
+        return *image;
+#endif
+    }
 
-    const VulkanImage& VulkanImageView::getImage() const noexcept { return settings->image(); }
+    const VulkanImage& VulkanImageView::getImage() const noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.image();
+#else
+        return *image;
+#endif
+    }
 }  // namespace sol

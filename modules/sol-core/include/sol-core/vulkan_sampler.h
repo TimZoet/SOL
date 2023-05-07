@@ -59,15 +59,13 @@ namespace sol
             VkBool32 unnormalizedCoordinates = VK_FALSE;
         };
 
-        using SettingsPtr = std::unique_ptr<Settings>;
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         VulkanSampler() = delete;
 
-        VulkanSampler(SettingsPtr settingsPtr, VkSampler vkSampler);
+        VulkanSampler(const Settings& set, VkSampler vkSampler);
 
         VulkanSampler(const VulkanSampler&) = delete;
 
@@ -89,7 +87,7 @@ namespace sol
          * \throws VulkanError Thrown if sampler creation failed.
          * \return Vulkan image view.
          */
-        [[nodiscard]] static VulkanSamplerPtr create(Settings settings);
+        [[nodiscard]] static VulkanSamplerPtr create(const Settings& settings);
 
         /**
          * \brief Create a new Vulkan sampler.
@@ -97,17 +95,19 @@ namespace sol
          * \throws VulkanError Thrown if sampler creation failed.
          * \return Vulkan sampler.
          */
-        [[nodiscard]] static VulkanSamplerSharedPtr createShared(Settings settings);
+        [[nodiscard]] static VulkanSamplerSharedPtr createShared(const Settings& settings);
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Get the settings with which this object was created.
          * \return Settings.
          */
         [[nodiscard]] const Settings& getSettings() const noexcept;
+#endif
 
         /**
          * \brief Get the device.
@@ -134,10 +134,14 @@ namespace sol
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Settings with which this object was created.
          */
-        SettingsPtr settings;
+        Settings settings;
+#else
+        VulkanDevice* device = nullptr;
+#endif
 
         /**
          * \brief Vulkan sampler.

@@ -20,10 +20,17 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    VulkanFramebuffer::VulkanFramebuffer(SettingsPtr settingsPtr, const VkFramebuffer vkFramebuffer) :
-        settings(std::move(settingsPtr)), framebuffer(vkFramebuffer)
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    VulkanFramebuffer::VulkanFramebuffer(const Settings& set, const VkFramebuffer vkFramebuffer) :
+        settings(set), framebuffer(vkFramebuffer)
     {
     }
+#else
+    VulkanFramebuffer::VulkanFramebuffer(const Settings& set, const VkFramebuffer vkFramebuffer) :
+        renderPass(&set.renderPass()), extent(set.width, set.height), framebuffer(vkFramebuffer)
+    {
+    }
+#endif
 
     VulkanFramebuffer::~VulkanFramebuffer() noexcept { vkDestroyFramebuffer(getDevice().get(), framebuffer, nullptr); }
 
@@ -31,16 +38,16 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    VulkanFramebufferPtr VulkanFramebuffer::create(Settings settings)
+    VulkanFramebufferPtr VulkanFramebuffer::create(const Settings& settings)
     {
         const auto framebuffer = createImpl(settings);
-        return std::make_unique<VulkanFramebuffer>(std::make_unique<Settings>(std::move(settings)), framebuffer);
+        return std::make_unique<VulkanFramebuffer>(settings, framebuffer);
     }
 
-    VulkanFramebufferSharedPtr VulkanFramebuffer::createShared(Settings settings)
+    VulkanFramebufferSharedPtr VulkanFramebuffer::createShared(const Settings& settings)
     {
         const auto framebuffer = createImpl(settings);
-        return std::make_shared<VulkanFramebuffer>(std::make_unique<Settings>(std::move(settings)), framebuffer);
+        return std::make_shared<VulkanFramebuffer>(settings, framebuffer);
     }
 
     VkFramebuffer VulkanFramebuffer::createImpl(const Settings& settings)
@@ -70,14 +77,36 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    const VulkanFramebuffer::Settings& VulkanFramebuffer::getSettings() const noexcept { return *settings; }
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    const VulkanFramebuffer::Settings& VulkanFramebuffer::getSettings() const noexcept { return settings; }
+#endif
 
-    VulkanDevice& VulkanFramebuffer::getDevice() noexcept { return settings->renderPass().getDevice(); }
+    VulkanDevice& VulkanFramebuffer::getDevice() noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.renderPass().getDevice();
+#else
+        return renderPass->getDevice();
+#endif
+    }
 
-    const VulkanDevice& VulkanFramebuffer::getDevice() const noexcept { return settings->renderPass().getDevice(); }
+    const VulkanDevice& VulkanFramebuffer::getDevice() const noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.renderPass().getDevice();
+#else
+        return renderPass->getDevice();
+#endif
+    }
 
     const VkFramebuffer& VulkanFramebuffer::get() const noexcept { return framebuffer; }
 
-    VkExtent2D VulkanFramebuffer::getExtent() const noexcept { return VkExtent2D{settings->width, settings->height}; }
-
+    VkExtent2D VulkanFramebuffer::getExtent() const noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return VkExtent2D{settings.width, settings.height};
+#else
+        return extent;
+#endif
+    }
 }  // namespace sol

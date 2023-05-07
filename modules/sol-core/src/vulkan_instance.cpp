@@ -4,7 +4,6 @@
 // Standard includes.
 ////////////////////////////////////////////////////////////////
 
-#include <algorithm>
 #include <format>
 
 ////////////////////////////////////////////////////////////////
@@ -28,12 +27,21 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    VulkanInstance::VulkanInstance(SettingsPtr                    settingsPtr,
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    VulkanInstance::VulkanInstance(const Settings&                set,
                                    const VkInstance               vkInstance,
                                    const VkDebugUtilsMessengerEXT vkDebugMessenger) :
-        settings(std::move(settingsPtr)), instance(vkInstance), debugMessenger(vkDebugMessenger)
+        settings(set), instance(vkInstance), debugMessenger(vkDebugMessenger)
     {
     }
+#else
+    VulkanInstance::VulkanInstance(const Settings&,
+                                   const VkInstance               vkInstance,
+                                   const VkDebugUtilsMessengerEXT vkDebugMessenger) :
+        instance(vkInstance), debugMessenger(vkDebugMessenger)
+    {
+    }
+#endif
 
     VulkanInstance::~VulkanInstance() noexcept
     {
@@ -45,16 +53,16 @@ namespace sol
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    VulkanInstancePtr VulkanInstance::create(Settings settings)
+    VulkanInstancePtr VulkanInstance::create(const Settings& settings)
     {
         const auto [instance, messenger] = createImpl(settings);
-        return std::make_unique<VulkanInstance>(std::make_unique<Settings>(std::move(settings)), instance, messenger);
+        return std::make_unique<VulkanInstance>(settings, instance, messenger);
     }
 
-    VulkanInstanceSharedPtr VulkanInstance::createShared(Settings settings)
+    VulkanInstanceSharedPtr VulkanInstance::createShared(const Settings& settings)
     {
         const auto [instance, messenger] = createImpl(settings);
-        return std::make_shared<VulkanInstance>(std::make_unique<Settings>(std::move(settings)), instance, messenger);
+        return std::make_shared<VulkanInstance>(settings, instance, messenger);
     }
 
     bool VulkanInstance::Settings::validate() const noexcept
@@ -140,7 +148,9 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    const VulkanInstance::Settings& VulkanInstance::getSettings() const noexcept { return *settings; }
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    const VulkanInstance::Settings& VulkanInstance::getSettings() const noexcept { return settings; }
+#endif
 
     const VkInstance& VulkanInstance::get() const noexcept { return instance; }
 }  // namespace sol

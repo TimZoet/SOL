@@ -40,15 +40,13 @@ namespace sol
             bool signaled = false;
         };
 
-        using SettingsPtr = std::unique_ptr<Settings>;
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         VulkanFence() = delete;
 
-        VulkanFence(SettingsPtr settingsPtr, VkFence vkFence);
+        VulkanFence(const Settings& set, VkFence vkFence);
 
         VulkanFence(const VulkanFence&) = delete;
 
@@ -70,7 +68,7 @@ namespace sol
          * \throws VulkanError Thrown if fence creation failed.
          * \return Vulkan fence.
          */
-        [[nodiscard]] static VulkanFencePtr create(Settings settings);
+        [[nodiscard]] static VulkanFencePtr create(const Settings& settings);
 
         /**
          * \brief Create a list of new Vulkan fences.
@@ -87,17 +85,19 @@ namespace sol
          * \throws VulkanError Thrown if fence creation failed.
          * \return Vulkan fence.
          */
-        [[nodiscard]] static VulkanFenceSharedPtr createShared(Settings settings);
+        [[nodiscard]] static VulkanFenceSharedPtr createShared(const Settings& settings);
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Get the settings with which this object was created.
          * \return Settings.
          */
         [[nodiscard]] const Settings& getSettings() const noexcept;
+#endif
 
         /**
          * \brief Get the device.
@@ -139,10 +139,14 @@ namespace sol
     private:
         [[nodiscard]] static VkFence createImpl(const Settings& settings);
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Settings with which this object was created.
          */
-        SettingsPtr settings;
+        Settings settings;
+#else
+        VulkanDevice* device = nullptr;
+#endif
 
         /**
          * \brief Vulkan fence.

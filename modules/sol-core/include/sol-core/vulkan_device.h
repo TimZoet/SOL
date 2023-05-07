@@ -57,15 +57,13 @@ namespace sol
             [[nodiscard]] bool validate() const noexcept;
         };
 
-        using SettingsPtr = std::unique_ptr<Settings>;
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         VulkanDevice() = delete;
 
-        VulkanDevice(SettingsPtr settingsPtr, VkDevice vkDevice);
+        VulkanDevice(const Settings& set, VkDevice vkDevice);
 
         VulkanDevice(const VulkanDevice&) = delete;
 
@@ -87,7 +85,7 @@ namespace sol
          * \throws VulkanError Thrown if device creation failed.
          * \return Vulkan device.
          */
-        [[nodiscard]] static VulkanDevicePtr create(Settings settings);
+        [[nodiscard]] static VulkanDevicePtr create(const Settings& settings);
 
         /**
          * \brief Create a new Vulkan device.
@@ -95,17 +93,19 @@ namespace sol
          * \throws VulkanError Thrown if device creation failed.
          * \return Vulkan device.
          */
-        [[nodiscard]] static VulkanDeviceSharedPtr createShared(Settings settings);
+        [[nodiscard]] static VulkanDeviceSharedPtr createShared(const Settings& settings);
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Get the settings with which this object was created.
          * \return Settings.
          */
         [[nodiscard]] const Settings& getSettings() const noexcept;
+#endif
 
         /**
          * \brief Get the physical device.
@@ -145,10 +145,14 @@ namespace sol
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Settings with which this object was created.
          */
-        SettingsPtr settings;
+        Settings settings;
+#else
+        VulkanPhysicalDevice* physicalDevice = nullptr;
+#endif
 
         /**
          * \brief Vulkan device.

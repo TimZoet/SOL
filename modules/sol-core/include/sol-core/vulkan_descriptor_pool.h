@@ -45,15 +45,13 @@ namespace sol
             std::vector<VkDescriptorPoolSize> poolSizes;
         };
 
-        using SettingsPtr = std::unique_ptr<Settings>;
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         VulkanDescriptorPool() = delete;
 
-        VulkanDescriptorPool(SettingsPtr settingsPtr, VkDescriptorPool vkPool);
+        VulkanDescriptorPool(const Settings& set, VkDescriptorPool vkPool);
 
         VulkanDescriptorPool(const VulkanDescriptorPool&) = delete;
 
@@ -75,7 +73,7 @@ namespace sol
          * \throws VulkanError Thrown if pool creation failed.
          * \return Vulkan descriptor pool.
          */
-        [[nodiscard]] static VulkanDescriptorPoolPtr create(Settings settings);
+        [[nodiscard]] static VulkanDescriptorPoolPtr create(const Settings& settings);
 
         /**
          * \brief  Create a new Vulkan descriptor pool.
@@ -83,17 +81,19 @@ namespace sol
          * \throws VulkanError Thrown if pool creation failed.
          * \return Vulkan descriptor pool.
          */
-        [[nodiscard]] static VulkanDescriptorPoolSharedPtr createShared(Settings settings);
+        [[nodiscard]] static VulkanDescriptorPoolSharedPtr createShared(const Settings& settings);
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Get the settings with which this object was created.
          * \return Settings.
          */
         [[nodiscard]] const Settings& getSettings() const noexcept;
+#endif
 
         /**
          * \brief Get the device.
@@ -116,10 +116,14 @@ namespace sol
     private:
         [[nodiscard]] static VkDescriptorPool createImpl(const Settings& settings);
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Settings with which this object was created.
          */
-        SettingsPtr settings;
+        Settings settings;
+#else
+        VulkanDevice* device = nullptr;
+#endif
 
         /**
          * \brief Vulkan descriptor pool.

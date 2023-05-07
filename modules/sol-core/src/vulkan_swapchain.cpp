@@ -27,10 +27,10 @@
 
 namespace sol
 {
-    VulkanSwapchain::VulkanSwapchain(SettingsPtr          settingsPtr,
+    VulkanSwapchain::VulkanSwapchain(const Settings&      set,
                                      const VkSwapchainKHR vkSwapchain,
                                      const CreateUtils    createUtils) :
-        settings(std::move(settingsPtr)),
+        settings(set),
         swapchain(vkSwapchain),
         surfaceFormat(createUtils.surfaceFormat),
         presentMode(createUtils.presentMode),
@@ -40,24 +40,24 @@ namespace sol
         createImageViews();
     }
 
-    VulkanSwapchain::~VulkanSwapchain() noexcept { vkDestroySwapchainKHR(settings->device, swapchain, nullptr); }
+    VulkanSwapchain::~VulkanSwapchain() noexcept { vkDestroySwapchainKHR(getDevice().get(), swapchain, nullptr); }
 
     ////////////////////////////////////////////////////////////////
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    VulkanSwapchainPtr VulkanSwapchain::create(Settings settings)
+    VulkanSwapchainPtr VulkanSwapchain::create(const Settings& settings)
     {
         CreateUtils createUtils;
         const auto  swapchain = createImpl(settings, createUtils);
-        return std::make_unique<VulkanSwapchain>(std::make_unique<Settings>(settings), swapchain, createUtils);
+        return std::make_unique<VulkanSwapchain>(settings, swapchain, createUtils);
     }
 
-    VulkanSwapchainSharedPtr VulkanSwapchain::createShared(Settings settings)
+    VulkanSwapchainSharedPtr VulkanSwapchain::createShared(const Settings& settings)
     {
         CreateUtils createUtils;
         const auto  swapchain = createImpl(settings, createUtils);
-        return std::make_shared<VulkanSwapchain>(std::make_unique<Settings>(settings), swapchain, createUtils);
+        return std::make_shared<VulkanSwapchain>(settings, swapchain, createUtils);
     }
 
     VkSwapchainKHR VulkanSwapchain::createImpl(const Settings& settings, CreateUtils& createUtils)
@@ -149,11 +149,13 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    const VulkanSwapchain::Settings& VulkanSwapchain::getSettings() const noexcept { return *settings; }
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    const VulkanSwapchain::Settings& VulkanSwapchain::getSettings() const noexcept { return settings; }
+#endif
 
-    VulkanDevice& VulkanSwapchain::getDevice() noexcept { return settings->device(); }
+    VulkanDevice& VulkanSwapchain::getDevice() noexcept { return settings.device(); }
 
-    const VulkanDevice& VulkanSwapchain::getDevice() const noexcept { return settings->device(); }
+    const VulkanDevice& VulkanSwapchain::getDevice() const noexcept { return settings.device(); }
 
     const VkSwapchainKHR& VulkanSwapchain::get() const noexcept { return swapchain; }
 
@@ -177,12 +179,12 @@ namespace sol
     {
         imageViews.clear();
         images.clear();
-        vkDestroySwapchainKHR(settings->device, swapchain, nullptr);
+        vkDestroySwapchainKHR(settings.device, swapchain, nullptr);
 
-        settings->device().getPhysicalDevice().recreateSwapchainSupportDetails(&settings->surface.operator()());
+        settings.device().getPhysicalDevice().recreateSwapchainSupportDetails(&settings.surface());
 
         CreateUtils createUtils;
-        swapchain     = createImpl(*settings, createUtils);
+        swapchain     = createImpl(settings, createUtils);
         surfaceFormat = createUtils.surfaceFormat;
         presentMode   = createUtils.presentMode;
         extent        = createUtils.extent;
@@ -196,20 +198,19 @@ namespace sol
 
         // Retrieve number of images.
         uint32_t imageCount;
-        handleVulkanError(vkGetSwapchainImagesKHR(settings->device, swapchain, &imageCount, nullptr));
+        handleVulkanError(vkGetSwapchainImagesKHR(settings.device, swapchain, &imageCount, nullptr));
 
         // Retrieve image handles.
         std::vector<VkImage> vkImages(imageCount);
-        handleVulkanError(vkGetSwapchainImagesKHR(settings->device, swapchain, &imageCount, vkImages.data()));
+        handleVulkanError(vkGetSwapchainImagesKHR(settings.device, swapchain, &imageCount, vkImages.data()));
 
         // Create images from handles.
         images.reserve(imageCount);
         VulkanImage::Settings imageSettings;
-        imageSettings.device           = settings->device;
+        imageSettings.device           = settings.device;
         imageSettings.isSwapchainImage = true;
         for (auto img : vkImages)
-            images.emplace_back(std::make_unique<VulkanImage>(
-              std::make_unique<VulkanImage::Settings>(imageSettings), img, VK_NULL_HANDLE));
+            images.emplace_back(std::make_unique<VulkanImage>(imageSettings, img, VK_NULL_HANDLE));
     }
 
     void VulkanSwapchain::createImageViews()

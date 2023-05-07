@@ -30,15 +30,13 @@ namespace sol
             ObjectRefSetting<VulkanDevice> device;
         };
 
-        using SettingsPtr = std::unique_ptr<Settings>;
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         VulkanMemoryAllocator() = delete;
 
-        VulkanMemoryAllocator(SettingsPtr settingsPtr, VmaAllocator vmaAllocator);
+        VulkanMemoryAllocator(const Settings& set, VmaAllocator vmaAllocator);
 
         VulkanMemoryAllocator(const VulkanMemoryAllocator&) = delete;
 
@@ -60,7 +58,7 @@ namespace sol
          * \throws VulkanError Thrown if allocator creation failed.
          * \return Vulkan memory allocator.
          */
-        [[nodiscard]] static VulkanMemoryAllocatorPtr create(Settings settings);
+        [[nodiscard]] static VulkanMemoryAllocatorPtr create(const Settings& settings);
 
         /**
          * \brief Create a new Vulkan memory allocator.
@@ -68,17 +66,19 @@ namespace sol
          * \throws VulkanError Thrown if allocator creation failed.
          * \return Vulkan memory allocator.
          */
-        [[nodiscard]] static VulkanMemoryAllocatorSharedPtr createShared(Settings settings);
+        [[nodiscard]] static VulkanMemoryAllocatorSharedPtr createShared(const Settings& settings);
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Get the settings with which this object was created.
          * \return Settings.
          */
         [[nodiscard]] const Settings& getSettings() const noexcept;
+#endif
 
         /**
          * \brief Get the device.
@@ -108,7 +108,7 @@ namespace sol
         /**
          * \brief Settings with which this object was created.
          */
-        SettingsPtr settings;
+        Settings settings;
 
         /**
          * \brief Vulkan memory allocator.

@@ -24,16 +24,16 @@
 
 namespace sol
 {
-    VulkanDevice::VulkanDevice(SettingsPtr settingsPtr, const VkDevice vkDevice) :
-        settings(std::move(settingsPtr)), device(vkDevice)
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    VulkanDevice::VulkanDevice(const Settings& set, const VkDevice vkDevice) : settings(set), device(vkDevice)
     {
         // Get queues.
-        queues.reserve(std::accumulate(settings->queues.cbegin(), settings->queues.cend(), static_cast<uint32_t>(0)));
-        for (uint32_t i = 0; i < settings->queues.size(); i++)
+        queues.reserve(std::accumulate(settings.queues.cbegin(), settings.queues.cend(), static_cast<uint32_t>(0)));
+        for (uint32_t i = 0; i < settings.queues.size(); i++)
         {
-            auto&   queueFamily = settings->physicalDevice().getQueueFamilies()[i];
+            auto&   queueFamily = settings.physicalDevice().getQueueFamilies()[i];
             VkQueue q;
-            for (uint32_t j = 0; j < settings->queues[i]; j++)
+            for (uint32_t j = 0; j < settings.queues[i]; j++)
             {
                 vkGetDeviceQueue(device, i, j, &q);
                 queues.emplace_back(std::make_unique<VulkanQueue>(*this, queueFamily, q));
@@ -41,9 +41,31 @@ namespace sol
         }
 
         // Make queues thread safe if requested.
-        if (settings->threadSafeQueues)
+        if (settings.threadSafeQueues)
             for (const auto& queue : queues) queue->setThreadSafe(true);
     }
+#else
+    VulkanDevice::VulkanDevice(const Settings& set, const VkDevice vkDevice) :
+        physicalDevice(&set.physicalDevice()), device(vkDevice)
+    {
+        // Get queues.
+        queues.reserve(std::accumulate(set.queues.cbegin(), set.queues.cend(), static_cast<uint32_t>(0)));
+        for (uint32_t i = 0; i < set.queues.size(); i++)
+        {
+            auto&   queueFamily = set.physicalDevice().getQueueFamilies()[i];
+            VkQueue q;
+            for (uint32_t j = 0; j < set.queues[i]; j++)
+            {
+                vkGetDeviceQueue(device, i, j, &q);
+                queues.emplace_back(std::make_unique<VulkanQueue>(*this, queueFamily, q));
+            }
+        }
+
+        // Make queues thread safe if requested.
+        if (set.threadSafeQueues)
+            for (const auto& queue : queues) queue->setThreadSafe(true);
+    }
+#endif
 
     VulkanDevice::~VulkanDevice() noexcept { vkDestroyDevice(device, nullptr); }
 
@@ -51,16 +73,16 @@ namespace sol
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    VulkanDevicePtr VulkanDevice::create(Settings settings)
+    VulkanDevicePtr VulkanDevice::create(const Settings& settings)
     {
         const auto device = createImpl(settings);
-        return std::make_unique<VulkanDevice>(std::make_unique<Settings>(std::move(settings)), device);
+        return std::make_unique<VulkanDevice>(settings, device);
     }
 
-    VulkanDeviceSharedPtr VulkanDevice::createShared(Settings settings)
+    VulkanDeviceSharedPtr VulkanDevice::createShared(const Settings& settings)
     {
         const auto device = createImpl(settings);
-        return std::make_shared<VulkanDevice>(std::make_unique<Settings>(std::move(settings)), device);
+        return std::make_shared<VulkanDevice>(settings, device);
     }
 
     bool VulkanDevice::Settings::validate() const noexcept
@@ -113,11 +135,27 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    const VulkanDevice::Settings& VulkanDevice::getSettings() const noexcept { return *settings; }
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    const VulkanDevice::Settings& VulkanDevice::getSettings() const noexcept { return settings; }
+#endif
 
-    VulkanPhysicalDevice& VulkanDevice::getPhysicalDevice() noexcept { return settings->physicalDevice(); }
+    VulkanPhysicalDevice& VulkanDevice::getPhysicalDevice() noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.physicalDevice();
+#else
+        return *physicalDevice;
+#endif
+    }
 
-    const VulkanPhysicalDevice& VulkanDevice::getPhysicalDevice() const noexcept { return settings->physicalDevice(); }
+    const VulkanPhysicalDevice& VulkanDevice::getPhysicalDevice() const noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.physicalDevice();
+#else
+        return *physicalDevice;
+#endif
+    }
 
     const VkDevice& VulkanDevice::get() const noexcept { return device; }
 

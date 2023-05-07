@@ -70,15 +70,13 @@ namespace sol
             VmaAllocationCreateFlags flags = 0;
         };
 
-        using SettingsPtr = std::unique_ptr<Settings>;
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         VulkanBuffer() = delete;
 
-        VulkanBuffer(SettingsPtr settingsPtr, VkBuffer vkBuffer, VmaAllocation vmaAllocation, void* pMappedData);
+        VulkanBuffer(const Settings& set, VkBuffer vkBuffer, VmaAllocation vmaAllocation, void* pMappedData);
 
         VulkanBuffer(const VulkanBuffer&) = delete;
 
@@ -100,7 +98,7 @@ namespace sol
          * \throws VulkanError Thrown if buffer creation failed.
          * \return Vulkan buffer.
          */
-        [[nodiscard]] static VulkanBufferPtr create(Settings settings);
+        [[nodiscard]] static VulkanBufferPtr create(const Settings& settings);
 
         /**
          * \brief Create a new Vulkan buffer.
@@ -108,17 +106,19 @@ namespace sol
          * \throws VulkanError Thrown if buffer creation failed.
          * \return Vulkan buffer.
          */
-        [[nodiscard]] static VulkanBufferSharedPtr createShared(Settings settings);
+        [[nodiscard]] static VulkanBufferSharedPtr createShared(const Settings& settings);
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Get the settings with which this object was created.
          * \return Settings.
          */
         [[nodiscard]] const Settings& getSettings() const noexcept;
+#endif
 
         /**
          * \brief Get the device.
@@ -131,6 +131,30 @@ namespace sol
          * \return VulkanDevice.
          */
         [[nodiscard]] const VulkanDevice& getDevice() const noexcept;
+
+        /**
+         * \brief Get the size of the buffer.
+         * \return Size in bytes.
+         */
+        [[nodiscard]] size_t getSize() const noexcept;
+
+        /**
+         * \brief Whether this buffer has a custom allocator.
+         * \return True or false.
+         */
+        [[nodiscard]] bool hasAllocator() const noexcept;
+
+        /**
+         * \brief Get the allocator.
+         * \return VulkanMemoryAllocator.
+         */
+        [[nodiscard]] VulkanMemoryAllocator& getAllocator() noexcept;
+
+        /**
+         * \brief Get the allocator.
+         * \return VulkanMemoryAllocator.
+         */
+        [[nodiscard]] const VulkanMemoryAllocator& getAllocator() const noexcept;
 
         /**
          * \brief Get the buffer handle managed by this object.
@@ -217,10 +241,27 @@ namespace sol
     private:
         [[nodiscard]] static std::tuple<VkBuffer, VmaAllocation, void*> createImpl(const Settings& settings);
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Settings with which this object was created.
          */
-        SettingsPtr settings;
+        Settings settings;
+#else
+        /**
+         * \brief Vulkan device.
+         */
+        VulkanDevice* device = nullptr;
+
+        /**
+         * \brief Size in bytes.
+         */
+        size_t size = 0;
+
+        /**
+         * \brief Optional allocator.
+         */
+        VulkanMemoryAllocator* allocator = nullptr;
+#endif
 
         /**
          * \brief Vulkan buffer.

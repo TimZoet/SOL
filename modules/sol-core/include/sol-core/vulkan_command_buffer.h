@@ -31,15 +31,13 @@ namespace sol
             VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         };
 
-        using SettingsPtr = std::unique_ptr<Settings>;
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         VulkanCommandBuffer() = delete;
 
-        VulkanCommandBuffer(SettingsPtr settingsPtr, VkCommandBuffer vkCommandBuffer);
+        VulkanCommandBuffer(const Settings& set, VkCommandBuffer vkCommandBuffer);
 
         VulkanCommandBuffer(const VulkanCommandBuffer&) = delete;
 
@@ -61,7 +59,7 @@ namespace sol
          * \throws VulkanError Thrown if command buffer creation failed.
          * \return Vulkan command buffer.
          */
-        [[nodiscard]] static VulkanCommandBufferPtr create(Settings settings);
+        [[nodiscard]] static VulkanCommandBufferPtr create(const Settings& settings);
 
         /**
          * \brief Create a new Vulkan command buffer.
@@ -69,17 +67,19 @@ namespace sol
          * \throws VulkanError Thrown if command buffer creation failed.
          * \return Vulkan command buffer.
          */
-        [[nodiscard]] static VulkanCommandBufferSharedPtr createShared(Settings settings);
+        [[nodiscard]] static VulkanCommandBufferSharedPtr createShared(const Settings& settings);
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Get the settings with which this object was created.
          * \return Settings.
          */
         [[nodiscard]] const Settings& getSettings() const noexcept;
+#endif
 
         /**
          * \brief Get the device.
@@ -92,6 +92,18 @@ namespace sol
          * \return VulkanDevice.
          */
         [[nodiscard]] const VulkanDevice& getDevice() const noexcept;
+
+        /**
+         * \brief Get the command pool.
+         * \return VulkanCommandPool.
+         */
+        [[nodiscard]] VulkanCommandPool& getCommandPool() noexcept;
+
+        /**
+         * \brief Get the command pool.
+         * \return VulkanCommandPool.
+         */
+        [[nodiscard]] const VulkanCommandPool& getCommandPool() const noexcept;
 
         /**
          * \brief Get the command buffer handle managed by this object.
@@ -114,10 +126,17 @@ namespace sol
     private:
         [[nodiscard]] static VkCommandBuffer createImpl(const Settings& settings);
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Settings with which this object was created.
          */
-        SettingsPtr settings;
+        Settings settings;
+#else
+        /**
+         * \brief Vulkan command pool.
+         */
+        VulkanCommandPool* commandPool = nullptr;
+#endif
 
         /**
          * \brief Vulkan command buffer.

@@ -28,8 +28,8 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    VulkanRenderPass::VulkanRenderPass(SettingsPtr settingsPtr, const VkRenderPass vkRenderPass) :
-        settings(std::move(settingsPtr)), renderPass(vkRenderPass)
+    VulkanRenderPass::VulkanRenderPass(const Settings& set, const VkRenderPass vkRenderPass) :
+        settings(set), renderPass(vkRenderPass)
     {
     }
 
@@ -39,16 +39,16 @@ namespace sol
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    VulkanRenderPassPtr VulkanRenderPass::create(Settings settings)
+    VulkanRenderPassPtr VulkanRenderPass::create(const Settings& settings)
     {
         const auto renderPass = createImpl(settings);
-        return std::make_unique<VulkanRenderPass>(std::make_unique<Settings>(settings), renderPass);
+        return std::make_unique<VulkanRenderPass>(settings, renderPass);
     }
 
-    VulkanRenderPassSharedPtr VulkanRenderPass::createShared(Settings settings)
+    VulkanRenderPassSharedPtr VulkanRenderPass::createShared(const Settings& settings)
     {
         const auto renderPass = createImpl(settings);
-        return std::make_shared<VulkanRenderPass>(std::make_unique<Settings>(settings), renderPass);
+        return std::make_shared<VulkanRenderPass>(settings, renderPass);
     }
 
     VkRenderPass VulkanRenderPass::createImpl(const Settings& settings)
@@ -97,24 +97,24 @@ namespace sol
             if (!subpass->getInputAttachments().empty())
             {
                 inputAtt = attachmentReferences.data() + attachmentReferences.size();
-                for (const auto& [attachment, layout] : subpass->getInputAttachments())
-                    attachmentReferences.emplace_back(attachment->getIndex(), layout);
+                for (const auto& [a, l] : subpass->getInputAttachments())
+                    attachmentReferences.emplace_back(a->getIndex(), l);
             }
 
             const VkAttachmentReference* colorAtt = nullptr;
             if (!subpass->getColorAttachments().empty())
             {
                 colorAtt = attachmentReferences.data() + attachmentReferences.size();
-                for (const auto& [attachment, layout] : subpass->getColorAttachments())
-                    attachmentReferences.emplace_back(attachment->getIndex(), layout);
+                for (const auto& [a, l] : subpass->getColorAttachments())
+                    attachmentReferences.emplace_back(a->getIndex(), l);
             }
 
             const VkAttachmentReference* resolveAtt = nullptr;
             if (!subpass->getResolveAttachments().empty())
             {
                 resolveAtt = attachmentReferences.data() + attachmentReferences.size();
-                for (const auto& [attachment, layout] : subpass->getResolveAttachments())
-                    attachmentReferences.emplace_back(attachment->getIndex(), layout);
+                for (const auto& [a, l] : subpass->getResolveAttachments())
+                    attachmentReferences.emplace_back(a->getIndex(), l);
             }
 
             const VkAttachmentReference* depthAtt = nullptr;
@@ -207,7 +207,7 @@ namespace sol
     void VulkanRenderPass::destroy()
     {
         // Destroy render pass.
-        vkDestroyRenderPass(settings->device, renderPass, nullptr);
+        vkDestroyRenderPass(getDevice().get(), renderPass, nullptr);
 
         // Clear handle.
         renderPass = VK_NULL_HANDLE;
@@ -218,7 +218,7 @@ namespace sol
         if (renderPass != VK_NULL_HANDLE)
             throw SolError("Cannot recreate VulkanRenderPass before explicitly destroying it.");
 
-        const auto p = createImpl(*settings);
+        const auto p = createImpl(settings);
         renderPass   = p;
     }
 
@@ -226,11 +226,13 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    const VulkanRenderPass::Settings& VulkanRenderPass::getSettings() const noexcept { return *settings; }
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    const VulkanRenderPass::Settings& VulkanRenderPass::getSettings() const noexcept { return settings; }
+#endif
 
-    VulkanDevice& VulkanRenderPass::getDevice() noexcept { return settings->device(); }
+    VulkanDevice& VulkanRenderPass::getDevice() noexcept { return settings.device(); }
 
-    const VulkanDevice& VulkanRenderPass::getDevice() const noexcept { return settings->device(); }
+    const VulkanDevice& VulkanRenderPass::getDevice() const noexcept { return settings.device(); }
 
     const VkRenderPass& VulkanRenderPass::get() const noexcept { return renderPass; }
 }  // namespace sol

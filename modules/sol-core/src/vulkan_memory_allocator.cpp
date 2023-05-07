@@ -20,8 +20,8 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    VulkanMemoryAllocator::VulkanMemoryAllocator(SettingsPtr settingsPtr, const VmaAllocator vmaAllocator) :
-        settings(std::move(settingsPtr)), allocator(vmaAllocator)
+    VulkanMemoryAllocator::VulkanMemoryAllocator(const Settings& set, const VmaAllocator vmaAllocator) :
+        settings(set), allocator(vmaAllocator)
     {
     }
 
@@ -31,16 +31,16 @@ namespace sol
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    VulkanMemoryAllocatorPtr VulkanMemoryAllocator::create(Settings settings)
+    VulkanMemoryAllocatorPtr VulkanMemoryAllocator::create(const Settings& settings)
     {
         auto alloc = createImpl(settings);
-        return std::make_unique<VulkanMemoryAllocator>(std::make_unique<Settings>(settings), alloc);
+        return std::make_unique<VulkanMemoryAllocator>(settings, alloc);
     }
 
-    VulkanMemoryAllocatorSharedPtr VulkanMemoryAllocator::createShared(Settings settings)
+    VulkanMemoryAllocatorSharedPtr VulkanMemoryAllocator::createShared(const Settings& settings)
     {
         auto alloc = createImpl(settings);
-        return std::make_shared<VulkanMemoryAllocator>(std::make_unique<Settings>(settings), alloc);
+        return std::make_shared<VulkanMemoryAllocator>(settings, alloc);
     }
 
     VmaAllocator VulkanMemoryAllocator::createImpl(const Settings& settings)
@@ -65,12 +65,13 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    const VulkanMemoryAllocator::Settings& VulkanMemoryAllocator::getSettings() const noexcept { return *settings; }
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    const VulkanMemoryAllocator::Settings& VulkanMemoryAllocator::getSettings() const noexcept { return settings; }
+#endif
 
-    VulkanDevice& VulkanMemoryAllocator::getDevice() noexcept { return settings->device(); }
+    VulkanDevice& VulkanMemoryAllocator::getDevice() noexcept { return settings.device(); }
 
-    const VulkanDevice& VulkanMemoryAllocator::getDevice() const noexcept { return settings->device(); }
+    const VulkanDevice& VulkanMemoryAllocator::getDevice() const noexcept { return settings.device(); }
 
     const VmaAllocator& VulkanMemoryAllocator::get() const noexcept { return allocator; }
-
 }  // namespace sol

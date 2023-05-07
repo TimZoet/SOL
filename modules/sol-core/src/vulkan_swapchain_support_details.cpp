@@ -21,7 +21,7 @@ namespace sol
 
     VulkanSwapchainSupportDetails::VulkanSwapchainSupportDetails() = default;
 
-    VulkanSwapchainSupportDetails::VulkanSwapchainSupportDetails(const VkSurfaceCapabilitiesKHR  cap,
+    VulkanSwapchainSupportDetails::VulkanSwapchainSupportDetails(const VkSurfaceCapabilitiesKHR&  cap,
                                                                  std::vector<VkSurfaceFormatKHR> formats,
                                                                  std::vector<VkPresentModeKHR>   modes) :
         capabilities(cap), surfaceFormats(std::move(formats)), presentModes(std::move(modes))

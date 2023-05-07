@@ -37,9 +37,11 @@ class SolConan(ConanFile):
     python_requires_extend = "pyreq.BaseConan"
     
     options = {
+        "enable_cache_settings": [True, False]
     }
     
     default_options = {
+        "enable_cache_settings": True
     }
     
     ############################################################################
@@ -103,6 +105,10 @@ class SolConan(ConanFile):
         base = self.python_requires["pyreq"].module.BaseConan
         
         tc = base.generate_toolchain(self)
+
+        if self.options.enable_cache_settings:
+            tc.variables["SOL_CORE_ENABLE_CACHE_SETTINGS"] = True
+
         tc.generate()
         
         deps = base.generate_deps(self)

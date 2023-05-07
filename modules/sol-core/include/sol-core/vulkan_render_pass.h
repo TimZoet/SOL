@@ -34,15 +34,13 @@ namespace sol
             VulkanRenderPassLayout* layout = nullptr;
         };
 
-        using SettingsPtr = std::unique_ptr<Settings>;
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         VulkanRenderPass() = delete;
 
-        VulkanRenderPass(SettingsPtr settingsPtr, VkRenderPass vkRenderPass);
+        VulkanRenderPass(const Settings& set, VkRenderPass vkRenderPass);
 
         VulkanRenderPass(const VulkanRenderPass&) = delete;
 
@@ -64,7 +62,7 @@ namespace sol
          * \throws VulkanError Thrown if renderpass creation failed.
          * \return Renderpass.
          */
-        [[nodiscard]] static VulkanRenderPassPtr create(Settings settings);
+        [[nodiscard]] static VulkanRenderPassPtr create(const Settings& settings);
 
         /**
          * \brief Create a new Vulkan renderpass.
@@ -72,7 +70,7 @@ namespace sol
          * \throws VulkanError Thrown if renderpass creation failed.
          * \return Renderpass.
          */
-        [[nodiscard]] static VulkanRenderPassSharedPtr createShared(Settings settings);
+        [[nodiscard]] static VulkanRenderPassSharedPtr createShared(const Settings& settings);
 
         void destroy();
 
@@ -82,11 +80,13 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Get the settings with which this object was created.
          * \return Settings.
          */
         [[nodiscard]] const Settings& getSettings() const noexcept;
+#endif
 
         /**
          * \brief Get the device.
@@ -116,7 +116,7 @@ namespace sol
         /**
          * \brief Settings with which this object was created.
          */
-        SettingsPtr settings;
+        Settings settings;
 
         /**
          * \brief Vulkan render pass.

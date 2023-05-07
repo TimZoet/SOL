@@ -1,5 +1,6 @@
 #pragma once
 
+
 ////////////////////////////////////////////////////////////////
 // External includes.
 ////////////////////////////////////////////////////////////////
@@ -46,15 +47,13 @@ namespace sol
             uint32_t layers = 1;
         };
 
-        using SettingsPtr = std::unique_ptr<Settings>;
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         VulkanFramebuffer() = delete;
 
-        VulkanFramebuffer(SettingsPtr settingsPtr, VkFramebuffer vkFramebuffer);
+        VulkanFramebuffer(const Settings& set, VkFramebuffer vkFramebuffer);
 
         VulkanFramebuffer(const VulkanFramebuffer&) = delete;
 
@@ -76,7 +75,7 @@ namespace sol
          * \throws VulkanError Thrown if framebuffer creation failed.
          * \return Framebuffer.
          */
-        [[nodiscard]] static VulkanFramebufferPtr create(Settings settings);
+        [[nodiscard]] static VulkanFramebufferPtr create(const Settings& settings);
 
         /**
          * \brief Create a new Vulkan framebuffer.
@@ -84,17 +83,19 @@ namespace sol
          * \throws VulkanError Thrown if framebuffer creation failed.
          * \return Framebuffer.
          */
-        [[nodiscard]] static VulkanFramebufferSharedPtr createShared(Settings settings);
+        [[nodiscard]] static VulkanFramebufferSharedPtr createShared(const Settings& settings);
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Get the settings with which this object was created.
          * \return Settings.
          */
         [[nodiscard]] const Settings& getSettings() const noexcept;
+#endif
 
         /**
          * \brief Get the device.
@@ -122,10 +123,17 @@ namespace sol
         ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////
+
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Settings with which this object was created.
          */
-        SettingsPtr settings;
+        Settings settings;
+#else
+        VulkanRenderPass* renderPass = nullptr;
+
+        VkExtent2D extent{};
+#endif
 
         /**
          * \brief Vulkan framebuffer.

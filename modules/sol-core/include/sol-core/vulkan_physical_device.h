@@ -72,15 +72,13 @@ namespace sol
             [[nodiscard]] bool validate() const noexcept;
         };
 
-        using SettingsPtr = std::unique_ptr<Settings>;
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         VulkanPhysicalDevice() = delete;
 
-        VulkanPhysicalDevice(SettingsPtr                                  settingsPtr,
+        VulkanPhysicalDevice(const Settings&                              set,
                              VkPhysicalDevice                             physicalDevice,
                              std::vector<VulkanQueueFamily>               families,
                              std::optional<VulkanSwapchainSupportDetails> details);
@@ -106,7 +104,7 @@ namespace sol
          * \throws VulkanNoDevicesError Thrown if no devices were found, or none of the devices fulfilled requirements.
          * \return Vulkan physical device.
          */
-        [[nodiscard]] static VulkanPhysicalDevicePtr create(Settings settings);
+        [[nodiscard]] static VulkanPhysicalDevicePtr create(const Settings& settings);
 
         /**
          * \brief Create a new Vulkan physical device.
@@ -115,17 +113,19 @@ namespace sol
          * \throws VulkanNoDevicesError Thrown if no devices were found, or none of the devices fulfilled requirements.
          * \return Vulkan physical device.
          */
-        [[nodiscard]] static VulkanPhysicalDeviceSharedPtr createShared(Settings settings);
+        [[nodiscard]] static VulkanPhysicalDeviceSharedPtr createShared(const Settings& settings);
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Get the settings with which this object was created.
          * \return Settings.
          */
         [[nodiscard]] const Settings& getSettings() const noexcept;
+#endif
 
         /**
          * \brief Get the instance.
@@ -178,10 +178,16 @@ namespace sol
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Settings with which this object was created.
          */
-        SettingsPtr settings;
+        Settings settings;
+#else
+        VulkanInstance* instance = nullptr;
+
+        VulkanSurface* surface = nullptr;
+#endif
 
         /**
          * \brief Vulkan physical device.

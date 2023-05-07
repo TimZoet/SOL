@@ -19,30 +19,37 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    VulkanCommandBuffer::VulkanCommandBuffer(SettingsPtr settingsPtr, const VkCommandBuffer vkCommandBuffer) :
-        settings(std::move(settingsPtr)), commandBuffer(vkCommandBuffer)
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    VulkanCommandBuffer::VulkanCommandBuffer(const Settings& set, const VkCommandBuffer vkCommandBuffer) :
+        settings(set), commandBuffer(vkCommandBuffer)
     {
     }
+#else
+    VulkanCommandBuffer::VulkanCommandBuffer(const Settings& set, const VkCommandBuffer vkCommandBuffer) :
+        commandPool(&set.commandPool()), commandBuffer(vkCommandBuffer)
+    {
+    }
+#endif
 
     VulkanCommandBuffer::~VulkanCommandBuffer() noexcept
     {
-        vkFreeCommandBuffers(getDevice().get(), settings->commandPool, static_cast<uint32_t>(1), &commandBuffer);
+        vkFreeCommandBuffers(getDevice().get(), getCommandPool().get(), 1, &commandBuffer);
     }
 
     ////////////////////////////////////////////////////////////////
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    VulkanCommandBufferPtr VulkanCommandBuffer::create(Settings settings)
+    VulkanCommandBufferPtr VulkanCommandBuffer::create(const Settings& settings)
     {
         const auto buffer = createImpl(settings);
-        return std::make_unique<VulkanCommandBuffer>(std::make_unique<Settings>(settings), buffer);
+        return std::make_unique<VulkanCommandBuffer>(settings, buffer);
     }
 
-    VulkanCommandBufferSharedPtr VulkanCommandBuffer::createShared(Settings settings)
+    VulkanCommandBufferSharedPtr VulkanCommandBuffer::createShared(const Settings& settings)
     {
         const auto buffer = createImpl(settings);
-        return std::make_shared<VulkanCommandBuffer>(std::make_unique<Settings>(settings), buffer);
+        return std::make_shared<VulkanCommandBuffer>(settings, buffer);
     }
 
     VkCommandBuffer VulkanCommandBuffer::createImpl(const Settings& settings)
@@ -64,11 +71,31 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    const VulkanCommandBuffer::Settings& VulkanCommandBuffer::getSettings() const noexcept { return *settings; }
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    const VulkanCommandBuffer::Settings& VulkanCommandBuffer::getSettings() const noexcept { return settings; }
+#endif
 
-    VulkanDevice& VulkanCommandBuffer::getDevice() noexcept { return settings->commandPool().getDevice(); }
+    VulkanDevice& VulkanCommandBuffer::getDevice() noexcept { return getCommandPool().getDevice(); }
 
-    const VulkanDevice& VulkanCommandBuffer::getDevice() const noexcept { return settings->commandPool().getDevice(); }
+    const VulkanDevice& VulkanCommandBuffer::getDevice() const noexcept { return getCommandPool().getDevice(); }
+
+    VulkanCommandPool& VulkanCommandBuffer::getCommandPool() noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.commandPool();
+#else
+        return *commandPool;
+#endif
+    }
+
+    const VulkanCommandPool& VulkanCommandBuffer::getCommandPool() const noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.commandPool();
+#else
+        return *commandPool;
+#endif
+    }
 
     const VkCommandBuffer& VulkanCommandBuffer::get() const noexcept { return commandBuffer; }
 

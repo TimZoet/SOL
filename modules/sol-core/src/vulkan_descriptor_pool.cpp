@@ -18,27 +18,37 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    VulkanDescriptorPool::VulkanDescriptorPool(SettingsPtr settingsPtr, const VkDescriptorPool vkPool) :
-        settings(std::move(settingsPtr)), pool(vkPool)
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    VulkanDescriptorPool::VulkanDescriptorPool(const Settings& set, const VkDescriptorPool vkPool) :
+        settings(set), pool(vkPool)
     {
     }
+#else
+    VulkanDescriptorPool::VulkanDescriptorPool(const Settings& set, const VkDescriptorPool vkPool) :
+        device(&set.device()), pool(vkPool)
+    {
+    }
+#endif
 
-    VulkanDescriptorPool::~VulkanDescriptorPool() noexcept { vkDestroyDescriptorPool(settings->device, pool, nullptr); }
+    VulkanDescriptorPool::~VulkanDescriptorPool() noexcept
+    {
+        vkDestroyDescriptorPool(getDevice().get(), pool, nullptr);
+    }
 
     ////////////////////////////////////////////////////////////////
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    VulkanDescriptorPoolPtr VulkanDescriptorPool::create(Settings settings)
+    VulkanDescriptorPoolPtr VulkanDescriptorPool::create(const Settings& settings)
     {
         auto layout = createImpl(settings);
-        return std::make_unique<VulkanDescriptorPool>(std::make_unique<Settings>(std::move(settings)), layout);
+        return std::make_unique<VulkanDescriptorPool>(settings, layout);
     }
 
-    VulkanDescriptorPoolSharedPtr VulkanDescriptorPool::createShared(Settings settings)
+    VulkanDescriptorPoolSharedPtr VulkanDescriptorPool::createShared(const Settings& settings)
     {
         auto layout = createImpl(settings);
-        return std::make_shared<VulkanDescriptorPool>(std::make_unique<Settings>(std::move(settings)), layout);
+        return std::make_shared<VulkanDescriptorPool>(settings, layout);
     }
 
     VkDescriptorPool VulkanDescriptorPool::createImpl(const Settings& settings)
@@ -60,11 +70,27 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    const VulkanDescriptorPool::Settings& VulkanDescriptorPool::getSettings() const noexcept { return *settings; }
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    const VulkanDescriptorPool::Settings& VulkanDescriptorPool::getSettings() const noexcept { return settings; }
+#endif
 
-    VulkanDevice& VulkanDescriptorPool::getDevice() noexcept { return settings->device(); }
+    VulkanDevice& VulkanDescriptorPool::getDevice() noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.device();
+#else
+        return *device;
+#endif
+    }
 
-    const VulkanDevice& VulkanDescriptorPool::getDevice() const noexcept { return settings->device(); }
+    const VulkanDevice& VulkanDescriptorPool::getDevice() const noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.device();
+#else
+        return *device;
+#endif
+    }
 
     const VkDescriptorPool& VulkanDescriptorPool::get() const noexcept { return pool; }
 }  // namespace sol

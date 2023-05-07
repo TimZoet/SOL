@@ -28,10 +28,13 @@ namespace sol
                                           const VkAllocationCallbacks*              pAllocator,
                                           VkDebugUtilsMessengerEXT*                 pDebugMessenger)
     {
-        const auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
-          vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
 
-        if (func != nullptr) { return func(instance, pCreateInfo, pAllocator, pDebugMessenger); }
+        if (const auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
+              vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
+            func != nullptr)
+        {
+            return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+        }
 
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
@@ -40,9 +43,12 @@ namespace sol
                                        const VkDebugUtilsMessengerEXT debugMessenger,
                                        const VkAllocationCallbacks*   pAllocator)
     {
-        const auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
-          vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
-        if (func != nullptr) { func(instance, debugMessenger, pAllocator); }
+        if (const auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+              vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
+            func != nullptr)
+        {
+            func(instance, debugMessenger, pAllocator);
+        }
     }
 
     void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)

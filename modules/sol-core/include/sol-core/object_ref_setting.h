@@ -85,6 +85,8 @@ namespace sol
          */
         operator auto() const { return object ? object->get() : VK_NULL_HANDLE; }
 
+        [[nodiscard]] bool valid() const noexcept { return object; }
+
     private:
         T* object = nullptr;
     };

@@ -41,15 +41,13 @@ namespace sol
             std::function<VkResult(VulkanInstance& instance, VkSurfaceKHR* surface)> func;
         };
 
-        using SettingsPtr = std::unique_ptr<Settings>;
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         VulkanSurface() = delete;
 
-        VulkanSurface(SettingsPtr settingsPtr, VkSurfaceKHR vkSurface);
+        VulkanSurface(const Settings& set, VkSurfaceKHR vkSurface);
 
         VulkanSurface(const VulkanSurface&) = delete;
 
@@ -71,7 +69,7 @@ namespace sol
          * \throws VulkanError Thrown if surface creation failed.
          * \return Vulkan surface.
          */
-        [[nodiscard]] static VulkanSurfacePtr create(Settings settings);
+        [[nodiscard]] static VulkanSurfacePtr create(const Settings& settings);
 
         /**
          * \brief Create a new Vulkan surface.
@@ -79,17 +77,31 @@ namespace sol
          * \throws VulkanError Thrown if surface creation failed.
          * \return Vulkan surface.
          */
-        [[nodiscard]] static VulkanSurfaceSharedPtr createShared(Settings settings);
+        [[nodiscard]] static VulkanSurfaceSharedPtr createShared(const Settings& settings);
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Get the settings with which this object was created.
          * \return Settings.
          */
         [[nodiscard]] const Settings& getSettings() const noexcept;
+#endif
+
+        /**
+         * \brief Get the instance.
+         * \return VulkanInstance.
+         */
+        [[nodiscard]] VulkanInstance& getInstance() noexcept;
+
+        /**
+         * \brief Get the instance.
+         * \return VulkanInstance.
+         */
+        [[nodiscard]] const VulkanInstance& getInstance() const noexcept;
 
         /**
          * \brief Get the surface handle managed by this object.
@@ -104,10 +116,14 @@ namespace sol
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Settings with which this object was created.
          */
-        SettingsPtr settings;
+        Settings settings;
+#else
+        VulkanInstance* instance = nullptr;
+#endif
 
         /**
          * \brief Vulkan surface.

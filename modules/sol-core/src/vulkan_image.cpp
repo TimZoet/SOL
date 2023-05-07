@@ -21,21 +21,34 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    VulkanImage::VulkanImage(SettingsPtr settingsPtr, const VkImage vkImage, const VmaAllocation vmaAllocation) :
-        settings(std::move(settingsPtr)), image(vkImage), memoryRequirements(), allocation(vmaAllocation)
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    VulkanImage::VulkanImage(const Settings& set, const VkImage vkImage, const VmaAllocation vmaAllocation) :
+        settings(set), image(vkImage), memoryRequirements(), allocation(vmaAllocation)
     {
-        if (!settings->isSwapchainImage) vkGetImageMemoryRequirements(settings->device, image, &memoryRequirements);
+        if (!isSwapchainImage()) vkGetImageMemoryRequirements(settings.device, image, &memoryRequirements);
     }
+#else
+    VulkanImage::VulkanImage(const Settings& set, const VkImage vkImage, const VmaAllocation vmaAllocation) :
+        device(&set.device()),
+        swapchainImage(set.isSwapchainImage),
+        allocator(set.allocator ? &set.allocator() : nullptr),
+        image(vkImage),
+        memoryRequirements(),
+        allocation(vmaAllocation)
+    {
+        if (!isSwapchainImage()) vkGetImageMemoryRequirements(device->get(), image, &memoryRequirements);
+    }
+#endif
 
     VulkanImage::~VulkanImage() noexcept
     {
         // Image may have been retrieved as part of a swapchain and is deallocated automatically.
-        if (!settings->isSwapchainImage)
+        if (isSwapchainImage())
         {
-            if (settings->allocator)
-                vmaDestroyImage(settings->allocator, image, allocation);
+            if (hasAllocator())
+                vmaDestroyImage(getAllocator().get(), image, allocation);
             else
-                vkDestroyImage(settings->device, image, nullptr);
+                vkDestroyImage(getDevice().get(), image, nullptr);
         }
     }
 
@@ -43,16 +56,16 @@ namespace sol
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    VulkanImagePtr VulkanImage::create(Settings settings)
+    VulkanImagePtr VulkanImage::create(const Settings& settings)
     {
         auto [image, alloc] = createImpl(settings);
-        return std::make_unique<VulkanImage>(std::make_unique<Settings>(settings), image, alloc);
+        return std::make_unique<VulkanImage>(settings, image, alloc);
     }
 
-    VulkanImageSharedPtr VulkanImage::createShared(Settings settings)
+    VulkanImageSharedPtr VulkanImage::createShared(const Settings& settings)
     {
         auto [image, alloc] = createImpl(settings);
-        return std::make_shared<VulkanImage>(std::make_unique<Settings>(settings), image, alloc);
+        return std::make_shared<VulkanImage>(settings, image, alloc);
     }
 
     std::pair<VkImage, VmaAllocation> VulkanImage::createImpl(const Settings& settings)
@@ -92,10 +105,7 @@ namespace sol
               vmaCreateImage(settings.allocator, &createInfo, &allocInfo, &vkImage, &vmaAllocation, nullptr));
         }
         // Create image.
-        else
-        {
-            handleVulkanError(vkCreateImage(settings.device, &createInfo, nullptr, &vkImage));
-        }
+        else { handleVulkanError(vkCreateImage(settings.device, &createInfo, nullptr, &vkImage)); }
 
         return {vkImage, vmaAllocation};
     }
@@ -106,11 +116,63 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    const VulkanImage::Settings& VulkanImage::getSettings() const noexcept { return *settings; }
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    const VulkanImage::Settings& VulkanImage::getSettings() const noexcept { return settings; }
+#endif
 
-    VulkanDevice& VulkanImage::getDevice() noexcept { return settings->device(); }
+    VulkanDevice& VulkanImage::getDevice() noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.device();
+#else
+        return *device;
+#endif
+    }
 
-    const VulkanDevice& VulkanImage::getDevice() const noexcept { return settings->device(); }
+    const VulkanDevice& VulkanImage::getDevice() const noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.device();
+#else
+        return *device;
+#endif
+    }
+
+    bool VulkanImage::isSwapchainImage() const noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.isSwapchainImage;
+#else
+        return swapchainImage;
+#endif
+    }
+
+    bool VulkanImage::hasAllocator() const noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.allocator.valid();
+#else
+        return allocator;
+#endif
+    }
+
+    VulkanMemoryAllocator& VulkanImage::getAllocator() noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.allocator();
+#else
+        return *allocator;
+#endif
+    }
+
+    const VulkanMemoryAllocator& VulkanImage::getAllocator() const noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.allocator();
+#else
+        return *allocator;
+#endif
+    }
 
     const VkImage& VulkanImage::get() const noexcept { return image; }
 
@@ -121,9 +183,9 @@ namespace sol
     void VulkanImage::bindMemory(VulkanDeviceMemory& memory, const size_t offset)
     {
         if (deviceMemory) throw SolError("Cannot bind memory. Memory was already bound.");
-        if (settings->allocator) throw SolError("Cannot bind memory. Image was created using a custom allocator.");
+        if (hasAllocator()) throw SolError("Cannot bind memory. Image was created using a custom allocator.");
 
-        handleVulkanError(vkBindImageMemory(settings->device, image, memory.get(), offset));
+        handleVulkanError(vkBindImageMemory(getDevice().get(), image, memory.get(), offset));
         deviceMemory = &memory;
     }
 }  // namespace sol
