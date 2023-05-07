@@ -27,16 +27,30 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    VulkanPhysicalDevice::VulkanPhysicalDevice(SettingsPtr                                  settingsPtr,
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    VulkanPhysicalDevice::VulkanPhysicalDevice(const Settings&                              set,
                                                const VkPhysicalDevice                       physicalDevice,
                                                std::vector<VulkanQueueFamily>               families,
                                                std::optional<VulkanSwapchainSupportDetails> details) :
-        settings(std::move(settingsPtr)),
+        settings(set),
         device(physicalDevice),
         queueFamilies(std::move(families)),
         swapchainSupportDetails(std::move(details))
     {
     }
+#else
+    VulkanPhysicalDevice::VulkanPhysicalDevice(const Settings&                              set,
+                                               const VkPhysicalDevice                       physicalDevice,
+                                               std::vector<VulkanQueueFamily>               families,
+                                               std::optional<VulkanSwapchainSupportDetails> details) :
+        instance(&set.instance()),
+        surface(set.surface ? &set.surface() : nullptr),
+        device(physicalDevice),
+        queueFamilies(std::move(families)),
+        swapchainSupportDetails(std::move(details))
+    {
+    }
+#endif
 
     VulkanPhysicalDevice::~VulkanPhysicalDevice() noexcept = default;
 
@@ -44,18 +58,16 @@ namespace sol
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    VulkanPhysicalDevicePtr VulkanPhysicalDevice::create(Settings settings)
+    VulkanPhysicalDevicePtr VulkanPhysicalDevice::create(const Settings& settings)
     {
         const auto [device, indices, details] = createImpl(settings);
-        return std::make_unique<VulkanPhysicalDevice>(
-          std::make_unique<Settings>(std::move(settings)), device, indices, details);
+        return std::make_unique<VulkanPhysicalDevice>(settings, device, indices, details);
     }
 
-    VulkanPhysicalDeviceSharedPtr VulkanPhysicalDevice::createShared(Settings settings)
+    VulkanPhysicalDeviceSharedPtr VulkanPhysicalDevice::createShared(const Settings& settings)
     {
         const auto [device, indices, details] = createImpl(settings);
-        return std::make_shared<VulkanPhysicalDevice>(
-          std::make_unique<Settings>(std::move(settings)), device, indices, details);
+        return std::make_shared<VulkanPhysicalDevice>(settings, device, indices, details);
     }
 
     bool VulkanPhysicalDevice::Settings::validate() const noexcept
@@ -168,11 +180,27 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    const VulkanPhysicalDevice::Settings& VulkanPhysicalDevice::getSettings() const noexcept { return *settings; }
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    const VulkanPhysicalDevice::Settings& VulkanPhysicalDevice::getSettings() const noexcept { return settings; }
+#endif
 
-    VulkanInstance& VulkanPhysicalDevice::getInstance() noexcept { return settings->instance(); }
+    VulkanInstance& VulkanPhysicalDevice::getInstance() noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.instance();
+#else
+        return *instance;
+#endif
+    }
 
-    const VulkanInstance& VulkanPhysicalDevice::getInstance() const noexcept { return settings->instance(); }
+    const VulkanInstance& VulkanPhysicalDevice::getInstance() const noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.instance();
+#else
+        return *instance;
+#endif
+    }
 
     const VkPhysicalDevice& VulkanPhysicalDevice::get() const noexcept { return device; }
 
@@ -195,8 +223,12 @@ namespace sol
         // The surface in the settings of this physdevice then is not always the correct one. That means that the details and
         // surface could go out of sync without that being very clear. How to deal with that? Just get rid of the surface and
         // details members and let user keep track of that stuff?
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         swapchainSupportDetails =
-          VulkanSwapchainSupportDetails::create(device, surface ? *surface : settings->surface());
+          VulkanSwapchainSupportDetails::create(device, surface ? *surface : settings.surface());
+#else
+        swapchainSupportDetails = VulkanSwapchainSupportDetails::create(device, surface ? *surface : *this->surface);
+#endif
     }
 
 }  // namespace sol

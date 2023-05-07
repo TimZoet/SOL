@@ -21,27 +21,34 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    VulkanDeviceMemory::VulkanDeviceMemory(SettingsPtr settingsPtr, const VkDeviceMemory vkMemory) :
-        settings(std::move(settingsPtr)), memory(vkMemory)
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    VulkanDeviceMemory::VulkanDeviceMemory(const Settings& set, const VkDeviceMemory vkMemory) :
+        settings(set), memory(vkMemory)
     {
     }
+#else
+    VulkanDeviceMemory::VulkanDeviceMemory(const Settings& set, const VkDeviceMemory vkMemory) :
+        device(&set.device()), memory(vkMemory)
+    {
+    }
+#endif
 
-    VulkanDeviceMemory::~VulkanDeviceMemory() noexcept { vkFreeMemory(settings->device, memory, nullptr); }
+    VulkanDeviceMemory::~VulkanDeviceMemory() noexcept { vkFreeMemory(getDevice().get(), memory, nullptr); }
 
     ////////////////////////////////////////////////////////////////
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    VulkanDeviceMemoryPtr VulkanDeviceMemory::create(Settings settings)
+    VulkanDeviceMemoryPtr VulkanDeviceMemory::create(const Settings& settings)
     {
         const auto memory = createImpl(settings);
-        return std::make_unique<VulkanDeviceMemory>(std::make_unique<Settings>(settings), memory);
+        return std::make_unique<VulkanDeviceMemory>(settings, memory);
     }
 
-    VulkanDeviceMemorySharedPtr VulkanDeviceMemory::createShared(Settings settings)
+    VulkanDeviceMemorySharedPtr VulkanDeviceMemory::createShared(const Settings& settings)
     {
         const auto memory = createImpl(settings);
-        return std::make_shared<VulkanDeviceMemory>(std::make_unique<Settings>(settings), memory);
+        return std::make_shared<VulkanDeviceMemory>(settings, memory);
     }
 
     VkDeviceMemory VulkanDeviceMemory::createImpl(const Settings& settings)
@@ -82,11 +89,27 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    const VulkanDeviceMemory::Settings& VulkanDeviceMemory::getSettings() const noexcept { return *settings; }
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    const VulkanDeviceMemory::Settings& VulkanDeviceMemory::getSettings() const noexcept { return settings; }
+#endif
 
-    VulkanDevice& VulkanDeviceMemory::getDevice() noexcept { return settings->device(); }
+    VulkanDevice& VulkanDeviceMemory::getDevice() noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.device();
+#else
+        return *device;
+#endif
+    }
 
-    const VulkanDevice& VulkanDeviceMemory::getDevice() const noexcept { return settings->device(); }
+    const VulkanDevice& VulkanDeviceMemory::getDevice() const noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.device();
+#else
+        return *device;
+#endif
+    }
 
     const VkDeviceMemory& VulkanDeviceMemory::get() const noexcept { return memory; }
 }  // namespace sol

@@ -61,15 +61,13 @@ namespace sol
             VkExtent2D extent;
         };
 
-        using SettingsPtr = std::unique_ptr<Settings>;
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         VulkanSwapchain() = delete;
 
-        VulkanSwapchain(SettingsPtr settingsPtr, VkSwapchainKHR vkSwapchain, CreateUtils createUtils);
+        VulkanSwapchain(const Settings& set, VkSwapchainKHR vkSwapchain, CreateUtils createUtils);
 
         VulkanSwapchain(const VulkanSwapchain&) = delete;
 
@@ -91,7 +89,7 @@ namespace sol
          * \throws VulkanError Thrown if swapchain creation failed.
          * \return Swapchain.
          */
-        [[nodiscard]] static VulkanSwapchainPtr create(Settings settings);
+        [[nodiscard]] static VulkanSwapchainPtr create(const Settings& settings);
 
         /**
          * \brief Create a new Vulkan swapchain.
@@ -99,17 +97,19 @@ namespace sol
          * \throws VulkanError Thrown if swapchain creation failed.
          * \return Swapchain.
          */
-        [[nodiscard]] static VulkanSwapchainSharedPtr createShared(Settings settings);
+        [[nodiscard]] static VulkanSwapchainSharedPtr createShared(const Settings& settings);
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Get the settings with which this object was created.
          * \return Settings.
          */
         [[nodiscard]] const Settings& getSettings() const noexcept;
+#endif
 
         /**
          * \brief Get the device.
@@ -191,7 +191,7 @@ namespace sol
         /**
          * \brief Settings with which this object was created.
          */
-        SettingsPtr settings;
+        Settings settings;
 
         /**
          * \brief Vulkan swap chain.

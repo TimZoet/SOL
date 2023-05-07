@@ -35,15 +35,13 @@ namespace sol
             ObjectRefSetting<VulkanDevice> device;
         };
 
-        using SettingsPtr = std::unique_ptr<Settings>;
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         VulkanSemaphore() = delete;
 
-        VulkanSemaphore(SettingsPtr settingsPtr, VkSemaphore vkSemaphore);
+        VulkanSemaphore(const Settings& set, VkSemaphore vkSemaphore);
 
         VulkanSemaphore(const VulkanSemaphore&) = delete;
 
@@ -65,7 +63,7 @@ namespace sol
          * \throws VulkanError Thrown if semaphore creation failed.
          * \return Vulkan semaphore.
          */
-        [[nodiscard]] static VulkanSemaphorePtr create(Settings settings);
+        [[nodiscard]] static VulkanSemaphorePtr create(const Settings& settings);
 
         /**
          * \brief Create a list of new Vulkan semaphores.
@@ -82,17 +80,19 @@ namespace sol
          * \throws VulkanError Thrown if semaphore creation failed.
          * \return Vulkan semaphore.
          */
-        [[nodiscard]] static VulkanSemaphoreSharedPtr createShared(Settings settings);
+        [[nodiscard]] static VulkanSemaphoreSharedPtr createShared(const Settings& settings);
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Get the settings with which this object was created.
          * \return Settings.
          */
         [[nodiscard]] const Settings& getSettings() const noexcept;
+#endif
 
         /**
          * \brief Get the device.
@@ -115,10 +115,14 @@ namespace sol
     private:
         [[nodiscard]] static VkSemaphore createImpl(const Settings& settings);
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Settings with which this object was created.
          */
-        SettingsPtr settings;
+        Settings settings;
+#else
+        VulkanDevice* device = nullptr;
+#endif
 
         /**
          * \brief Vulkan semaphore.

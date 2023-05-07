@@ -67,15 +67,13 @@ namespace sol
             [[nodiscard]] bool validate() const noexcept;
         };
 
-        using SettingsPtr = std::unique_ptr<Settings>;
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         VulkanInstance() = delete;
 
-        VulkanInstance(SettingsPtr settingsPtr, VkInstance vkInstance, VkDebugUtilsMessengerEXT vkDebugMessenger);
+        VulkanInstance(const Settings& set, VkInstance vkInstance, VkDebugUtilsMessengerEXT vkDebugMessenger);
 
         VulkanInstance(const VulkanInstance&) = delete;
 
@@ -97,7 +95,7 @@ namespace sol
          * \throws VulkanError Thrown if instance creation failed.
          * \return Vulkan instance.
          */
-        [[nodiscard]] static VulkanInstancePtr create(Settings settings);
+        [[nodiscard]] static VulkanInstancePtr create(const Settings& settings);
 
         /**
          * \brief Create a new Vulkan instance.
@@ -105,17 +103,19 @@ namespace sol
          * \throws VulkanError Thrown if instance creation failed.
          * \return Vulkan instance.
          */
-        [[nodiscard]] static VulkanInstanceSharedPtr createShared(Settings settings);
+        [[nodiscard]] static VulkanInstanceSharedPtr createShared(const Settings& settings);
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Get the settings with which this object was created.
          * \return Settings.
          */
         [[nodiscard]] const Settings& getSettings() const noexcept;
+#endif
 
         /**
          * \brief Get the instance handle managed by this object.
@@ -130,10 +130,12 @@ namespace sol
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Settings with which this object was created.
          */
-        SettingsPtr settings;
+        Settings settings;
+#endif
 
         /**
          * \brief Vulkan instance.

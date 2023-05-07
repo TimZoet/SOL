@@ -18,27 +18,33 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    VulkanSurface::VulkanSurface(SettingsPtr settingsPtr, const VkSurfaceKHR vkSurface) :
-        settings(std::move(settingsPtr)), surface(vkSurface)
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    VulkanSurface::VulkanSurface(const Settings& set, const VkSurfaceKHR vkSurface) : settings(set), surface(vkSurface)
     {
     }
+#else
+    VulkanSurface::VulkanSurface(const Settings& set, const VkSurfaceKHR vkSurface) :
+        instance(&set.instance()), surface(vkSurface)
+    {
+    }
+#endif
 
-    VulkanSurface::~VulkanSurface() noexcept { vkDestroySurfaceKHR(settings->instance, surface, nullptr); }
+    VulkanSurface::~VulkanSurface() noexcept { vkDestroySurfaceKHR(getInstance().get(), surface, nullptr); }
 
     ////////////////////////////////////////////////////////////////
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    VulkanSurfacePtr VulkanSurface::create(Settings settings)
+    VulkanSurfacePtr VulkanSurface::create(const Settings& settings)
     {
         const auto surface = createImpl(settings);
-        return std::make_unique<VulkanSurface>(std::make_unique<Settings>(std::move(settings)), surface);
+        return std::make_unique<VulkanSurface>(settings, surface);
     }
 
-    VulkanSurfaceSharedPtr VulkanSurface::createShared(Settings settings)
+    VulkanSurfaceSharedPtr VulkanSurface::createShared(const Settings& settings)
     {
         const auto surface = createImpl(settings);
-        return std::make_shared<VulkanSurface>(std::make_unique<Settings>(std::move(settings)), surface);
+        return std::make_shared<VulkanSurface>(settings, surface);
     }
 
     VkSurfaceKHR VulkanSurface::createImpl(const Settings& settings)
@@ -54,7 +60,27 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    const VulkanSurface::Settings& VulkanSurface::getSettings() const noexcept { return *settings; }
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    const VulkanSurface::Settings& VulkanSurface::getSettings() const noexcept { return settings; }
+#endif
+
+    VulkanInstance& VulkanSurface::getInstance() noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.instance();
+#else
+        return *instance;
+#endif
+    }
+
+    const VulkanInstance& VulkanSurface::getInstance() const noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.instance();
+#else
+        return *instance;
+#endif
+    }
 
     const VkSurfaceKHR& VulkanSurface::get() const noexcept { return surface; }
 }  // namespace sol

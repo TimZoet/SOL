@@ -18,21 +18,28 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    VulkanSemaphore::VulkanSemaphore(SettingsPtr settingsPtr, const VkSemaphore vkSemaphore) :
-        settings(std::move(settingsPtr)), semaphore(vkSemaphore)
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    VulkanSemaphore::VulkanSemaphore(const Settings& set, const VkSemaphore vkSemaphore) :
+        settings(set), semaphore(vkSemaphore)
     {
     }
+#else
+    VulkanSemaphore::VulkanSemaphore(const Settings& set, const VkSemaphore vkSemaphore) :
+        device(&set.device()), semaphore(vkSemaphore)
+    {
+    }
+#endif
 
-    VulkanSemaphore::~VulkanSemaphore() noexcept { vkDestroySemaphore(settings->device, semaphore, nullptr); }
+    VulkanSemaphore::~VulkanSemaphore() noexcept { vkDestroySemaphore(getDevice().get(), semaphore, nullptr); }
 
     ////////////////////////////////////////////////////////////////
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    VulkanSemaphorePtr VulkanSemaphore::create(Settings settings)
+    VulkanSemaphorePtr VulkanSemaphore::create(const Settings& settings)
     {
         const auto semaphore = createImpl(settings);
-        return std::make_unique<VulkanSemaphore>(std::make_unique<Settings>(settings), semaphore);
+        return std::make_unique<VulkanSemaphore>(settings, semaphore);
     }
 
     std::vector<VulkanSemaphorePtr> VulkanSemaphore::create(const Settings settings, const size_t count)
@@ -43,10 +50,10 @@ namespace sol
         return semaphores;
     }
 
-    VulkanSemaphoreSharedPtr VulkanSemaphore::createShared(Settings settings)
+    VulkanSemaphoreSharedPtr VulkanSemaphore::createShared(const Settings& settings)
     {
         const auto semaphore = createImpl(settings);
-        return std::make_shared<VulkanSemaphore>(std::make_unique<Settings>(settings), semaphore);
+        return std::make_shared<VulkanSemaphore>(settings, semaphore);
     }
 
     VkSemaphore VulkanSemaphore::createImpl(const Settings& settings)
@@ -65,11 +72,27 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    const VulkanSemaphore::Settings& VulkanSemaphore::getSettings() const noexcept { return *settings; }
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    const VulkanSemaphore::Settings& VulkanSemaphore::getSettings() const noexcept { return settings; }
+#endif
 
-    VulkanDevice& VulkanSemaphore::getDevice() noexcept { return settings->device(); }
+    VulkanDevice& VulkanSemaphore::getDevice() noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.device();
+#else
+        return *device;
+#endif
+    }
 
-    const VulkanDevice& VulkanSemaphore::getDevice() const noexcept { return settings->device(); }
+    const VulkanDevice& VulkanSemaphore::getDevice() const noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.device();
+#else
+        return *device;
+#endif
+    }
 
     const VkSemaphore& VulkanSemaphore::get() const noexcept { return semaphore; }
 }  // namespace sol

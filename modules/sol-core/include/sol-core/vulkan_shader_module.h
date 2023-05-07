@@ -74,15 +74,13 @@ namespace sol
             const shaderc::Compiler* compiler = nullptr;
         };
 
-        using SettingsPtr = std::unique_ptr<Settings>;
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         VulkanShaderModule() = delete;
 
-        VulkanShaderModule(SettingsPtr settingsPtr, VkShaderModule vkShaderModule);
+        VulkanShaderModule(const Settings& set, VkShaderModule vkShaderModule);
 
         VulkanShaderModule(const VulkanShaderModule&) = delete;
 
@@ -105,7 +103,7 @@ namespace sol
          * \throws VulkanShaderCompilationError Thrown if compilation failed.
          * \return Vulkan shader module.
          */
-        [[nodiscard]] static VulkanShaderModulePtr create(Settings settings);
+        [[nodiscard]] static VulkanShaderModulePtr create(const Settings& settings);
 
         /**
          * \brief Create a new Vulkan shader module.
@@ -114,17 +112,19 @@ namespace sol
          * \throws VulkanShaderCompilationError Thrown if compilation failed.
          * \return Vulkan shader module.
          */
-        [[nodiscard]] static VulkanShaderModuleSharedPtr createShared(Settings settings);
+        [[nodiscard]] static VulkanShaderModuleSharedPtr createShared(const Settings& settings);
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Get the settings with which this object was created.
          * \return Settings.
          */
         [[nodiscard]] const Settings& getSettings() const noexcept;
+#endif
 
         /**
          * \brief Get the device.
@@ -151,10 +151,14 @@ namespace sol
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Settings with which this object was created.
          */
-        SettingsPtr settings;
+        Settings settings;
+#else
+        VulkanDevice* device = nullptr;
+#endif
 
         /**
          * \brief Shader module.

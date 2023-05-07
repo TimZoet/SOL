@@ -19,27 +19,34 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    VulkanCommandPool::VulkanCommandPool(SettingsPtr settingsPtr, const VkCommandPool vkCommandPool) :
-        settings(std::move(settingsPtr)), commandPool(vkCommandPool)
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    VulkanCommandPool::VulkanCommandPool(const Settings& set, const VkCommandPool vkCommandPool) :
+        settings(set), commandPool(vkCommandPool)
     {
     }
+#else
+    VulkanCommandPool::VulkanCommandPool(const Settings& set, const VkCommandPool vkCommandPool) :
+        device(&set.device()), flags(set.flags), commandPool(vkCommandPool)
+    {
+    }
+#endif
 
-    VulkanCommandPool::~VulkanCommandPool() noexcept { vkDestroyCommandPool(settings->device, commandPool, nullptr); }
+    VulkanCommandPool::~VulkanCommandPool() noexcept { vkDestroyCommandPool(getDevice().get(), commandPool, nullptr); }
 
     ////////////////////////////////////////////////////////////////
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    VulkanCommandPoolPtr VulkanCommandPool::create(Settings settings)
+    VulkanCommandPoolPtr VulkanCommandPool::create(const Settings& settings)
     {
         auto commandPool = createImpl(settings);
-        return std::make_unique<VulkanCommandPool>(std::make_unique<Settings>(settings), commandPool);
+        return std::make_unique<VulkanCommandPool>(settings, commandPool);
     }
 
-    VulkanCommandPoolSharedPtr VulkanCommandPool::createShared(Settings settings)
+    VulkanCommandPoolSharedPtr VulkanCommandPool::createShared(const Settings& settings)
     {
         auto commandPool = createImpl(settings);
-        return std::make_shared<VulkanCommandPool>(std::make_unique<Settings>(settings), commandPool);
+        return std::make_shared<VulkanCommandPool>(settings, commandPool);
     }
 
     VkCommandPool VulkanCommandPool::createImpl(const Settings& settings)
@@ -60,17 +67,37 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    const VulkanCommandPool::Settings& VulkanCommandPool::getSettings() const noexcept { return *settings; }
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    const VulkanCommandPool::Settings& VulkanCommandPool::getSettings() const noexcept { return settings; }
+#endif
 
-    VulkanDevice& VulkanCommandPool::getDevice() noexcept { return settings->device(); }
+    VulkanDevice& VulkanCommandPool::getDevice() noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.device();
+#else
+        return *device;
+#endif
+    }
 
-    const VulkanDevice& VulkanCommandPool::getDevice() const noexcept { return settings->device(); }
+    const VulkanDevice& VulkanCommandPool::getDevice() const noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.device();
+#else
+        return *device;
+#endif
+    }
 
     const VkCommandPool& VulkanCommandPool::get() const noexcept { return commandPool; }
 
     bool VulkanCommandPool::isResettable() const noexcept
     {
-        return settings->flags & VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.flags & VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+#else
+        return flags & VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+#endif
     }
 
     ////////////////////////////////////////////////////////////////

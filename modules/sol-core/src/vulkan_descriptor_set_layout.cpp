@@ -18,31 +18,37 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(SettingsPtr                 settingsPtr,
-                                                         const VkDescriptorSetLayout vkLayout) :
-        settings(std::move(settingsPtr)), layout(vkLayout)
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(const Settings& set, const VkDescriptorSetLayout vkLayout) :
+        settings(set), layout(vkLayout)
     {
     }
+#else
+    VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(const Settings& set, const VkDescriptorSetLayout vkLayout) :
+        device(&set.device()), layout(vkLayout)
+    {
+    }
+#endif
 
     VulkanDescriptorSetLayout::~VulkanDescriptorSetLayout() noexcept
     {
-        vkDestroyDescriptorSetLayout(settings->device, layout, nullptr);
+        vkDestroyDescriptorSetLayout(getDevice().get(), layout, nullptr);
     }
 
     ////////////////////////////////////////////////////////////////
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    VulkanDescriptorSetLayoutPtr VulkanDescriptorSetLayout::create(Settings settings)
+    VulkanDescriptorSetLayoutPtr VulkanDescriptorSetLayout::create(const Settings& settings)
     {
         auto layout = createImpl(settings);
-        return std::make_unique<VulkanDescriptorSetLayout>(std::make_unique<Settings>(std::move(settings)), layout);
+        return std::make_unique<VulkanDescriptorSetLayout>(settings, layout);
     }
 
-    VulkanDescriptorSetLayoutSharedPtr VulkanDescriptorSetLayout::createShared(Settings settings)
+    VulkanDescriptorSetLayoutSharedPtr VulkanDescriptorSetLayout::createShared(const Settings& settings)
     {
         auto layout = createImpl(settings);
-        return std::make_shared<VulkanDescriptorSetLayout>(std::make_unique<Settings>(std::move(settings)), layout);
+        return std::make_shared<VulkanDescriptorSetLayout>(settings, layout);
     }
 
     VkDescriptorSetLayout VulkanDescriptorSetLayout::createImpl(const Settings& settings)
@@ -64,14 +70,30 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
     const VulkanDescriptorSetLayout::Settings& VulkanDescriptorSetLayout::getSettings() const noexcept
     {
-        return *settings;
+        return settings;
+    }
+#endif
+
+    VulkanDevice& VulkanDescriptorSetLayout::getDevice() noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.device();
+#else
+        return *device;
+#endif
     }
 
-    VulkanDevice& VulkanDescriptorSetLayout::getDevice() noexcept { return settings->device(); }
-
-    const VulkanDevice& VulkanDescriptorSetLayout::getDevice() const noexcept { return settings->device(); }
+    const VulkanDevice& VulkanDescriptorSetLayout::getDevice() const noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.device();
+#else
+        return *device;
+#endif
+    }
 
     const VkDescriptorSetLayout& VulkanDescriptorSetLayout::get() const noexcept { return layout; }
 }  // namespace sol

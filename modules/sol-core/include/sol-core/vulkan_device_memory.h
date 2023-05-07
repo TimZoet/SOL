@@ -41,15 +41,13 @@ namespace sol
             VkMemoryPropertyFlags memoryPropertyFlags = VK_MEMORY_PROPERTY_FLAG_BITS_MAX_ENUM;
         };
 
-        using SettingsPtr = std::unique_ptr<Settings>;
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         VulkanDeviceMemory() = delete;
 
-        VulkanDeviceMemory(SettingsPtr settingsPtr, VkDeviceMemory vkMemory);
+        VulkanDeviceMemory(const Settings& set, VkDeviceMemory vkMemory);
 
         VulkanDeviceMemory(const VulkanDeviceMemory&) = delete;
 
@@ -71,7 +69,7 @@ namespace sol
          * \throws VulkanError Thrown if device memory creation failed.
          * \return Vulkan device memory.
          */
-        [[nodiscard]] static VulkanDeviceMemoryPtr create(Settings settings);
+        [[nodiscard]] static VulkanDeviceMemoryPtr create(const Settings& settings);
 
         /**
          * \brief Create a new Vulkan device memory.
@@ -79,17 +77,19 @@ namespace sol
          * \throws VulkanError Thrown if device memory creation failed.
          * \return Vulkan device memory.
          */
-        [[nodiscard]] static VulkanDeviceMemorySharedPtr createShared(Settings settings);
+        [[nodiscard]] static VulkanDeviceMemorySharedPtr createShared(const Settings& settings);
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Get the settings with which this object was created.
          * \return Settings.
          */
         [[nodiscard]] const Settings& getSettings() const noexcept;
+#endif
 
         /**
          * \brief Get the device.
@@ -115,10 +115,14 @@ namespace sol
         [[nodiscard]] static uint32_t
           findMemoryType(const VulkanPhysicalDevice& physicalDevice, uint32_t filter, VkMemoryPropertyFlags properties);
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Settings with which this object was created.
          */
-        SettingsPtr settings;
+        Settings settings;
+#else
+        VulkanDevice* device = nullptr;
+#endif
 
         /**
          * \brief Vulkan device memory.

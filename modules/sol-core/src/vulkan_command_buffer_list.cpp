@@ -28,34 +28,38 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    VulkanCommandBufferList::VulkanCommandBufferList(SettingsPtr                  settingsPtr,
-                                                     std::vector<VkCommandBuffer> commandBuffers) :
-        settings(std::move(settingsPtr)), buffers(std::move(commandBuffers))
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    VulkanCommandBufferList::VulkanCommandBufferList(const Settings& set, std::vector<VkCommandBuffer> commandBuffers) :
+        settings(set), buffers(std::move(commandBuffers))
     {
     }
+#else
+    VulkanCommandBufferList::VulkanCommandBufferList(const Settings& set, std::vector<VkCommandBuffer> commandBuffers) :
+        commandPool(&set.commandPool()), buffers(std::move(commandBuffers))
+    {
+    }
+#endif
 
     VulkanCommandBufferList::~VulkanCommandBufferList() noexcept
     {
-        vkFreeCommandBuffers(getDevice().get(),
-                             settings->commandPool,
-                             static_cast<uint32_t>(buffers.size()),
-                             buffers.data());
+        vkFreeCommandBuffers(
+          getDevice().get(), getCommandPool().get(), static_cast<uint32_t>(buffers.size()), buffers.data());
     }
 
     ////////////////////////////////////////////////////////////////
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    VulkanCommandBufferListPtr VulkanCommandBufferList::create(Settings settings)
+    VulkanCommandBufferListPtr VulkanCommandBufferList::create(const Settings& settings)
     {
         auto buffers = createImpl(settings);
-        return std::make_unique<VulkanCommandBufferList>(std::make_unique<Settings>(settings), std::move(buffers));
+        return std::make_unique<VulkanCommandBufferList>(settings, std::move(buffers));
     }
 
-    VulkanCommandBufferListSharedPtr VulkanCommandBufferList::createShared(Settings settings)
+    VulkanCommandBufferListSharedPtr VulkanCommandBufferList::createShared(const Settings& settings)
     {
         auto buffers = createImpl(settings);
-        return std::make_shared<VulkanCommandBufferList>(std::make_unique<Settings>(settings), std::move(buffers));
+        return std::make_shared<VulkanCommandBufferList>(settings, std::move(buffers));
     }
 
     std::vector<VkCommandBuffer> VulkanCommandBufferList::createImpl(const Settings& settings)
@@ -78,13 +82,30 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    const VulkanCommandBufferList::Settings& VulkanCommandBufferList::getSettings() const noexcept { return *settings; }
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    const VulkanCommandBufferList::Settings& VulkanCommandBufferList::getSettings() const noexcept { return settings; }
+#endif
 
-    VulkanDevice& VulkanCommandBufferList::getDevice() noexcept { return settings->commandPool().getDevice(); }
+    VulkanDevice& VulkanCommandBufferList::getDevice() noexcept { return getCommandPool().getDevice(); }
 
-    const VulkanDevice& VulkanCommandBufferList::getDevice() const noexcept
+    const VulkanDevice& VulkanCommandBufferList::getDevice() const noexcept { return getCommandPool().getDevice(); }
+
+    VulkanCommandPool& VulkanCommandBufferList::getCommandPool() noexcept
     {
-        return settings->commandPool().getDevice();
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.commandPool();
+#else
+        return *commandPool;
+#endif
+    }
+
+    const VulkanCommandPool& VulkanCommandBufferList::getCommandPool() const noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.commandPool();
+#else
+        return *commandPool;
+#endif
     }
 
     size_t VulkanCommandBufferList::getSize() const noexcept { return buffers.size(); }

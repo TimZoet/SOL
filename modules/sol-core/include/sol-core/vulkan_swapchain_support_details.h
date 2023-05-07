@@ -29,7 +29,7 @@ namespace sol
 
         VulkanSwapchainSupportDetails();
 
-        VulkanSwapchainSupportDetails(VkSurfaceCapabilitiesKHR        cap,
+        VulkanSwapchainSupportDetails(const VkSurfaceCapabilitiesKHR& cap,
                                       std::vector<VkSurfaceFormatKHR> formats,
                                       std::vector<VkPresentModeKHR>   modes);
 

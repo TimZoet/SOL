@@ -44,15 +44,13 @@ namespace sol
                                              VK_COMPONENT_SWIZZLE_IDENTITY};
         };
 
-        using SettingsPtr = std::unique_ptr<Settings>;
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         VulkanImageView() = delete;
 
-        VulkanImageView(SettingsPtr settingsPtr, VkImageView vkImageView);
+        VulkanImageView(const Settings& set, VkImageView vkImageView);
 
         VulkanImageView(const VulkanImageView&) = delete;
 
@@ -74,7 +72,7 @@ namespace sol
          * \throws VulkanError Thrown if image view creation failed.
          * \return Vulkan image view.
          */
-        [[nodiscard]] static VulkanImageViewPtr create(Settings settings);
+        [[nodiscard]] static VulkanImageViewPtr create(const Settings& settings);
 
         /**
          * \brief Create a new Vulkan image view.
@@ -82,17 +80,19 @@ namespace sol
          * \throws VulkanError Thrown if image view creation failed.
          * \return Vulkan image view.
          */
-        [[nodiscard]] static VulkanImageViewSharedPtr createShared(Settings settings);
+        [[nodiscard]] static VulkanImageViewSharedPtr createShared(const Settings& settings);
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Get the settings with which this object was created.
          * \return Settings.
          */
         [[nodiscard]] const Settings& getSettings() const noexcept;
+#endif
 
         /**
          * \brief Get the device.
@@ -131,10 +131,14 @@ namespace sol
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Settings with which this object was created.
          */
-        SettingsPtr settings;
+        Settings settings;
+#else
+        VulkanImage* image = nullptr;
+#endif
 
         /**
          * \brief Vulkan image view.

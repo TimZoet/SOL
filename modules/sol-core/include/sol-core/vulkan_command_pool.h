@@ -39,15 +39,13 @@ namespace sol
             VkCommandPoolCreateFlags flags = 0;
         };
 
-        using SettingsPtr = std::unique_ptr<Settings>;
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         VulkanCommandPool() = delete;
 
-        VulkanCommandPool(SettingsPtr settingsPtr, VkCommandPool vkCommandPool);
+        VulkanCommandPool(const Settings& set, VkCommandPool vkCommandPool);
 
         VulkanCommandPool(const VulkanCommandPool&) = delete;
 
@@ -69,7 +67,7 @@ namespace sol
          * \throws VulkanError Thrown if command pool creation failed.
          * \return Vulkan command pool.
          */
-        [[nodiscard]] static VulkanCommandPoolPtr create(Settings settings);
+        [[nodiscard]] static VulkanCommandPoolPtr create(const Settings& settings);
 
         /**
          * \brief Create a new Vulkan command pool.
@@ -77,17 +75,19 @@ namespace sol
          * \throws VulkanError Thrown if command pool creation failed.
          * \return Vulkan command pool.
          */
-        [[nodiscard]] static VulkanCommandPoolSharedPtr createShared(Settings settings);
+        [[nodiscard]] static VulkanCommandPoolSharedPtr createShared(const Settings& settings);
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Get the settings with which this object was created.
          * \return Settings.
          */
         [[nodiscard]] const Settings& getSettings() const noexcept;
+#endif
 
         /**
          * \brief Get the device.
@@ -122,10 +122,16 @@ namespace sol
     private:
         [[nodiscard]] static VkCommandPool createImpl(const Settings& settings);
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Settings with which this object was created.
          */
-        SettingsPtr settings;
+        Settings settings;
+#else
+        VulkanDevice* device = nullptr;
+
+        VkCommandPoolCreateFlags flags = 0;
+#endif
 
         /**
          * \brief Vulkan command pool.

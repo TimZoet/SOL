@@ -22,10 +22,10 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    VulkanGraphicsPipeline::VulkanGraphicsPipeline(SettingsPtr            settingsPtr,
+    VulkanGraphicsPipeline::VulkanGraphicsPipeline(Settings               set,
                                                    const VkPipeline       vkPipeline,
                                                    const VkPipelineLayout vkLayout) :
-        settings(std::move(settingsPtr)), pipeline(vkPipeline), pipelineLayout(vkLayout)
+        settings(std::move(set)), pipeline(vkPipeline), pipelineLayout(vkLayout)
     {
     }
 
@@ -35,18 +35,16 @@ namespace sol
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    VulkanGraphicsPipelinePtr VulkanGraphicsPipeline::create(Settings settings)
+    VulkanGraphicsPipelinePtr VulkanGraphicsPipeline::create(const Settings& settings)
     {
         auto [pipeline, layout] = createImpl(settings);
-        return std::make_unique<VulkanGraphicsPipeline>(
-          std::make_unique<Settings>(std::move(settings)), pipeline, layout);
+        return std::make_unique<VulkanGraphicsPipeline>(settings, pipeline, layout);
     }
 
-    VulkanGraphicsPipelineSharedPtr VulkanGraphicsPipeline::createShared(Settings settings)
+    VulkanGraphicsPipelineSharedPtr VulkanGraphicsPipeline::createShared(const Settings& settings)
     {
         auto [pipeline, layout] = createImpl(settings);
-        return std::make_shared<VulkanGraphicsPipeline>(
-          std::make_unique<Settings>(std::move(settings)), pipeline, layout);
+        return std::make_shared<VulkanGraphicsPipeline>(settings, pipeline, layout);
     }
 
     std::pair<VkPipeline, VkPipelineLayout> VulkanGraphicsPipeline::createImpl(const Settings& settings)
@@ -192,7 +190,7 @@ namespace sol
         if (pipeline != VK_NULL_HANDLE || pipelineLayout != VK_NULL_HANDLE)
             throw SolError("Cannot recreate VulkanGraphicsPipeline before explicitly destroying it.");
 
-        auto [p, l]    = createImpl(*settings);
+        auto [p, l]    = createImpl(settings);
         pipeline       = p;
         pipelineLayout = l;
     }
@@ -201,14 +199,13 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    const VulkanGraphicsPipeline::Settings& VulkanGraphicsPipeline::getSettings() const noexcept { return *settings; }
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    const VulkanGraphicsPipeline::Settings& VulkanGraphicsPipeline::getSettings() const noexcept { return settings; }
+#endif
 
-    VulkanDevice& VulkanGraphicsPipeline::getDevice() noexcept { return settings->renderPass().getDevice(); }
+    VulkanDevice& VulkanGraphicsPipeline::getDevice() noexcept { return settings.renderPass().getDevice(); }
 
-    const VulkanDevice& VulkanGraphicsPipeline::getDevice() const noexcept
-    {
-        return settings->renderPass().getDevice();
-    }
+    const VulkanDevice& VulkanGraphicsPipeline::getDevice() const noexcept { return settings.renderPass().getDevice(); }
 
     const VkPipeline& VulkanGraphicsPipeline::getPipeline() const noexcept { return pipeline; }
 

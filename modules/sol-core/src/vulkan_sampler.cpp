@@ -18,27 +18,31 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    VulkanSampler::VulkanSampler(SettingsPtr settingsPtr, const VkSampler vkSampler) :
-        settings(std::move(settingsPtr)), sampler(vkSampler)
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    VulkanSampler::VulkanSampler(const Settings& set, const VkSampler vkSampler) : settings(set), sampler(vkSampler) {}
+#else
+    VulkanSampler::VulkanSampler(const Settings& set, const VkSampler vkSampler) :
+        device(&set.device()), sampler(vkSampler)
     {
     }
+#endif
 
-    VulkanSampler::~VulkanSampler() noexcept { vkDestroySampler(settings->device, sampler, nullptr); }
+    VulkanSampler::~VulkanSampler() noexcept { vkDestroySampler(getDevice().get(), sampler, nullptr); }
 
     ////////////////////////////////////////////////////////////////
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    VulkanSamplerPtr VulkanSampler::create(Settings settings)
+    VulkanSamplerPtr VulkanSampler::create(const Settings& settings)
     {
         auto sampler = createImpl(settings);
-        return std::make_unique<VulkanSampler>(std::make_unique<Settings>(settings), sampler);
+        return std::make_unique<VulkanSampler>(settings, sampler);
     }
 
-    VulkanSamplerSharedPtr VulkanSampler::createShared(Settings settings)
+    VulkanSamplerSharedPtr VulkanSampler::createShared(const Settings& settings)
     {
         auto sampler = createImpl(settings);
-        return std::make_shared<VulkanSampler>(std::make_unique<Settings>(settings), sampler);
+        return std::make_shared<VulkanSampler>(settings, sampler);
     }
 
     VkSampler VulkanSampler::createImpl(const Settings& settings)
@@ -75,11 +79,27 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    const VulkanSampler::Settings& VulkanSampler::getSettings() const noexcept { return *settings; }
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    const VulkanSampler::Settings& VulkanSampler::getSettings() const noexcept { return settings; }
+#endif
 
-    VulkanDevice& VulkanSampler::getDevice() noexcept { return settings->device(); }
+    VulkanDevice& VulkanSampler::getDevice() noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.device();
+#else
+        return *device;
+#endif
+    }
 
-    const VulkanDevice& VulkanSampler::getDevice() const noexcept { return settings->device(); }
+    const VulkanDevice& VulkanSampler::getDevice() const noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.device();
+#else
+        return *device;
+#endif
+    }
 
     const VkSampler& VulkanSampler::get() const noexcept { return sampler; }
 }  // namespace sol

@@ -61,15 +61,13 @@ namespace sol
             std::optional<VkPipelineDepthStencilStateCreateInfo> depthStencil;
         };
 
-        using SettingsPtr = std::unique_ptr<Settings>;
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         VulkanGraphicsPipeline() = delete;
 
-        VulkanGraphicsPipeline(SettingsPtr settingsPtr, VkPipeline vkPipeline, VkPipelineLayout vkLayout);
+        VulkanGraphicsPipeline(Settings set, VkPipeline vkPipeline, VkPipelineLayout vkLayout);
 
         VulkanGraphicsPipeline(const VulkanGraphicsPipeline&) = delete;
 
@@ -91,7 +89,7 @@ namespace sol
          * \throws VulkanError Thrown if pipeline creation failed.
          * \return Vulkan graphics pipeline.
          */
-        [[nodiscard]] static VulkanGraphicsPipelinePtr create(Settings settings);
+        [[nodiscard]] static VulkanGraphicsPipelinePtr create(const Settings& settings);
 
         /**
          * \brief Create a new Vulkan graphics pipeline.
@@ -99,7 +97,7 @@ namespace sol
          * \throws VulkanError Thrown if pipeline creation failed.
          * \return Vulkan graphics pipeline.
          */
-        [[nodiscard]] static VulkanGraphicsPipelineSharedPtr createShared(Settings settings);
+        [[nodiscard]] static VulkanGraphicsPipelineSharedPtr createShared(const Settings& settings);
 
         void destroy();
 
@@ -109,11 +107,13 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Get the settings with which this object was created.
          * \return Settings.
          */
         [[nodiscard]] const Settings& getSettings() const noexcept;
+#endif
 
         /**
          * \brief Get the device.
@@ -145,7 +145,7 @@ namespace sol
         /**
          * \brief Settings with which this object was created.
          */
-        SettingsPtr settings;
+        Settings settings;
 
         /**
          * \brief Vulkan graphics pipeline.

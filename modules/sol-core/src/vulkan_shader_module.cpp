@@ -25,30 +25,37 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    VulkanShaderModule::VulkanShaderModule(SettingsPtr settingsPtr, const VkShaderModule vkShaderModule) :
-        settings(std::move(settingsPtr)), shaderModule(vkShaderModule)
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    VulkanShaderModule::VulkanShaderModule(const Settings& set, const VkShaderModule vkShaderModule) :
+        settings(set), shaderModule(vkShaderModule)
     {
     }
+#else
+    VulkanShaderModule::VulkanShaderModule(const Settings& set, const VkShaderModule vkShaderModule) :
+        device(&set.device()), shaderModule(vkShaderModule)
+    {
+    }
+#endif
 
     VulkanShaderModule::~VulkanShaderModule() noexcept
     {
-        vkDestroyShaderModule(settings->device, shaderModule, nullptr);
+        vkDestroyShaderModule(getDevice().get(), shaderModule, nullptr);
     }
 
     ////////////////////////////////////////////////////////////////
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    VulkanShaderModulePtr VulkanShaderModule::create(Settings settings)
+    VulkanShaderModulePtr VulkanShaderModule::create(const Settings& settings)
     {
         auto module = createImpl(settings);
-        return std::make_unique<VulkanShaderModule>(std::make_unique<Settings>(std::move(settings)), module);
+        return std::make_unique<VulkanShaderModule>(settings, module);
     }
 
-    VulkanShaderModuleSharedPtr VulkanShaderModule::createShared(Settings settings)
+    VulkanShaderModuleSharedPtr VulkanShaderModule::createShared(const Settings& settings)
     {
         auto module = createImpl(settings);
-        return std::make_shared<VulkanShaderModule>(std::make_unique<Settings>(std::move(settings)), module);
+        return std::make_shared<VulkanShaderModule>(settings, module);
     }
 
     VkShaderModule VulkanShaderModule::createImpl(const Settings& settings)
@@ -121,11 +128,27 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    const VulkanShaderModule::Settings& VulkanShaderModule::getSettings() const noexcept { return *settings; }
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    const VulkanShaderModule::Settings& VulkanShaderModule::getSettings() const noexcept { return settings; }
+#endif
 
-    VulkanDevice& VulkanShaderModule::getDevice() noexcept { return settings->device(); }
+    VulkanDevice& VulkanShaderModule::getDevice() noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.device();
+#else
+        return *device;
+#endif
+    }
 
-    const VulkanDevice& VulkanShaderModule::getDevice() const noexcept { return settings->device(); }
+    const VulkanDevice& VulkanShaderModule::getDevice() const noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.device();
+#else
+        return *device;
+#endif
+    }
 
     const VkShaderModule& VulkanShaderModule::get() const noexcept { return shaderModule; }
 }  // namespace sol

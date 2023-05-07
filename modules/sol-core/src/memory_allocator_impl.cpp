@@ -3,4 +3,5 @@
 ////////////////////////////////////////////////////////////////
 
 #define VMA_IMPLEMENTATION
+// ReSharper disable once CppUnusedIncludeDirective
 #include <vma/vk_mem_alloc.h>

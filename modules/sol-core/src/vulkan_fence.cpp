@@ -18,21 +18,22 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    VulkanFence::VulkanFence(SettingsPtr settingsPtr, const VkFence vkFence) :
-        settings(std::move(settingsPtr)), fence(vkFence)
-    {
-    }
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    VulkanFence::VulkanFence(const Settings& set, const VkFence vkFence) : settings(set), fence(vkFence) {}
+#else
+    VulkanFence::VulkanFence(const Settings& set, const VkFence vkFence) : device(&set.device()), fence(vkFence) {}
+#endif
 
-    VulkanFence::~VulkanFence() noexcept { vkDestroyFence(settings->device, fence, nullptr); }
+    VulkanFence::~VulkanFence() noexcept { vkDestroyFence(getDevice().get(), fence, nullptr); }
 
     ////////////////////////////////////////////////////////////////
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    VulkanFencePtr VulkanFence::create(Settings settings)
+    VulkanFencePtr VulkanFence::create(const Settings& settings)
     {
         const auto fence = createImpl(settings);
-        return std::make_unique<VulkanFence>(std::make_unique<Settings>(settings), fence);
+        return std::make_unique<VulkanFence>(settings, fence);
     }
 
     std::vector<VulkanFencePtr> VulkanFence::create(const Settings settings, const size_t count)
@@ -43,10 +44,10 @@ namespace sol
         return fences;
     }
 
-    VulkanFenceSharedPtr VulkanFence::createShared(Settings settings)
+    VulkanFenceSharedPtr VulkanFence::createShared(const Settings& settings)
     {
         const auto fence = createImpl(settings);
-        return std::make_shared<VulkanFence>(std::make_unique<Settings>(settings), fence);
+        return std::make_shared<VulkanFence>(settings, fence);
     }
 
     VkFence VulkanFence::createImpl(const Settings& settings)
@@ -66,11 +67,27 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    const VulkanFence::Settings& VulkanFence::getSettings() const noexcept { return *settings; }
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+    const VulkanFence::Settings& VulkanFence::getSettings() const noexcept { return settings; }
+#endif
 
-    VulkanDevice& VulkanFence::getDevice() noexcept { return settings->device(); }
+    VulkanDevice& VulkanFence::getDevice() noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.device();
+#else
+        return *device;
+#endif
+    }
 
-    const VulkanDevice& VulkanFence::getDevice() const noexcept { return settings->device(); }
+    const VulkanDevice& VulkanFence::getDevice() const noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return settings.device();
+#else
+        return *device;
+#endif
+    }
 
     const VkFence& VulkanFence::get() const noexcept { return fence; }
 

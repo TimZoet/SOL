@@ -6,6 +6,8 @@ set(TYPE module)
 set(INCLUDE_DIR "include/sol-core")
 set(SRC_DIR "src")
 
+option(SOL_CORE_ENABLE_CACHE_SETTINGS "Use 0-based indices for all bind methods, instead of the default 1-based indices sqlite uses" ON)
+
 set(HEADERS
     ${INCLUDE_DIR}/fwd.h
     ${INCLUDE_DIR}/object_ref_setting.h
@@ -111,6 +113,8 @@ make_target(
 
 target_compile_definitions(
     ${NAME}
+    PUBLIC
+        $<$<BOOL:${SOL_CORE_ENABLE_CACHE_SETTINGS}>:"SOL_CORE_ENABLE_CACHE_SETTINGS">
     PRIVATE
         SOL_VERSION_MAJOR=${SOL_VERSION_MAJOR}
         SOL_VERSION_MINOR=${SOL_VERSION_MINOR}

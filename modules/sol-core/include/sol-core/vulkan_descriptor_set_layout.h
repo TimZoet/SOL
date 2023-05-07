@@ -40,15 +40,13 @@ namespace sol
             std::vector<VkDescriptorSetLayoutBinding> bindings;
         };
 
-        using SettingsPtr = std::unique_ptr<Settings>;
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         VulkanDescriptorSetLayout() = delete;
 
-        VulkanDescriptorSetLayout(SettingsPtr settingsPtr, VkDescriptorSetLayout vkLayout);
+        VulkanDescriptorSetLayout(const Settings& set, VkDescriptorSetLayout vkLayout);
 
         VulkanDescriptorSetLayout(const VulkanDescriptorSetLayout&) = delete;
 
@@ -70,7 +68,7 @@ namespace sol
          * \throws VulkanError Thrown if layout creation failed.
          * \return Vulkan descriptor set layout.
          */
-        [[nodiscard]] static VulkanDescriptorSetLayoutPtr create(Settings settings);
+        [[nodiscard]] static VulkanDescriptorSetLayoutPtr create(const Settings& settings);
 
         /**
          * \brief Create a new Vulkan descriptor set layout.
@@ -78,17 +76,19 @@ namespace sol
          * \throws VulkanError Thrown if layout creation failed.
          * \return Vulkan descriptor set layout.
          */
-        [[nodiscard]] static VulkanDescriptorSetLayoutSharedPtr createShared(Settings settings);
+        [[nodiscard]] static VulkanDescriptorSetLayoutSharedPtr createShared(const Settings& settings);
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Get the settings with which this object was created.
          * \return Settings.
          */
         [[nodiscard]] const Settings& getSettings() const noexcept;
+#endif
 
         /**
          * \brief Get the device.
@@ -111,10 +111,14 @@ namespace sol
     private:
         [[nodiscard]] static VkDescriptorSetLayout createImpl(const Settings& settings);
 
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Settings with which this object was created.
          */
-        SettingsPtr settings;
+        Settings settings;
+#else
+        VulkanDevice* device = nullptr;
+#endif
 
         /**
          * \brief Vulkan descriptor set layout.
