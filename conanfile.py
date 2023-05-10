@@ -80,6 +80,7 @@ class SolConan(ConanFile):
 
         self.requires("common/1.1.0@timzoet/v1.1.0")
         self.requires("glfw/3.3.6")
+        self.requires("stduuid/1.0.0@timzoet/stable")
         self.requires("vulkan/1.3.243.0")
 
         if self.options.build_tests:
@@ -90,16 +91,41 @@ class SolConan(ConanFile):
     
     def package_info(self):
         self.cpp_info.components["generated"].libs = ["sol-generated"]
-        self.cpp_info.components["generated"].requires = ["cmake-modules::cmake-modules", 
-                                                          "vulkan::vulkan"]
+        self.cpp_info.components["generated"].requires = [
+            "cmake-modules::cmake-modules",
+            "vulkan::vulkan"
+        ]
+        
         self.cpp_info.components["error"].libs = ["sol-error"]
-        self.cpp_info.components["core"].requires = ["generated",
-                                                     "vulkan::vulkan"]
+        self.cpp_info.components["core"].requires = [
+            "generated",
+            "vulkan::vulkan"
+        ]
+        
         self.cpp_info.components["core"].libs = ["sol-core"]
-        self.cpp_info.components["core"].requires = ["error", "generated",
-                                                     "common::common",
-                                                     "glfw::glfw",
-                                                     "vulkan::vulkan"]
+        self.cpp_info.components["core"].requires = [
+            "error",
+            "generated",
+            "common::common",
+            "glfw::glfw",
+            "stduuid::stduuid",
+            "vulkan::vulkan"
+        ]
+        
+        self.cpp_info.components["memory"].libs = ["sol-memory"]
+        self.cpp_info.components["memory"].requires = [
+            "core"
+        ]
+        
+        self.cpp_info.components["mesh"].libs = ["sol-mesh"]
+        self.cpp_info.components["mesh"].requires = [
+            "memory"
+        ]
+        
+        self.cpp_info.components["texture"].libs = ["sol-texture"]
+        self.cpp_info.components["texture"].requires = [
+            "memory"
+        ]
 
     def generate(self):
         base = self.python_requires["pyreq"].module.BaseConan

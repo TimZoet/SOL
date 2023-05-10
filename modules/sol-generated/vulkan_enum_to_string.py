@@ -59,7 +59,7 @@ def string_to_int(s):
         return False, -1
 
 if __name__ == "__main__":
-    with open(sys.argv[1]) as f:
+    with open(sys.argv[1], 'r') as f:
         text = ''.join(f.readlines())
     
     # Pattern for matching an entire enum.
