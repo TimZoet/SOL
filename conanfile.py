@@ -90,26 +90,44 @@ class SolConan(ConanFile):
         self.copy("*.dll", dst="bin", src="bin")
     
     def package_info(self):
-        self.cpp_info.components["generated"].libs = ["sol-generated"]
-        self.cpp_info.components["generated"].requires = [
-            "cmake-modules::cmake-modules",
-            "vulkan::vulkan"
+        self.cpp_info.components["command"].libs = ["sol-command"]
+        self.cpp_info.components["command"].requires = [
+            "core",
+            "material",
+            "mesh",
+            "render",
+            "scenegraph",
+            "texture",
+            "common::common"
         ]
-        
-        self.cpp_info.components["error"].libs = ["sol-error"]
-        self.cpp_info.components["core"].requires = [
-            "generated",
-            "vulkan::vulkan"
-        ]
-        
+
         self.cpp_info.components["core"].libs = ["sol-core"]
         self.cpp_info.components["core"].requires = [
             "error",
             "generated",
             "common::common",
-            "glfw::glfw",
-            "stduuid::stduuid",
             "vulkan::vulkan"
+        ]
+
+        self.cpp_info.components["error"].libs = ["sol-error"]
+        self.cpp_info.components["error"].requires = [
+            "generated",
+            "vulkan::vulkan"
+        ]
+
+        self.cpp_info.components["generated"].libs = ["sol-generated"]
+        self.cpp_info.components["generated"].requires = [
+            "cmake-modules::cmake-modules",
+            "vulkan::vulkan"
+        ]
+
+        self.cpp_info.components["material"].libs = ["sol-material"]
+        self.cpp_info.components["material"].requires = [
+            "core",
+            "memory",
+            "mesh",
+            "texture",
+            "stduuid::stduuid"
         ]
         
         self.cpp_info.components["memory"].libs = ["sol-memory"]
@@ -119,12 +137,34 @@ class SolConan(ConanFile):
         
         self.cpp_info.components["mesh"].libs = ["sol-mesh"]
         self.cpp_info.components["mesh"].requires = [
-            "memory"
+            "memory",
+            "stduuid::stduuid"
+        ]
+
+        self.cpp_info.components["render"].libs = ["sol-render"]
+        self.cpp_info.components["render"].requires = [
+            "core",
+            "material",
+            "mesh",
+            "scenegraph"
+        ]
+
+        self.cpp_info.components["scenegraph"].libs = ["sol-scenegraph"]
+        self.cpp_info.components["scenegraph"].requires = [
+            "core",
+            "material"
         ]
         
         self.cpp_info.components["texture"].libs = ["sol-texture"]
         self.cpp_info.components["texture"].requires = [
+            "core",
             "memory"
+        ]
+
+        self.cpp_info.components["window"].libs = ["sol-window"]
+        self.cpp_info.components["window"].requires = [
+            "core",
+            "glfw::glfw"
         ]
 
     def generate(self):
