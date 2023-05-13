@@ -11,6 +11,8 @@ namespace sol
 {
     std::vector<const char*> stringVectorToConstCharVector(const std::vector<std::string>& strings);
 
+    uint32_t crc32(const uint8_t* data, size_t size);
+
     template<std::integral T>
     bool overlaps(std::array<T, 2> lower0, std::array<T, 2> upper0, std::array<T, 2> lower1, std::array<T, 2> upper1)
     {

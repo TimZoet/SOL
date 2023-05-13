@@ -96,18 +96,22 @@ namespace sol
     {
         if (!settings.validate()) throw SettingsValidationError("Could not create VulkanDevice. Settings not valid.");
 
+        std::vector priorities(std::ranges::fold_left(settings.queues, 0, std::plus()), 1.0f);
+        size_t      offset = 0;
+
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
         for (uint32_t i = 0; i < settings.queues.size(); i++)
         {
-            std::vector             priorities(settings.queues[i], 1.0f);
             VkDeviceQueueCreateInfo queueCreateInfo{};
             queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
             queueCreateInfo.pNext            = nullptr;
             queueCreateInfo.flags            = 0;
             queueCreateInfo.queueFamilyIndex = i;
             queueCreateInfo.queueCount       = settings.queues[i];
-            queueCreateInfo.pQueuePriorities = priorities.data();
+            queueCreateInfo.pQueuePriorities = priorities.data() + offset;
             queueCreateInfos.push_back(queueCreateInfo);
+
+            offset += settings.queues[i];
         }
 
         // TODO: Expose these properties.

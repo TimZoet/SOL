@@ -64,6 +64,6 @@ namespace sol
 
     bool VulkanQueueFamily::supportsDedicatedTransfer() const noexcept
     {
-        return supportsTransfer() && !(supportsCompute() || supportsGraphics() || supportsPresent());
+        return supportsTransfer() && !(supportsCompute() || supportsGraphics());
     }
 }  // namespace sol
