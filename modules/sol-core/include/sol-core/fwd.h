@@ -14,6 +14,7 @@ namespace sol
     class VulkanCommandBuffer;
     class VulkanCommandBufferList;
     class VulkanCommandPool;
+    class VulkanComputePipeline;
     class VulkanDescriptorPool;
     class VulkanDescriptorSetLayout;
     class VulkanDevice;
@@ -48,6 +49,8 @@ namespace sol
     using VulkanCommandBufferListSharedPtr   = std::shared_ptr<VulkanCommandBufferList>;
     using VulkanCommandPoolPtr               = std::unique_ptr<VulkanCommandPool>;
     using VulkanCommandPoolSharedPtr         = std::shared_ptr<VulkanCommandPool>;
+    using VulkanComputePipelinePtr           = std::unique_ptr<VulkanComputePipeline>;
+    using VulkanComputePipelineSharedPtr     = std::shared_ptr<VulkanComputePipeline>;
     using VulkanDescriptorPoolPtr            = std::unique_ptr<VulkanDescriptorPool>;
     using VulkanDescriptorPoolSharedPtr      = std::shared_ptr<VulkanDescriptorPool>;
     using VulkanDescriptorSetLayoutPtr       = std::unique_ptr<VulkanDescriptorSetLayout>;

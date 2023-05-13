@@ -18,6 +18,7 @@ set(HEADERS
     ${INCLUDE_DIR}/vulkan_command_buffer.h
     ${INCLUDE_DIR}/vulkan_command_buffer_list.h
     ${INCLUDE_DIR}/vulkan_command_pool.h
+    ${INCLUDE_DIR}/vulkan_compute_pipeline.h
     ${INCLUDE_DIR}/vulkan_debug.h
     ${INCLUDE_DIR}/vulkan_descriptor_pool.h
     ${INCLUDE_DIR}/vulkan_descriptor_set_layout.h
@@ -53,6 +54,7 @@ set(SOURCES
     ${SRC_DIR}/vulkan_command_buffer.cpp
     ${SRC_DIR}/vulkan_command_buffer_list.cpp
     ${SRC_DIR}/vulkan_command_pool.cpp
+    ${SRC_DIR}/vulkan_compute_pipeline.cpp
     ${SRC_DIR}/vulkan_debug.cpp
     ${SRC_DIR}/vulkan_descriptor_pool.cpp
     ${SRC_DIR}/vulkan_descriptor_set_layout.cpp
