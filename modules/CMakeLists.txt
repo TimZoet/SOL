@@ -1,6 +1,7 @@
 add_subdirectory(sol-core)
 add_subdirectory(sol-error)
 add_subdirectory(sol-generated)
+add_subdirectory(sol-material)
 add_subdirectory(sol-memory)
 add_subdirectory(sol-mesh)
 add_subdirectory(sol-texture)
