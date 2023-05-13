@@ -1,0 +1,63 @@
+#include "sol-command/mesh/update_mesh_manager_command.h"
+
+////////////////////////////////////////////////////////////////
+// Module includes.
+////////////////////////////////////////////////////////////////
+
+#include "common/enum_classes.h"
+#include "sol-error/sol_error.h"
+#include "sol-mesh/mesh_manager.h"
+
+////////////////////////////////////////////////////////////////
+// Current target includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-command/command_queue.h"
+
+namespace sol
+{
+    ////////////////////////////////////////////////////////////////
+    // Constructors.
+    ////////////////////////////////////////////////////////////////
+
+    UpdateMeshManagerCommand::UpdateMeshManagerCommand() = default;
+
+    UpdateMeshManagerCommand::~UpdateMeshManagerCommand() noexcept = default;
+
+    ////////////////////////////////////////////////////////////////
+    // Getters.
+    ////////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////////
+    // Setters.
+    ////////////////////////////////////////////////////////////////
+
+    void UpdateMeshManagerCommand::setMeshManager(MeshManager& manager)
+    {
+        commandQueue->requireNonFinalized();
+        meshManager = &manager;
+    }
+
+    void UpdateMeshManagerCommand::setAction(const Action a) noexcept { action = a; }
+
+    ////////////////////////////////////////////////////////////////
+    // Run.
+    ////////////////////////////////////////////////////////////////
+
+    void UpdateMeshManagerCommand::finalize()
+    {
+        if (!meshManager) throw SolError("Cannot finalize UpdateMeshManagerCommand: meshManager not set.");
+    }
+
+    void UpdateMeshManagerCommand::operator()()
+    {
+        if (any(action & Action::Deallocate)) meshManager->deallocateDeletedMeshes();
+        if (any(action & Action::Transfer)) meshManager->transferStagedCopies();
+    }
+
+    ////////////////////////////////////////////////////////////////
+    // Debugging and visualization.
+    ////////////////////////////////////////////////////////////////
+
+    std::string UpdateMeshManagerCommand::getVizLabel() const { return "UpdateMeshManager"; }
+}  // namespace sol

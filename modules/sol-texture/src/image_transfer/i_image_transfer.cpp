@@ -1,0 +1,10 @@
+#include "sol-texture/image_transfer/i_image_transfer.h"
+
+namespace sol
+{
+    ////////////////////////////////////////////////////////////////
+    // Constructors.
+    ////////////////////////////////////////////////////////////////
+
+    IImageTransfer::~IImageTransfer() noexcept = default;
+}  // namespace sol
