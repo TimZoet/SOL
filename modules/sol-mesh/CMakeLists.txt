@@ -15,6 +15,7 @@ set(HEADERS
     ${INCLUDE_DIR}/mesh_manager.h
     ${INCLUDE_DIR}/multi_mesh.h
     ${INCLUDE_DIR}/shared_mesh.h
+
     ${INCLUDE_DIR}/mesh_transfer/default_mesh_transfer.h
     ${INCLUDE_DIR}/mesh_transfer/i_mesh_transfer.h
 )
@@ -28,6 +29,9 @@ set(SOURCES
     ${SRC_DIR}/mesh_manager.cpp
     ${SRC_DIR}/multi_mesh.cpp
     ${SRC_DIR}/shared_mesh.cpp
+
+    ${SRC_DIR}/mesh_transfer/default_mesh_transfer.cpp
+    ${SRC_DIR}/mesh_transfer/i_mesh_transfer.cpp
 )
 
 set(DEPS_PUBLIC

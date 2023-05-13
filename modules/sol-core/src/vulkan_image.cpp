@@ -43,7 +43,7 @@ namespace sol
     VulkanImage::~VulkanImage() noexcept
     {
         // Image may have been retrieved as part of a swapchain and is deallocated automatically.
-        if (isSwapchainImage())
+        if (!isSwapchainImage())
         {
             if (hasAllocator())
                 vmaDestroyImage(getAllocator().get(), image, allocation);

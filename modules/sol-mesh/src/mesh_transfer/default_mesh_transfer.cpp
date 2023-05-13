@@ -1,22 +1,27 @@
-#include "sol/mesh/mesh_transfer/default_mesh_transfer.h"
+#include "sol-mesh/mesh_transfer/default_mesh_transfer.h"
+
+////////////////////////////////////////////////////////////////
+// Module includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-core/vulkan_buffer.h"
+#include "sol-core/vulkan_command_buffer.h"
+#include "sol-core/vulkan_command_pool.h"
+#include "sol-core/vulkan_device.h"
+#include "sol-core/vulkan_fence.h"
+#include "sol-core/vulkan_physical_device.h"
+#include "sol-core/vulkan_queue.h"
+#include "sol-core/vulkan_queue_family.h"
+#include "sol-core/vulkan_semaphore.h"
+#include "sol-memory/memory_manager.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol/core/vulkan_buffer.h"
-#include "sol/core/vulkan_command_buffer.h"
-#include "sol/core/vulkan_command_pool.h"
-#include "sol/core/vulkan_device.h"
-#include "sol/core/vulkan_fence.h"
-#include "sol/core/vulkan_physical_device.h"
-#include "sol/core/vulkan_queue.h"
-#include "sol/core/vulkan_queue_family.h"
-#include "sol/core/vulkan_semaphore.h"
-#include "sol/memory/memory_manager.h"
-#include "sol/mesh/i_mesh.h"
-#include "sol/mesh/mesh_description.h"
-#include "sol/mesh/mesh_manager.h"
+#include "sol-mesh/i_mesh.h"
+#include "sol-mesh/mesh_description.h"
+#include "sol-mesh/mesh_manager.h"
 
 namespace sol
 {
@@ -24,18 +29,17 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    DefaultMeshTransfer::DefaultMeshTransfer(MeshManager& manager) :
-        IMeshTransfer(), memoryManager(&manager.getMemoryManager())
+    DefaultMeshTransfer::DefaultMeshTransfer(MeshManager& manager) : memoryManager(&manager.getMemoryManager())
     {
         const auto& transferQueue  = memoryManager->getTransferQueue();
-        auto*       transferFamily = &transferQueue.getFamily();
+        auto&       transferFamily = transferQueue.getFamily();
         auto&       physicalDevice = memoryManager->getDevice().getPhysicalDevice();
         const auto  size           = physicalDevice.getQueueFamilies().size();
 
         for (uint32_t i = 0; i < size; i++)
         {
             auto& commandPool         = memoryManager->getCommandPool(i);
-            auto& transferCommandPool = memoryManager->getCommandPool(*transferFamily);
+            auto& transferCommandPool = memoryManager->getCommandPool(transferFamily);
             acquireState.releaseCommandBuffers.emplace_back(
               commandPool.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY));
             acquireState.acquireCommandBuffers.emplace_back(
@@ -47,7 +51,7 @@ namespace sol
         }
 
         copyState.commandBuffer =
-          memoryManager->getCommandPool(*transferFamily).createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+          memoryManager->getCommandPool(transferFamily).createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
         VulkanSemaphore::Settings semSettings;
         semSettings.device      = memoryManager->getDevice();
