@@ -1,0 +1,112 @@
+#pragma once
+
+////////////////////////////////////////////////////////////////
+// Standard includes.
+////////////////////////////////////////////////////////////////
+
+#include <atomic>
+#include <barrier>
+#include <functional>
+#include <optional>
+#include <vector>
+
+////////////////////////////////////////////////////////////////
+// Module includes.
+////////////////////////////////////////////////////////////////
+
+//#include "dot/graph.h"
+
+////////////////////////////////////////////////////////////////
+// Current target includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-command/fwd.h"
+
+namespace sol
+{
+    class CommandQueue
+    {
+        ////////////////////////////////////////////////////////////////
+        // Types.
+        ////////////////////////////////////////////////////////////////
+
+        struct Command
+        {
+            ICommandPtr command;
+
+            std::unique_ptr<std::barrier<>> wait;
+
+            std::vector<std::barrier<>*> notify;
+        };
+
+    public:
+        ////////////////////////////////////////////////////////////////
+        // Constructors.
+        ////////////////////////////////////////////////////////////////
+
+        CommandQueue();
+
+        CommandQueue(const CommandQueue&) = delete;
+
+        CommandQueue(CommandQueue&&) = delete;
+
+        ~CommandQueue() noexcept;
+
+        CommandQueue& operator=(const CommandQueue&) = delete;
+
+        CommandQueue& operator=(CommandQueue&&) = delete;
+
+        ////////////////////////////////////////////////////////////////
+        // Getters.
+        ////////////////////////////////////////////////////////////////
+
+        [[nodiscard]] bool isFinalized() const noexcept;
+
+        ////////////////////////////////////////////////////////////////
+        // ...
+        ////////////////////////////////////////////////////////////////
+
+        template<std::derived_from<ICommand> T, typename... Args>
+        T& createCommand()
+        {
+            auto command          = std::make_unique<T>(std::forward<Args>()...);
+            command->commandQueue = this;
+            auto& commandRef      = *command;
+            commands.emplace_back(Command{.command = std::move(command)});
+            return commandRef;
+        }
+
+        void finalize();
+
+        void requireFinalized() const;
+
+        void requireNonFinalized() const;
+
+        ////////////////////////////////////////////////////////////////
+        // ...
+        ////////////////////////////////////////////////////////////////
+
+        void start();
+
+        std::optional<std::function<void()>> getNextCommand();
+
+        void end();
+
+        ////////////////////////////////////////////////////////////////
+        // Debugging and visualization.
+        ////////////////////////////////////////////////////////////////
+
+        //void visualize(dot::Graph& graph) const;
+
+    private:
+        ////////////////////////////////////////////////////////////////
+        // Member variables.
+        ////////////////////////////////////////////////////////////////
+
+        bool finalized = false;
+
+        std::vector<Command> commands;
+
+        std::atomic_size_t nextCommand = -1;
+    };
+}  // namespace sol
