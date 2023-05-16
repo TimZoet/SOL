@@ -258,7 +258,7 @@ namespace
                     auto& texture         = *instanceData.materialInstance->getTextureData(sampler->binding);
                     imageInfo.sampler     = texture.getSampler().get();
                     imageInfo.imageView   = texture.getImageView()->get();
-                    imageInfo.imageLayout = texture.getImage()->getTargetLayout();
+                    imageInfo.imageLayout = texture.getImage()->getImageLayout();
                 }
 
                 auto& write            = descriptorWrites[set * bindingCount + sampler->binding];
