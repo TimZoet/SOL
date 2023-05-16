@@ -40,6 +40,11 @@ namespace sol
             ObjectRefSetting<VulkanPhysicalDevice> physicalDevice;
 
             /**
+             * \brief Optional features to enable.
+             */
+            VkPhysicalDeviceFeatures2* features = nullptr;
+
+            /**
              * \brief List of required device extensions.
              */
             std::vector<std::string> extensions;
