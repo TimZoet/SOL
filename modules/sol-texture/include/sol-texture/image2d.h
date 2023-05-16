@@ -92,44 +92,37 @@ namespace sol
         [[nodiscard]] VkImageUsageFlags getImageUsageFlags() const noexcept;
 
         /**
+         * \brief Get the image aspect flags.
+         * \return ImageAspectFlags.
+         */
+        [[nodiscard]] VkImageAspectFlags getAspectFlags() const noexcept;
+
+        /**
          * \brief Get the queue family that currently owns this resource.
          * \return VulkanQueueFamily.
          */
-        [[nodiscard]] const VulkanQueueFamily* getCurrentFamily() const noexcept;
+        [[nodiscard]] const VulkanQueueFamily* getQueueFamily() const noexcept;
 
         /**
-         * \brief Get the queue family that should own this resource after the next data and/or ownership transfer.
-         * \return VulkanQueueFamily.
+         * \brief Get the current layout of the image.
+         * \return VkImageLayout.
          */
-        [[nodiscard]] const VulkanQueueFamily* getTargetFamily() const noexcept;
-
-        [[nodiscard]] VkImageLayout getCurrentLayout() const noexcept;
-
-        [[nodiscard]] VkImageLayout getTargetLayout() const noexcept;
-
-        [[nodiscard]] VkPipelineStageFlags getStageFlags() const noexcept;
-
-        [[nodiscard]] VkAccessFlags getAccessFlags() const noexcept;
-
-        [[nodiscard]] VkImageAspectFlags getAspectFlags() const noexcept;
+        [[nodiscard]] VkImageLayout getImageLayout() const noexcept;
 
         ////////////////////////////////////////////////////////////////
         // Setters.
         ////////////////////////////////////////////////////////////////
 
-        void setCurrentFamily(const VulkanQueueFamily& family);
+        void stageTransition(const VulkanQueueFamily*     family,
+                             std::optional<VkImageLayout> layout,
+                             VkPipelineStageFlags2        srcStage,
+                             VkPipelineStageFlags2        dstStage,
+                             VkAccessFlags2               srcAccess,
+                             VkAccessFlags2               dstAccess);
 
-        void setTargetFamily(const VulkanQueueFamily& family);
+        void setQueueFamily(const VulkanQueueFamily& family) noexcept;
 
-        void setCurrentLayout(VkImageLayout layout);
-
-        void setTargetLayout(VkImageLayout layout);
-
-        void setStageFlags(VkPipelineStageFlags flags);
-
-        void setAccessFlags(VkAccessFlags flags);
-
-        void setAspectFlags(VkImageAspectFlags flags);
+        void setImageLayout(VkImageLayout layout) noexcept;
 
         ////////////////////////////////////////////////////////////////
         // Data.
@@ -225,32 +218,18 @@ namespace sol
         VkImageUsageFlags usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
         /**
-         * \brief Queue family that currently owns this image.
+         * \brief Image aspect.
          */
-        const VulkanQueueFamily* currentFamily = nullptr;
+        VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
 
         /**
-         * \brief Queue family that should own this image after an ownership transfer.
+         * \brief Queue family that currently owns this image.
          */
-        const VulkanQueueFamily* targetFamily = nullptr;
+        const VulkanQueueFamily* queueFamily = nullptr;
 
         /**
          * \brief Current image layout.
          */
-        VkImageLayout currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-        /**
-         * \brief Layout this image should have after a layout transition.
-         */
-        VkImageLayout targetLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-        /**
-         * \brief Stages at which this image is accessed.
-         */
-        VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-
-        VkAccessFlags accessFlags = VK_ACCESS_SHADER_READ_BIT;
-
-        VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+        VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     };
 }  // namespace sol

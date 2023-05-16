@@ -8,8 +8,7 @@ set(HEADERS
     ${INCLUDE_DIR}/image2d.h
     ${INCLUDE_DIR}/texture_manager.h
     ${INCLUDE_DIR}/texture2d.h
-    
-    ${INCLUDE_DIR}/image_transfer/default_image_transfer.h
+
     ${INCLUDE_DIR}/image_transfer/i_image_transfer.h
     ${INCLUDE_DIR}/image_transfer/image_staging_buffer.h
     ${INCLUDE_DIR}/image_transfer/improved_image_transfer.h
@@ -19,8 +18,7 @@ set(SOURCES
     ${SRC_DIR}/image2d.cpp
     ${SRC_DIR}/texture_manager.cpp
     ${SRC_DIR}/texture2d.cpp
-    
-    ${SRC_DIR}/image_transfer/default_image_transfer.cpp
+
     ${SRC_DIR}/image_transfer/i_image_transfer.cpp
     ${SRC_DIR}/image_transfer/image_staging_buffer.cpp
     ${SRC_DIR}/image_transfer/improved_image_transfer.cpp

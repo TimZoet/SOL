@@ -67,51 +67,32 @@ namespace sol
 
     VkImageUsageFlags Image2D::getImageUsageFlags() const noexcept { return usage; }
 
-    const VulkanQueueFamily* Image2D::getCurrentFamily() const noexcept { return currentFamily; }
-
-    const VulkanQueueFamily* Image2D::getTargetFamily() const noexcept { return targetFamily; }
-
-    VkImageLayout Image2D::getCurrentLayout() const noexcept { return currentLayout; }
-
-    VkImageLayout Image2D::getTargetLayout() const noexcept { return targetLayout; }
-
-    VkPipelineStageFlags Image2D::getStageFlags() const noexcept { return stageFlags; }
-
-    VkAccessFlags Image2D::getAccessFlags() const noexcept { return accessFlags; }
-
     VkImageAspectFlags Image2D::getAspectFlags() const noexcept { return aspectFlags; }
+
+    const VulkanQueueFamily* Image2D::getQueueFamily() const noexcept { return queueFamily; }
+
+    VkImageLayout Image2D::getImageLayout() const noexcept { return imageLayout; }
 
     ////////////////////////////////////////////////////////////////
     // Setters.
     ////////////////////////////////////////////////////////////////
 
-    void Image2D::setCurrentFamily(const VulkanQueueFamily& family) { currentFamily = &family; }
-
-    void Image2D::setTargetFamily(const VulkanQueueFamily& family)
+    void Image2D::stageTransition(const VulkanQueueFamily*           family,
+                                  const std::optional<VkImageLayout> layout,
+                                  const VkPipelineStageFlags2        srcStage,
+                                  const VkPipelineStageFlags2        dstStage,
+                                  const VkAccessFlags2               srcAccess,
+                                  const VkAccessFlags2               dstAccess)
     {
-        if (&family != targetFamily)
-        {
-            targetFamily = &family;
-            if (targetFamily != currentFamily) textureManager->stageOwnershipTransfer(*this);
-        }
+        if (!family && !layout)
+            throw SolError("Cannot stage transition without either a family transfer or layout transition.");
+
+        textureManager->stageTransition(*this, family, layout, srcStage, dstStage, srcAccess, dstAccess);
     }
 
-    void Image2D::setCurrentLayout(const VkImageLayout layout) { currentLayout = layout; }
+    void Image2D::setQueueFamily(const VulkanQueueFamily& family) noexcept { queueFamily = &family; }
 
-    void Image2D::setTargetLayout(const VkImageLayout layout)
-    {
-        if (layout != targetLayout)
-        {
-            targetLayout = layout;
-            if (layout != currentLayout) textureManager->stageLayoutTransition(*this);
-        }
-    }
-
-    void Image2D::setStageFlags(const VkPipelineStageFlags flags) { stageFlags = flags; }
-
-    void Image2D::setAccessFlags(const VkAccessFlags flags) { accessFlags = flags; }
-
-    void Image2D::setAspectFlags(const VkImageAspectFlags flags) { aspectFlags = flags; }
+    void Image2D::setImageLayout(const VkImageLayout layout) noexcept { imageLayout = layout; }
 
     ////////////////////////////////////////////////////////////////
     // Data setters.
