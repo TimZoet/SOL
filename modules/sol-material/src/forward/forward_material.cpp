@@ -13,11 +13,8 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    ForwardMaterial::ForwardMaterial(VulkanShaderModuleSharedPtr vertexModule,
-                                     VulkanShaderModuleSharedPtr fragmentModule) :
-        vertexShader(std::move(vertexModule)),
-        fragmentShader(std::move(fragmentModule)),
-        layout(vertexShader->getDevice())
+    ForwardMaterial::ForwardMaterial(VulkanShaderModule& vertexModule, VulkanShaderModule& fragmentModule) :
+        vertexShader(&vertexModule), fragmentShader(&fragmentModule), layout(vertexShader->getDevice())
     {
         assert(&vertexShader->getDevice() == &fragmentShader->getDevice());
     }
@@ -32,9 +29,9 @@ namespace sol
 
     const IForwardMaterialManager& ForwardMaterial::getMaterialManager() const noexcept { return *materialManager; }
 
-    const VulkanShaderModuleSharedPtr& ForwardMaterial::getVertexShader() const noexcept { return vertexShader; }
+    const VulkanShaderModule& ForwardMaterial::getVertexShader() const noexcept { return *vertexShader; }
 
-    const VulkanShaderModuleSharedPtr& ForwardMaterial::getFragmentShader() const noexcept { return fragmentShader; }
+    const VulkanShaderModule& ForwardMaterial::getFragmentShader() const noexcept { return *fragmentShader; }
 
     const ForwardMaterialLayout& ForwardMaterial::getLayout() const noexcept { return layout; }
 
@@ -54,15 +51,9 @@ namespace sol
         materialManager = &manager;
     }
 
-    void ForwardMaterial::setVertexShader(VulkanShaderModuleSharedPtr module) noexcept
-    {
-        vertexShader = std::move(module);
-    }
+    void ForwardMaterial::setVertexShader(VulkanShaderModule& module) noexcept { vertexShader = &module; }
 
-    void ForwardMaterial::setFragmentShader(VulkanShaderModuleSharedPtr module) noexcept
-    {
-        fragmentShader = std::move(module);
-    }
+    void ForwardMaterial::setFragmentShader(VulkanShaderModule& module) noexcept { fragmentShader = &module; }
 
     void ForwardMaterial::setMeshLayout(MeshLayout& mLayout)
     {
