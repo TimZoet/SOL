@@ -54,14 +54,14 @@ namespace sol
         VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
         vertShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         vertShaderStageInfo.stage  = VK_SHADER_STAGE_VERTEX_BIT;
-        vertShaderStageInfo.module = settings.vertexShader().get();
-        vertShaderStageInfo.pName  = "main";
+        vertShaderStageInfo.module = settings.vertexShader;
+        vertShaderStageInfo.pName  = "VSMain";//TODO: This name (same for fragment and compute) should be configurable. Store in VulkanShaderModule?
 
         VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
         fragShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         fragShaderStageInfo.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
         fragShaderStageInfo.module = settings.fragmentShader;
-        fragShaderStageInfo.pName  = "main";
+        fragShaderStageInfo.pName  = "PSMain";
 
         VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 

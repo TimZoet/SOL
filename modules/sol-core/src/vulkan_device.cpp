@@ -117,7 +117,7 @@ namespace sol
         // Create device info.
         VkDeviceCreateInfo createInfo{};
         createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        createInfo.pNext = settings.features;
+        createInfo.pNext                   = settings.features;
         createInfo.queueCreateInfoCount    = static_cast<uint32_t>(queueCreateInfos.size());
         createInfo.pQueueCreateInfos       = queueCreateInfos.data();
         const auto cstrings                = stringVectorToConstCharVector(settings.extensions);

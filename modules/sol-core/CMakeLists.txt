@@ -1,5 +1,5 @@
 find_package(common REQUIRED)
-find_package(vulkan REQUIRED)
+find_package(Vulkan COMPONENTS shaderc_combined REQUIRED)
 
 set(NAME sol-core)
 set(TYPE module)
@@ -85,8 +85,8 @@ set(DEPS_PUBLIC
     sol-error
     sol-generated
 
-    vulkan::core
-    vulkan::shaderc
+    Vulkan::Vulkan
+    Vulkan::shaderc_combined
 )
 
 set(DEPS_PRIVATE
