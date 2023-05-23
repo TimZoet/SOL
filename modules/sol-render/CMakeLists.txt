@@ -9,6 +9,13 @@ set(HEADERS
     ${INCLUDE_DIR}/common/i_traverser.h
     ${INCLUDE_DIR}/common/render_settings.h
     
+    ${INCLUDE_DIR}/compute/compute_material_manager.h
+    ${INCLUDE_DIR}/compute/compute_pipeline_cache.h
+    ${INCLUDE_DIR}/compute/compute_render_data.h
+    ${INCLUDE_DIR}/compute/compute_renderer.h
+    ${INCLUDE_DIR}/compute/compute_traverser.h
+    ${INCLUDE_DIR}/compute/fwd.h
+
     ${INCLUDE_DIR}/deferred/deferred_renderer.h
     
     ${INCLUDE_DIR}/forward/forward_material_manager.h
@@ -22,6 +29,12 @@ set(SOURCES
     ${SRC_DIR}/common/i_traverser.cpp
     ${SRC_DIR}/common/render_settings.cpp
     
+    ${SRC_DIR}/compute/compute_material_manager.cpp
+    ${SRC_DIR}/compute/compute_pipeline_cache.cpp
+    ${SRC_DIR}/compute/compute_render_data.cpp
+    ${SRC_DIR}/compute/compute_renderer.cpp
+    ${SRC_DIR}/compute/compute_traverser.cpp
+
     ${SRC_DIR}/forward/forward_material_manager.cpp
     ${SRC_DIR}/forward/forward_render_data.cpp
     ${SRC_DIR}/forward/forward_renderer.cpp

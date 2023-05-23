@@ -475,8 +475,8 @@ namespace sol
         // TODO: To what extent are the RenderSettings needed here? Things like culling should perhaps be put in the ForwardMaterial class instead.
         VulkanGraphicsPipeline::Settings pipelineSettings;
         pipelineSettings.renderPass           = renderPass;
-        pipelineSettings.vertexShader         = *material.getVertexShader();
-        pipelineSettings.fragmentShader       = *material.getFragmentShader();
+        pipelineSettings.vertexShader         = const_cast<VulkanShaderModule&>(material.getVertexShader());//TODO: const_cast
+        pipelineSettings.fragmentShader       = const_cast<VulkanShaderModule&>(material.getFragmentShader());
         pipelineSettings.vertexAttributes     = meshLayout->getAttributeDescriptions();
         pipelineSettings.vertexBindings       = meshLayout->getBindingDescriptions();
         pipelineSettings.descriptorSetLayouts = material.getLayout().getFinalizedDescriptorSetLayouts();
