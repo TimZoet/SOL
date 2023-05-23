@@ -223,19 +223,21 @@ namespace sol
             if (info.copies.empty()) continue;
 
             VkImageMemoryBarrier2 barrier{};
-            barrier.sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-            barrier.srcStageMask  = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;  // TODO: Should we use the user supplied stage
-            barrier.srcAccessMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT; // and access masks here, assuming they are set?
-            barrier.dstStageMask  = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
-            barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-            barrier.oldLayout     = info.transition.oldLayout;
-            barrier.newLayout     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-            barrier.image         = info.image;
+            barrier.sType        = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+            barrier.srcStageMask = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;  // TODO: Should we use the user supplied stage
+            barrier.srcAccessMask =
+              VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;  // and access masks here, assuming they are set?
+            barrier.dstStageMask                    = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+            barrier.dstAccessMask                   = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+            barrier.oldLayout                       = info.transition.oldLayout;
+            barrier.newLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            barrier.image                           = info.image;
+            barrier.subresourceRange.aspectMask     = info.aspect;
             barrier.subresourceRange.baseMipLevel   = 0;
             barrier.subresourceRange.levelCount     = 1;
             barrier.subresourceRange.baseArrayLayer = 0;
             barrier.subresourceRange.layerCount     = 1;
-            barrier.subresourceRange.aspectMask     = info.aspect;
+
 
             // If the image has an owner that is not the transfer queue, a barrier on both queues is needed.
             if (info.transition.srcFamily && info.transition.srcFamily != &transferQueue.getFamily())
@@ -268,32 +270,33 @@ namespace sol
         //
         for (uint32_t i = 0; i < familyCount; i++)
         {
-            auto& cbRelease = *releaseCommandBuffers[i];
-            auto& cbAcquire = *acquireCommandBuffers[i];
-            cbRelease.beginOneTimeCommand();
-            cbAcquire.beginOneTimeCommand();
-
-            VkDependencyInfo info{};
-            info.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-
             // Write the release command.
             if (!releaseBarriers[i].empty())
             {
+                VkDependencyInfo info{};
+                info.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+                auto& cb   = *releaseCommandBuffers[i];
+                cb.resetCommand(VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
+                cb.beginOneTimeCommand();
                 info.imageMemoryBarrierCount = static_cast<uint32_t>(releaseBarriers[i].size());
                 info.pImageMemoryBarriers    = releaseBarriers[i].data();
-                vkCmdPipelineBarrier2(cbRelease.get(), &info);
+                vkCmdPipelineBarrier2(cb.get(), &info);
+                cb.endCommand();
             }
 
             // Write the acquire command.
             if (!acquireBarriers[i].empty())
             {
+                VkDependencyInfo info{};
+                info.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+                auto& cb   = *acquireCommandBuffers[i];
+                cb.resetCommand(VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
+                cb.beginOneTimeCommand();
                 info.imageMemoryBarrierCount = static_cast<uint32_t>(acquireBarriers.size());
                 info.pImageMemoryBarriers    = acquireBarriers[i].data();
-                vkCmdPipelineBarrier2(cbAcquire.get(), &info);
+                vkCmdPipelineBarrier2(cb.get(), &info);
+                cb.endCommand();
             }
-
-            cbRelease.endCommand();
-            cbAcquire.endCommand();
         }
 
         //
@@ -348,6 +351,7 @@ namespace sol
         // Wait for previous call to this method to complete before clearing command buffer.
         wait();
 
+        // TODO: This does a redundant submit when there are no copies.
         copy.commandBuffer->resetCommand(VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
         copy.commandBuffer->beginOneTimeCommand();
 
@@ -418,11 +422,11 @@ namespace sol
             barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
             barrier.pNext                           = nullptr;
             barrier.image                           = info.image;
+            barrier.subresourceRange.aspectMask     = info.aspect;
             barrier.subresourceRange.baseMipLevel   = 0;
             barrier.subresourceRange.levelCount     = 1;
             barrier.subresourceRange.baseArrayLayer = 0;
             barrier.subresourceRange.layerCount     = 1;
-            barrier.subresourceRange.aspectMask     = info.aspect;
             barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
             barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
 
@@ -519,6 +523,7 @@ namespace sol
 
                 if (!releaseBarriers[idx].empty())
                 {
+                    cmd.srcCommandBuffer->resetCommand(VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
                     cmd.srcCommandBuffer->beginOneTimeCommand();
                     info.imageMemoryBarrierCount = static_cast<uint32_t>(releaseBarriers[idx].size());
                     info.pImageMemoryBarriers    = releaseBarriers[idx].data();
@@ -528,9 +533,10 @@ namespace sol
 
                 if (!acquireBarriers[idx].empty())
                 {
+                    cmd.dstCommandBuffer->resetCommand(VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
                     cmd.dstCommandBuffer->beginOneTimeCommand();
-                    info.imageMemoryBarrierCount = 0;  // static_cast<uint32_t>(acquireBarriers[idx].size());
-                    info.pImageMemoryBarriers    = nullptr;  // acquireBarriers[idx].data();
+                    info.imageMemoryBarrierCount = static_cast<uint32_t>(acquireBarriers[idx].size());
+                    info.pImageMemoryBarriers    = acquireBarriers[idx].data();
                     vkCmdPipelineBarrier2(cmd.dstCommandBuffer->get(), &info);
                     cmd.dstCommandBuffer->endCommand();
                 }
@@ -592,11 +598,10 @@ namespace sol
 
     void ImprovedImageTransfer::wait()
     {
-        const auto& device = memoryManager->getDevice();
-
         // Wait for fence that signals completion of the copies.
         if (copy.fence->isSignaled())
         {
+            const auto& device = memoryManager->getDevice();
             vkWaitForFences(device.get(), 1, &copy.fence->get(), true, UINT64_MAX);
             vkResetFences(device.get(), 1, &copy.fence->get());
             copy.fence->setSignaled(false);

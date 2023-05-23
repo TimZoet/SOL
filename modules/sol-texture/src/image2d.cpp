@@ -160,7 +160,7 @@ namespace sol
         imageSettings.sharingMode    = VK_SHARING_MODE_EXCLUSIVE;
         imageSettings.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
         imageSettings.allocator      = textureManager->getMemoryManager().getAllocator();
-        imageSettings.memoryUsage    = VMA_MEMORY_USAGE_GPU_ONLY;
+        imageSettings.memoryUsage    = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
         imageSettings.requiredFlags  = 0;
         imageSettings.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
         imageSettings.flags          = 0;
