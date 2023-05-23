@@ -1,4 +1,4 @@
-find_package(vulkan REQUIRED)
+find_package(Vulkan REQUIRED)
 
 set(NAME sol-error)
 set(TYPE module)
@@ -29,7 +29,7 @@ set(SOURCES
 set(DEPS_PUBLIC
     sol-generated
     
-    vulkan::core
+    Vulkan::Vulkan
 )
 
 set(DEPS_PRIVATE
