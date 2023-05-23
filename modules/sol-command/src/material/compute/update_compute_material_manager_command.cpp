@@ -1,11 +1,11 @@
-#include "sol-command/material/forward/update_forward_material_manager_command.h"
+#include "sol-command/material/compute/update_compute_material_manager_command.h"
 
 ////////////////////////////////////////////////////////////////
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
 #include "sol-error/sol_error.h"
-#include "sol-render/forward/forward_material_manager.h"
+#include "sol-render/compute/compute_material_manager.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
@@ -19,29 +19,32 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    UpdateForwardMaterialManagerCommand::UpdateForwardMaterialManagerCommand() = default;
+    UpdateComputeMaterialManagerCommand::UpdateComputeMaterialManagerCommand() = default;
 
-    UpdateForwardMaterialManagerCommand::~UpdateForwardMaterialManagerCommand() noexcept = default;
+    UpdateComputeMaterialManagerCommand::~UpdateComputeMaterialManagerCommand() noexcept = default;
 
     ////////////////////////////////////////////////////////////////
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    ForwardMaterialManager* UpdateForwardMaterialManagerCommand::getMaterialManager() const noexcept { return materialManager; }
+    ComputeMaterialManager* UpdateComputeMaterialManagerCommand::getMaterialManager() const noexcept
+    {
+        return materialManager;
+    }
 
-    const uint32_t* UpdateForwardMaterialManagerCommand::getFrameIndexPtr() const noexcept { return frameIndexPtr; }
+    const uint32_t* UpdateComputeMaterialManagerCommand::getFrameIndexPtr() const noexcept { return frameIndexPtr; }
 
     ////////////////////////////////////////////////////////////////
     // Setters.
     ////////////////////////////////////////////////////////////////
 
-    void UpdateForwardMaterialManagerCommand::setMaterialManager(ForwardMaterialManager& manager)
+    void UpdateComputeMaterialManagerCommand::setMaterialManager(ComputeMaterialManager& manager)
     {
         commandQueue->requireNonFinalized();
         materialManager = &manager;
     }
 
-    void UpdateForwardMaterialManagerCommand::setFrameIndexPtr(uint32_t* ptr)
+    void UpdateComputeMaterialManagerCommand::setFrameIndexPtr(uint32_t* ptr)
     {
         commandQueue->requireNonFinalized();
         frameIndexPtr = ptr;
@@ -51,17 +54,19 @@ namespace sol
     // Run.
     ////////////////////////////////////////////////////////////////
 
-    void UpdateForwardMaterialManagerCommand::finalize()
+    void UpdateComputeMaterialManagerCommand::finalize()
     {
-        if (!materialManager) throw SolError("Cannot finalize UpdateForwardMaterialManagerCommand: materialManager not set.");
-        if (!frameIndexPtr) throw SolError("Cannot finalize UpdateForwardMaterialManagerCommand: frameIndexPtr not set.");
+        if (!materialManager)
+            throw SolError("Cannot finalize UpdateComputeMaterialManagerCommand: materialManager not set.");
+        if (!frameIndexPtr)
+            throw SolError("Cannot finalize UpdateComputeMaterialManagerCommand: frameIndexPtr not set.");
     }
 
-    void UpdateForwardMaterialManagerCommand::operator()() { materialManager->updateUniformBuffers(*frameIndexPtr); }
+    void UpdateComputeMaterialManagerCommand::operator()() {}
 
     ////////////////////////////////////////////////////////////////
     // Debugging and visualization.
     ////////////////////////////////////////////////////////////////
 
-    std::string UpdateForwardMaterialManagerCommand::getVizLabel() const { return "UpdateForwardMaterialManager"; }
+    std::string UpdateComputeMaterialManagerCommand::getVizLabel() const { return "UpdateComputeMaterialManager"; }
 }  // namespace sol

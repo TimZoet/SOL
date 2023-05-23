@@ -50,6 +50,8 @@ namespace sol
 
         [[nodiscard]] const std::vector<VulkanFramebuffer*>& getFramebuffers() const noexcept;
 
+        [[nodiscard]] const uint32_t* getFrameIndexPtr() const noexcept;
+
         [[nodiscard]] const uint32_t* getImageIndexPtr() const noexcept;
 
         ////////////////////////////////////////////////////////////////
@@ -65,6 +67,8 @@ namespace sol
         void setCommandBufferList(VulkanCommandBufferList& buffers);
 
         void addFramebuffer(VulkanFramebuffer& framebuffer);
+
+        void setFrameIndexPtr(uint32_t* ptr);
 
         void setImageIndexPtr(uint32_t* ptr);
 
@@ -96,6 +100,8 @@ namespace sol
         VulkanCommandBufferList* commandBuffers = nullptr;
 
         std::vector<VulkanFramebuffer*> framebuffers;
+
+        uint32_t* frameIndexPtr = nullptr;
 
         uint32_t* imageIndexPtr = nullptr;
     };

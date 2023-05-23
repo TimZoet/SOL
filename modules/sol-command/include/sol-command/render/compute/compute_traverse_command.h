@@ -4,7 +4,8 @@
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-render/forward/fwd.h"
+#include "sol-render/compute/fwd.h"
+#include "sol-scenegraph/fwd.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
@@ -14,40 +15,42 @@
 
 namespace sol
 {
-    class UpdateForwardMaterialManagerCommand final : public ICommand
+    class ComputeTraverseCommand final : public ICommand
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        UpdateForwardMaterialManagerCommand();
+        ComputeTraverseCommand();
 
-        UpdateForwardMaterialManagerCommand(const UpdateForwardMaterialManagerCommand&) = delete;
+        ComputeTraverseCommand(const ComputeTraverseCommand&) = delete;
 
-        UpdateForwardMaterialManagerCommand(UpdateForwardMaterialManagerCommand&&) = delete;
+        ComputeTraverseCommand(ComputeTraverseCommand&&) = delete;
 
-        ~UpdateForwardMaterialManagerCommand() noexcept override;
+        ~ComputeTraverseCommand() noexcept override;
 
-        UpdateForwardMaterialManagerCommand& operator=(const UpdateForwardMaterialManagerCommand&) = delete;
+        ComputeTraverseCommand& operator=(const ComputeTraverseCommand&) = delete;
 
-        UpdateForwardMaterialManagerCommand& operator=(UpdateForwardMaterialManagerCommand&&) = delete;
+        ComputeTraverseCommand& operator=(ComputeTraverseCommand&&) = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] ForwardMaterialManager* getMaterialManager() const noexcept;
+        [[nodiscard]] ComputeTraverser* getTraverser() const noexcept;
 
-        [[nodiscard]] const uint32_t* getFrameIndexPtr() const noexcept;
+        [[nodiscard]] Scenegraph* getScenegraph() const noexcept;
 
         ////////////////////////////////////////////////////////////////
         // Setters.
         ////////////////////////////////////////////////////////////////
 
-        void setMaterialManager(ForwardMaterialManager& manager);
+        void setRenderData(ComputeRenderData& data);
 
-        void setFrameIndexPtr(uint32_t* ptr);
+        void setTraverser(ComputeTraverser& traverse);
+
+        void setScenegraph(Scenegraph& graph);
 
         ////////////////////////////////////////////////////////////////
         // Run.
@@ -68,9 +71,10 @@ namespace sol
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        // TODO: This should become the IForwardMaterialManager class.
-        ForwardMaterialManager* materialManager = nullptr;
+        ComputeRenderData* renderData = nullptr;
 
-        uint32_t* frameIndexPtr = nullptr;
+        ComputeTraverser* traverser = nullptr;
+
+        Scenegraph* scenegraph = nullptr;
     };
 }  // namespace sol

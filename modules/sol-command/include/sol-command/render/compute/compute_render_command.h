@@ -4,7 +4,8 @@
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-render/forward/fwd.h"
+#include "sol-core/fwd.h"
+#include "sol-render/compute/fwd.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
@@ -14,30 +15,34 @@
 
 namespace sol
 {
-    class UpdateForwardMaterialManagerCommand final : public ICommand
+    class ComputeRenderCommand final : public ICommand
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        UpdateForwardMaterialManagerCommand();
+        ComputeRenderCommand();
 
-        UpdateForwardMaterialManagerCommand(const UpdateForwardMaterialManagerCommand&) = delete;
+        ComputeRenderCommand(const ComputeRenderCommand&) = delete;
 
-        UpdateForwardMaterialManagerCommand(UpdateForwardMaterialManagerCommand&&) = delete;
+        ComputeRenderCommand(ComputeRenderCommand&&) = delete;
 
-        ~UpdateForwardMaterialManagerCommand() noexcept override;
+        ~ComputeRenderCommand() noexcept override;
 
-        UpdateForwardMaterialManagerCommand& operator=(const UpdateForwardMaterialManagerCommand&) = delete;
+        ComputeRenderCommand& operator=(const ComputeRenderCommand&) = delete;
 
-        UpdateForwardMaterialManagerCommand& operator=(UpdateForwardMaterialManagerCommand&&) = delete;
+        ComputeRenderCommand& operator=(ComputeRenderCommand&&) = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] ForwardMaterialManager* getMaterialManager() const noexcept;
+        [[nodiscard]] ComputeRenderer* getRenderer() const noexcept;
+
+        [[nodiscard]] ComputeRenderData* getRenderData() const noexcept;
+
+        [[nodiscard]] VulkanCommandBufferList* getCommandBufferList() const noexcept;
 
         [[nodiscard]] const uint32_t* getFrameIndexPtr() const noexcept;
 
@@ -45,7 +50,11 @@ namespace sol
         // Setters.
         ////////////////////////////////////////////////////////////////
 
-        void setMaterialManager(ForwardMaterialManager& manager);
+        void setRenderer(ComputeRenderer& render);
+
+        void setRenderData(ComputeRenderData& data);
+
+        void setCommandBufferList(VulkanCommandBufferList& buffers);
 
         void setFrameIndexPtr(uint32_t* ptr);
 
@@ -68,8 +77,11 @@ namespace sol
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        // TODO: This should become the IForwardMaterialManager class.
-        ForwardMaterialManager* materialManager = nullptr;
+        ComputeRenderer* renderer = nullptr;
+
+        ComputeRenderData* renderData = nullptr;
+
+        VulkanCommandBufferList* commandBuffers = nullptr;
 
         uint32_t* frameIndexPtr = nullptr;
     };

@@ -4,7 +4,7 @@
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-render/forward/fwd.h"
+#include "sol-render/compute/fwd.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
@@ -14,30 +14,30 @@
 
 namespace sol
 {
-    class UpdateForwardMaterialManagerCommand final : public ICommand
+    class UpdateComputeMaterialManagerCommand final : public ICommand
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        UpdateForwardMaterialManagerCommand();
+        UpdateComputeMaterialManagerCommand();
 
-        UpdateForwardMaterialManagerCommand(const UpdateForwardMaterialManagerCommand&) = delete;
+        UpdateComputeMaterialManagerCommand(const UpdateComputeMaterialManagerCommand&) = delete;
 
-        UpdateForwardMaterialManagerCommand(UpdateForwardMaterialManagerCommand&&) = delete;
+        UpdateComputeMaterialManagerCommand(UpdateComputeMaterialManagerCommand&&) = delete;
 
-        ~UpdateForwardMaterialManagerCommand() noexcept override;
+        ~UpdateComputeMaterialManagerCommand() noexcept override;
 
-        UpdateForwardMaterialManagerCommand& operator=(const UpdateForwardMaterialManagerCommand&) = delete;
+        UpdateComputeMaterialManagerCommand& operator=(const UpdateComputeMaterialManagerCommand&) = delete;
 
-        UpdateForwardMaterialManagerCommand& operator=(UpdateForwardMaterialManagerCommand&&) = delete;
+        UpdateComputeMaterialManagerCommand& operator=(UpdateComputeMaterialManagerCommand&&) = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] ForwardMaterialManager* getMaterialManager() const noexcept;
+        [[nodiscard]] ComputeMaterialManager* getMaterialManager() const noexcept;
 
         [[nodiscard]] const uint32_t* getFrameIndexPtr() const noexcept;
 
@@ -45,7 +45,7 @@ namespace sol
         // Setters.
         ////////////////////////////////////////////////////////////////
 
-        void setMaterialManager(ForwardMaterialManager& manager);
+        void setMaterialManager(ComputeMaterialManager& manager);
 
         void setFrameIndexPtr(uint32_t* ptr);
 
@@ -68,8 +68,8 @@ namespace sol
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        // TODO: This should become the IForwardMaterialManager class.
-        ForwardMaterialManager* materialManager = nullptr;
+        // TODO: This should become the IComputeMaterialManager class.
+        ComputeMaterialManager* materialManager = nullptr;
 
         uint32_t* frameIndexPtr = nullptr;
     };
