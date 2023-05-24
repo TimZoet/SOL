@@ -60,9 +60,14 @@ namespace sol
             std::function<bool(const VkPhysicalDeviceProperties&)> propertyFilter;
 
             /**
+             * \brief Optional features to write to. If left empty, any feature filter function will still run.
+             */
+            VkPhysicalDeviceFeatures2* features = nullptr;
+
+            /**
              * \brief Function to filter devices by their features. Should return true if device fulfills requirements.
              */
-            std::function<bool(const VkPhysicalDeviceFeatures&)> featureFilter;
+            std::function<bool(const VkPhysicalDeviceFeatures2&)> featureFilter;
 
             /**
              * \brief Function to filter devices by their queue families. Should return true if device fulfills requirements.

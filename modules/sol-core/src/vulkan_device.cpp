@@ -114,16 +114,12 @@ namespace sol
             offset += settings.queues[i];
         }
 
-        // TODO: Expose these properties.
-        // Create device features.
-        VkPhysicalDeviceFeatures deviceFeatures{};
-
         // Create device info.
         VkDeviceCreateInfo createInfo{};
         createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        createInfo.pNext                   = settings.features;
         createInfo.queueCreateInfoCount    = static_cast<uint32_t>(queueCreateInfos.size());
         createInfo.pQueueCreateInfos       = queueCreateInfos.data();
-        createInfo.pEnabledFeatures        = &deviceFeatures;
         const auto cstrings                = stringVectorToConstCharVector(settings.extensions);
         createInfo.enabledExtensionCount   = static_cast<uint32_t>(cstrings.size());
         createInfo.ppEnabledExtensionNames = cstrings.data();

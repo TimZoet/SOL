@@ -28,7 +28,8 @@ namespace sol
         ////////////////////////////////////////////////////////////////
         // Types.
         ////////////////////////////////////////////////////////////////
-        
+
+        // TODO: Set explicit values to allow reordering down the line?
         enum class Type
         {
             Empty,
@@ -36,6 +37,8 @@ namespace sol
             ForwardMaterial,
             ForwardPushConstant,
             DeferredMaterial,
+            ComputeMaterial,
+            Dispatch,
         };
 
         ////////////////////////////////////////////////////////////////

@@ -1,0 +1,80 @@
+#pragma once
+
+////////////////////////////////////////////////////////////////
+// Module includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-render/compute/fwd.h"
+#include "sol-scenegraph/fwd.h"
+
+////////////////////////////////////////////////////////////////
+// Current target includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-command/i_command.h"
+
+namespace sol
+{
+    class ComputeTraverseCommand final : public ICommand
+    {
+    public:
+        ////////////////////////////////////////////////////////////////
+        // Constructors.
+        ////////////////////////////////////////////////////////////////
+
+        ComputeTraverseCommand();
+
+        ComputeTraverseCommand(const ComputeTraverseCommand&) = delete;
+
+        ComputeTraverseCommand(ComputeTraverseCommand&&) = delete;
+
+        ~ComputeTraverseCommand() noexcept override;
+
+        ComputeTraverseCommand& operator=(const ComputeTraverseCommand&) = delete;
+
+        ComputeTraverseCommand& operator=(ComputeTraverseCommand&&) = delete;
+
+        ////////////////////////////////////////////////////////////////
+        // Getters.
+        ////////////////////////////////////////////////////////////////
+
+        [[nodiscard]] ComputeTraverser* getTraverser() const noexcept;
+
+        [[nodiscard]] Scenegraph* getScenegraph() const noexcept;
+
+        ////////////////////////////////////////////////////////////////
+        // Setters.
+        ////////////////////////////////////////////////////////////////
+
+        void setRenderData(ComputeRenderData& data);
+
+        void setTraverser(ComputeTraverser& traverse);
+
+        void setScenegraph(Scenegraph& graph);
+
+        ////////////////////////////////////////////////////////////////
+        // Run.
+        ////////////////////////////////////////////////////////////////
+
+        void finalize() override;
+
+        void operator()() override;
+
+        ////////////////////////////////////////////////////////////////
+        // Debugging and visualization.
+        ////////////////////////////////////////////////////////////////
+
+        [[nodiscard]] std::string getVizLabel() const override;
+
+    private:
+        ////////////////////////////////////////////////////////////////
+        // Member variables.
+        ////////////////////////////////////////////////////////////////
+
+        ComputeRenderData* renderData = nullptr;
+
+        ComputeTraverser* traverser = nullptr;
+
+        Scenegraph* scenegraph = nullptr;
+    };
+}  // namespace sol

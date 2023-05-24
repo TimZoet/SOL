@@ -29,7 +29,7 @@ namespace sol
 
     ForwardMaterialManager* UpdateForwardMaterialManagerCommand::getMaterialManager() const noexcept { return materialManager; }
 
-    const uint32_t* UpdateForwardMaterialManagerCommand::getImageIndexPtr() const noexcept { return imageIndexPtr; }
+    const uint32_t* UpdateForwardMaterialManagerCommand::getFrameIndexPtr() const noexcept { return frameIndexPtr; }
 
     ////////////////////////////////////////////////////////////////
     // Setters.
@@ -41,10 +41,10 @@ namespace sol
         materialManager = &manager;
     }
 
-    void UpdateForwardMaterialManagerCommand::setImageIndexPtr(uint32_t* ptr)
+    void UpdateForwardMaterialManagerCommand::setFrameIndexPtr(uint32_t* ptr)
     {
         commandQueue->requireNonFinalized();
-        imageIndexPtr = ptr;
+        frameIndexPtr = ptr;
     }
 
     ////////////////////////////////////////////////////////////////
@@ -54,10 +54,10 @@ namespace sol
     void UpdateForwardMaterialManagerCommand::finalize()
     {
         if (!materialManager) throw SolError("Cannot finalize UpdateForwardMaterialManagerCommand: materialManager not set.");
-        if (!imageIndexPtr) throw SolError("Cannot finalize UpdateForwardMaterialManagerCommand: imageIndexPtr not set.");
+        if (!frameIndexPtr) throw SolError("Cannot finalize UpdateForwardMaterialManagerCommand: frameIndexPtr not set.");
     }
 
-    void UpdateForwardMaterialManagerCommand::operator()() { materialManager->updateUniformBuffers(*imageIndexPtr); }
+    void UpdateForwardMaterialManagerCommand::operator()() { materialManager->updateUniformBuffers(*frameIndexPtr); }
 
     ////////////////////////////////////////////////////////////////
     // Debugging and visualization.

@@ -34,7 +34,7 @@ namespace sol
 
         ForwardMaterial() = default;
 
-        ForwardMaterial(VulkanShaderModuleSharedPtr vertexModule, VulkanShaderModuleSharedPtr fragmentModule);
+        ForwardMaterial(VulkanShaderModule& vertexModule, VulkanShaderModule& fragmentModule);
 
         ForwardMaterial(const ForwardMaterial&) = delete;
 
@@ -62,9 +62,9 @@ namespace sol
          */
         [[nodiscard]] const IForwardMaterialManager& getMaterialManager() const noexcept;
 
-        [[nodiscard]] const VulkanShaderModuleSharedPtr& getVertexShader() const noexcept;
+        [[nodiscard]] const VulkanShaderModule& getVertexShader() const noexcept;
 
-        [[nodiscard]] const VulkanShaderModuleSharedPtr& getFragmentShader() const noexcept;
+        [[nodiscard]] const VulkanShaderModule& getFragmentShader() const noexcept;
 
         [[nodiscard]] const ForwardMaterialLayout& getLayout() const noexcept;
 
@@ -80,9 +80,9 @@ namespace sol
 
         void setMaterialManager(IForwardMaterialManager& manager);
 
-        void setVertexShader(VulkanShaderModuleSharedPtr module) noexcept;
+        void setVertexShader(VulkanShaderModule& module) noexcept;
 
-        void setFragmentShader(VulkanShaderModuleSharedPtr module) noexcept;
+        void setFragmentShader(VulkanShaderModule& module) noexcept;
 
         /**
          * \brief Set mesh layout.
@@ -101,9 +101,9 @@ namespace sol
 
         IForwardMaterialManager* materialManager = nullptr;
 
-        VulkanShaderModuleSharedPtr vertexShader = nullptr;
+        VulkanShaderModule* vertexShader = nullptr;
 
-        VulkanShaderModuleSharedPtr fragmentShader = nullptr;
+        VulkanShaderModule* fragmentShader = nullptr;
 
         MeshLayout* meshLayout = nullptr;
 

@@ -8,6 +8,10 @@
 
 namespace sol
 {
+    class ComputeMaterial;
+    class ComputeMaterialInstance;
+    class ComputeMaterialLayout;
+    class IComputeMaterialManager;
     class ForwardMaterial;
     class ForwardMaterialInstance;
     class ForwardMaterialLayout;
@@ -17,6 +21,12 @@ namespace sol
     class UniformBuffer;
     class UniformBufferManager;
 
+    using ComputeMaterialPtr               = std::unique_ptr<ComputeMaterial>;
+    using ComputeMaterialSharedPtr         = std::shared_ptr<ComputeMaterial>;
+    using ComputeMaterialInstancePtr       = std::unique_ptr<ComputeMaterialInstance>;
+    using ComputeMaterialInstanceSharedPtr = std::shared_ptr<ComputeMaterialInstance>;
+    using IComputeMaterialManagerPtr       = std::unique_ptr<IComputeMaterialManager>;
+    using IComputeMaterialManagerSharedPtr = std::shared_ptr<IComputeMaterialManager>;
     using ForwardMaterialPtr               = std::unique_ptr<ForwardMaterial>;
     using ForwardMaterialSharedPtr         = std::shared_ptr<ForwardMaterial>;
     using ForwardMaterialInstancePtr       = std::unique_ptr<ForwardMaterialInstance>;

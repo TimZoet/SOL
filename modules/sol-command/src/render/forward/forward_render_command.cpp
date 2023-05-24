@@ -43,6 +43,8 @@ namespace sol
         return framebuffers;
     }
 
+    const uint32_t* ForwardRenderCommand::getFrameIndexPtr() const noexcept { return frameIndexPtr; }
+
     const uint32_t* ForwardRenderCommand::getImageIndexPtr() const noexcept { return imageIndexPtr; }
 
     ////////////////////////////////////////////////////////////////
@@ -79,6 +81,12 @@ namespace sol
         framebuffers.emplace_back(&framebuffer);
     }
 
+    void ForwardRenderCommand::setFrameIndexPtr(uint32_t* ptr)
+    {
+        commandQueue->requireNonFinalized();
+        frameIndexPtr = ptr;
+    }
+
     void ForwardRenderCommand::setImageIndexPtr(uint32_t* ptr)
     {
         commandQueue->requireNonFinalized();
@@ -113,20 +121,20 @@ namespace sol
             framebuffer = framebuffers[*imageIndexPtr];
         }
 
-        commandBuffers->resetCommand(*imageIndexPtr, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
-        commandBuffers->beginOneTimeCommand(*imageIndexPtr);
+        commandBuffers->resetCommand(*frameIndexPtr, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
+        commandBuffers->beginOneTimeCommand(*frameIndexPtr);
 
         const ForwardRenderer::Parameters params = {.renderData    = *renderData,
                                                     .renderPass    = *renderPass,
                                                     .framebuffer   = *framebuffer,
-                                                    .commandBuffer = commandBuffers->get(*imageIndexPtr),
-                                                    .index         = *imageIndexPtr};
+                                                    .commandBuffer = commandBuffers->get(*frameIndexPtr),
+                                                    .index         = *frameIndexPtr };
         renderer->createPipelines(params);
         renderer->beginRenderPass(params);
         renderer->render(params);
         renderer->endRenderPass(params);
 
-        commandBuffers->endCommand(*imageIndexPtr);
+        commandBuffers->endCommand(*frameIndexPtr);
     }
 
     ////////////////////////////////////////////////////////////////

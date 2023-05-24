@@ -33,7 +33,7 @@ namespace sol
 {
     // TODO: This class does not implement any virtual methods of the base yet, because there are none.
     // Also, the ForwardRenderer is doing dynamic_casts because of that.
-    class ForwardMaterialManager : IForwardMaterialManager
+    class ForwardMaterialManager : public IForwardMaterialManager
     {
     public:
         ////////////////////////////////////////////////////////////////

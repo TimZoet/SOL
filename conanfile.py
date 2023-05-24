@@ -80,8 +80,8 @@ class SolConan(ConanFile):
 
         self.requires("common/1.1.0@timzoet/v1.1.0")
         self.requires("glfw/3.3.6")
+        self.requires("math/1.0.0@timzoet/v1.0.0")
         self.requires("stduuid/1.0.0@timzoet/stable")
-        self.requires("vulkan/1.3.243.0")
 
         if self.options.build_tests:
             self.requires("bettertest/1.0.1@timzoet/v1.0.1")
@@ -105,20 +105,17 @@ class SolConan(ConanFile):
         self.cpp_info.components["core"].requires = [
             "error",
             "generated",
-            "common::common",
-            "vulkan::vulkan"
+            "common::common"
         ]
 
         self.cpp_info.components["error"].libs = ["sol-error"]
         self.cpp_info.components["error"].requires = [
-            "generated",
-            "vulkan::vulkan"
+            "generated"
         ]
 
         self.cpp_info.components["generated"].libs = ["sol-generated"]
         self.cpp_info.components["generated"].requires = [
-            "cmake-modules::cmake-modules",
-            "vulkan::vulkan"
+            "cmake-modules::cmake-modules"
         ]
 
         self.cpp_info.components["material"].libs = ["sol-material"]

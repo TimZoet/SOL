@@ -39,7 +39,7 @@ namespace sol
 
         [[nodiscard]] ForwardMaterialManager* getMaterialManager() const noexcept;
 
-        [[nodiscard]] const uint32_t* getImageIndexPtr() const noexcept;
+        [[nodiscard]] const uint32_t* getFrameIndexPtr() const noexcept;
 
         ////////////////////////////////////////////////////////////////
         // Setters.
@@ -47,7 +47,7 @@ namespace sol
 
         void setMaterialManager(ForwardMaterialManager& manager);
 
-        void setImageIndexPtr(uint32_t* ptr);
+        void setFrameIndexPtr(uint32_t* ptr);
 
         ////////////////////////////////////////////////////////////////
         // Run.
@@ -71,6 +71,6 @@ namespace sol
         // TODO: This should become the IForwardMaterialManager class.
         ForwardMaterialManager* materialManager = nullptr;
 
-        uint32_t* imageIndexPtr = nullptr;
+        uint32_t* frameIndexPtr = nullptr;
     };
 }  // namespace sol

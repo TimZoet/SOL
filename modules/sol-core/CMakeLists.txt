@@ -1,5 +1,5 @@
 find_package(common REQUIRED)
-find_package(vulkan REQUIRED)
+find_package(Vulkan COMPONENTS shaderc_combined REQUIRED)
 
 set(NAME sol-core)
 set(TYPE module)
@@ -18,6 +18,7 @@ set(HEADERS
     ${INCLUDE_DIR}/vulkan_command_buffer.h
     ${INCLUDE_DIR}/vulkan_command_buffer_list.h
     ${INCLUDE_DIR}/vulkan_command_pool.h
+    ${INCLUDE_DIR}/vulkan_compute_pipeline.h
     ${INCLUDE_DIR}/vulkan_debug.h
     ${INCLUDE_DIR}/vulkan_descriptor_pool.h
     ${INCLUDE_DIR}/vulkan_descriptor_set_layout.h
@@ -53,6 +54,7 @@ set(SOURCES
     ${SRC_DIR}/vulkan_command_buffer.cpp
     ${SRC_DIR}/vulkan_command_buffer_list.cpp
     ${SRC_DIR}/vulkan_command_pool.cpp
+    ${SRC_DIR}/vulkan_compute_pipeline.cpp
     ${SRC_DIR}/vulkan_debug.cpp
     ${SRC_DIR}/vulkan_descriptor_pool.cpp
     ${SRC_DIR}/vulkan_descriptor_set_layout.cpp
@@ -83,8 +85,8 @@ set(DEPS_PUBLIC
     sol-error
     sol-generated
 
-    vulkan::core
-    vulkan::shaderc
+    Vulkan::Vulkan
+    Vulkan::shaderc_combined
 )
 
 set(DEPS_PRIVATE

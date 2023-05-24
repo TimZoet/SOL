@@ -107,13 +107,17 @@ namespace sol
             }
 
             // Filter device based on its features.
-            if (settings.featureFilter)
+            if (settings.features)
             {
-                VkPhysicalDeviceFeatures deviceFeatures;
-                vkGetPhysicalDeviceFeatures(d, &deviceFeatures);
-
-                // Run filter. If it fails, skip current device.
-                if (!settings.featureFilter(deviceFeatures)) continue;
+                vkGetPhysicalDeviceFeatures2(d, settings.features);
+                if (settings.featureFilter && !settings.featureFilter(*settings.features)) continue;
+            }
+            else
+            {
+                VkPhysicalDeviceFeatures2 features{};
+                features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+                vkGetPhysicalDeviceFeatures2(d, &features);
+                if (settings.featureFilter && !settings.featureFilter(features)) continue;
             }
 
             // Retrieve queue families.

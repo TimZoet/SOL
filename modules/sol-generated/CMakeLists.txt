@@ -1,4 +1,4 @@
-find_package(vulkan REQUIRED)
+find_package(Vulkan REQUIRED)
 
 set(NAME sol-generated)
 set(TYPE module)
@@ -6,7 +6,7 @@ set(INCLUDE_DIR "include/sol-generated")
 set(SRC_DIR "src")
 
 # Custom command to generate a cpp file that contains functions to convert Vulkan enums to strings.
-get_target_property(VULKAN_INCLUDE_DIR vulkan::core INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(VULKAN_INCLUDE_DIR Vulkan::Vulkan INTERFACE_INCLUDE_DIRECTORIES)
 set(ENUM_TO_STRING_H ${CMAKE_CURRENT_BINARY_DIR}/generated/vulkan_enum_to_string.h)
 set(ENUM_TO_STRING_CPP ${CMAKE_CURRENT_BINARY_DIR}/generated/vulkan_enum_to_string.cpp)
 add_custom_command(
@@ -25,7 +25,7 @@ set(SOURCES
 )
 
 set(DEPS_PUBLIC
-    vulkan::core
+    Vulkan::Vulkan
 )
 
 set(DEPS_PRIVATE

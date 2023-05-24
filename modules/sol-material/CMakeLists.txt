@@ -14,6 +14,11 @@ set(HEADERS
     ${INCLUDE_DIR}/common/uniform_buffer.h
     ${INCLUDE_DIR}/common/uniform_buffer_manager.h
 
+    ${INCLUDE_DIR}/compute/compute_material.h
+    ${INCLUDE_DIR}/compute/compute_material_instance.h
+    ${INCLUDE_DIR}/compute/compute_material_layout.h
+    ${INCLUDE_DIR}/compute/i_compute_material_manager.h
+
     ${INCLUDE_DIR}/forward/forward_material.h
     ${INCLUDE_DIR}/forward/forward_material_instance.h
     ${INCLUDE_DIR}/forward/forward_material_layout.h
@@ -27,6 +32,11 @@ set(SOURCES
     
     ${SRC_DIR}/common/uniform_buffer.cpp
     ${SRC_DIR}/common/uniform_buffer_manager.cpp
+
+    ${SRC_DIR}/compute/compute_material.cpp
+    ${SRC_DIR}/compute/compute_material_instance.cpp
+    ${SRC_DIR}/compute/compute_material_layout.cpp
+    ${SRC_DIR}/compute/i_compute_material_manager.cpp
 
     ${SRC_DIR}/forward/forward_material.cpp
     ${SRC_DIR}/forward/forward_material_instance.cpp
