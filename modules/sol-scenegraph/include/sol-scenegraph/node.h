@@ -39,6 +39,8 @@ namespace sol
             DeferredMaterial,
             ComputeMaterial,
             Dispatch,
+            RayTracingMaterial,
+            TraceRays,
         };
 
         ////////////////////////////////////////////////////////////////
