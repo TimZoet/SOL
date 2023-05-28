@@ -68,6 +68,11 @@ namespace sol
              * \brief Preferred allocation flags. Only used when allocator is specified.
              */
             VmaAllocationCreateFlags flags = 0;
+
+            /**
+             * \brief Optional alignment. Only used when allocator is specified.
+             */
+            VkDeviceSize alignment = 0;
         };
 
         ////////////////////////////////////////////////////////////////
@@ -137,6 +142,12 @@ namespace sol
          * \return Size in bytes.
          */
         [[nodiscard]] size_t getSize() const noexcept;
+
+        /**
+         * \brief Get the device address of this buffer.
+         * \return VkDeviceAddress.
+         */
+        [[nodiscard]] VkDeviceAddress getDeviceAddress() const noexcept;
 
         /**
          * \brief Whether this buffer has a custom allocator.

@@ -14,6 +14,7 @@ set(HEADERS
     ${INCLUDE_DIR}/utils.h
     ${INCLUDE_DIR}/version.h
     ${INCLUDE_DIR}/vulkan_attachment.h
+    ${INCLUDE_DIR}/vulkan_bottom_level_acceleration_structure.h
     ${INCLUDE_DIR}/vulkan_buffer.h
     ${INCLUDE_DIR}/vulkan_command_buffer.h
     ${INCLUDE_DIR}/vulkan_command_buffer_list.h
@@ -34,15 +35,18 @@ set(HEADERS
     ${INCLUDE_DIR}/vulkan_physical_device.h
     ${INCLUDE_DIR}/vulkan_queue.h
     ${INCLUDE_DIR}/vulkan_queue_family.h
+    ${INCLUDE_DIR}/vulkan_ray_tracing_pipeline.h
     ${INCLUDE_DIR}/vulkan_render_pass.h
     ${INCLUDE_DIR}/vulkan_render_pass_layout.h
     ${INCLUDE_DIR}/vulkan_sampler.h
     ${INCLUDE_DIR}/vulkan_semaphore.h
+    ${INCLUDE_DIR}/vulkan_shader_binding_table.h
     ${INCLUDE_DIR}/vulkan_shader_module.h
     ${INCLUDE_DIR}/vulkan_subpass.h
     ${INCLUDE_DIR}/vulkan_surface.h
     ${INCLUDE_DIR}/vulkan_swapchain.h
     ${INCLUDE_DIR}/vulkan_swapchain_support_details.h
+    ${INCLUDE_DIR}/vulkan_top_level_acceleration_structure.h
 )
 
 set(SOURCES
@@ -50,6 +54,7 @@ set(SOURCES
     ${SRC_DIR}/utils.cpp
     ${SRC_DIR}/version.cpp
     ${SRC_DIR}/vulkan_attachment.cpp
+    ${SRC_DIR}/vulkan_bottom_level_acceleration_structure.cpp
     ${SRC_DIR}/vulkan_buffer.cpp
     ${SRC_DIR}/vulkan_command_buffer.cpp
     ${SRC_DIR}/vulkan_command_buffer_list.cpp
@@ -70,15 +75,18 @@ set(SOURCES
     ${SRC_DIR}/vulkan_physical_device.cpp
     ${SRC_DIR}/vulkan_queue.cpp
     ${SRC_DIR}/vulkan_queue_family.cpp
+    ${SRC_DIR}/vulkan_ray_tracing_pipeline.cpp
     ${SRC_DIR}/vulkan_render_pass.cpp
     ${SRC_DIR}/vulkan_render_pass_layout.cpp
     ${SRC_DIR}/vulkan_sampler.cpp
     ${SRC_DIR}/vulkan_semaphore.cpp
+    ${SRC_DIR}/vulkan_shader_binding_table.cpp
     ${SRC_DIR}/vulkan_shader_module.cpp
     ${SRC_DIR}/vulkan_subpass.cpp
     ${SRC_DIR}/vulkan_surface.cpp
     ${SRC_DIR}/vulkan_swapchain.cpp
     ${SRC_DIR}/vulkan_swapchain_support_details.cpp
+    ${SRC_DIR}/vulkan_top_level_acceleration_structure.cpp
 )
 
 set(DEPS_PUBLIC

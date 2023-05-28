@@ -43,6 +43,8 @@ namespace sol
         // Make queues thread safe if requested.
         if (settings.threadSafeQueues)
             for (const auto& queue : queues) queue->setThreadSafe(true);
+
+        loadExtensionFunctions(set);
     }
 #else
     VulkanDevice::VulkanDevice(const Settings& set, const VkDevice vkDevice) :
@@ -64,6 +66,8 @@ namespace sol
         // Make queues thread safe if requested.
         if (set.threadSafeQueues)
             for (const auto& queue : queues) queue->setThreadSafe(true);
+
+        loadExtensionFunctions(set);
     }
 #endif
 
@@ -170,5 +174,34 @@ namespace sol
             familyQueues.emplace_back(q.get());
 
         return familyQueues;
+    }
+
+    ////////////////////////////////////////////////////////////////
+    // Extension functions.
+    ////////////////////////////////////////////////////////////////
+
+    void VulkanDevice::loadExtensionFunctions(const Settings& set)
+    {
+        const auto load = [this]<typename F>(F& f, const std::string& name) {
+            f = reinterpret_cast<F>(vkGetDeviceProcAddr(device, name.c_str()));
+        };
+
+        for (const auto& ext : set.extensions)
+        {
+            if (ext == VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)
+            {
+                load(vkCmdBuildAccelerationStructuresKHR, "vkCmdBuildAccelerationStructuresKHR");
+                load(vkCreateAccelerationStructureKHR, "vkCreateAccelerationStructureKHR");
+                load(vkDestroyAccelerationStructureKHR, "vkDestroyAccelerationStructureKHR");
+                load(vkGetAccelerationStructureBuildSizesKHR, "vkGetAccelerationStructureBuildSizesKHR");
+                load(vkGetAccelerationStructureDeviceAddressKHR, "vkGetAccelerationStructureDeviceAddressKHR");
+            }
+            else if (ext == VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)
+            {
+                load(vkCreateRayTracingPipelinesKHR, "vkCreateRayTracingPipelinesKHR");
+                load(vkGetRayTracingShaderGroupHandlesKHR, "vkGetRayTracingShaderGroupHandlesKHR");
+                load(vkCmdTraceRaysKHR, "vkCmdTraceRaysKHR");
+            }
+        }
     }
 }  // namespace sol

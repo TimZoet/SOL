@@ -10,7 +10,7 @@ namespace sol
 {
     uint32_t Version::get() const noexcept { return VK_MAKE_API_VERSION(0, major, minor, patch); }
 
-    uint32_t Version::getApiVersion() noexcept { return VK_API_VERSION_1_2; }
+    uint32_t Version::getApiVersion() noexcept { return VK_API_VERSION_1_3; }
 
     uint32_t Version::getEngineVersion() noexcept
     {

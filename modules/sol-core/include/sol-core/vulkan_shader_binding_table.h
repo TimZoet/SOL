@@ -5,7 +5,6 @@
 ////////////////////////////////////////////////////////////////
 
 #include <vulkan/vulkan.hpp>
-#include <vma/vk_mem_alloc.h>
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
@@ -16,11 +15,11 @@
 
 namespace sol
 {
-    class VulkanMemoryAllocator
+    class VulkanShaderBindingTable
     {
     public:
         /**
-         * \brief VulkanMemoryAllocator settings.
+         * \brief VulkanShaderBindingTable settings.
          */
         struct Settings
         {
@@ -30,48 +29,53 @@ namespace sol
             ObjectRefSetting<VulkanDevice> device;
 
             /**
-             * \brief Create flags.
+             * \brief Vulkan ray tracing pipeline.
              */
-            VmaAllocatorCreateFlags flags = 0;
+            ObjectRefSetting<VulkanRayTracingPipeline> pipeline;
+
+            /**
+             * \brief Optional allocator.
+             */
+            ObjectRefSetting<VulkanMemoryAllocator> allocator;
         };
 
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        VulkanMemoryAllocator() = delete;
+        VulkanShaderBindingTable() = delete;
 
-        VulkanMemoryAllocator(const Settings& set, VmaAllocator vmaAllocator);
+        VulkanShaderBindingTable(const Settings& set, std::vector<VulkanBufferPtr> b);
 
-        VulkanMemoryAllocator(const VulkanMemoryAllocator&) = delete;
+        VulkanShaderBindingTable(const VulkanShaderBindingTable&) = delete;
 
-        VulkanMemoryAllocator(VulkanMemoryAllocator&&) = delete;
+        VulkanShaderBindingTable(VulkanShaderBindingTable&&) = delete;
 
-        ~VulkanMemoryAllocator() noexcept;
+        ~VulkanShaderBindingTable() noexcept;
 
-        VulkanMemoryAllocator& operator=(const VulkanMemoryAllocator&) = delete;
+        VulkanShaderBindingTable& operator=(const VulkanShaderBindingTable&) = delete;
 
-        VulkanMemoryAllocator& operator=(VulkanMemoryAllocator&&) = delete;
+        VulkanShaderBindingTable& operator=(VulkanShaderBindingTable&&) = delete;
 
         ////////////////////////////////////////////////////////////////
         // Create.
         ////////////////////////////////////////////////////////////////
 
         /**
-         * \brief Create a new Vulkan memory allocator.
+         * \brief Create a new shader binding table.
          * \param settings Settings.
-         * \throws VulkanError Thrown if allocator creation failed.
-         * \return Vulkan memory allocator.
+         * \throws VulkanError Thrown if creation failed.
+         * \return Shader binding table.
          */
-        [[nodiscard]] static VulkanMemoryAllocatorPtr create(const Settings& settings);
+        [[nodiscard]] static VulkanShaderBindingTablePtr create(const Settings& settings);
 
         /**
-         * \brief Create a new Vulkan memory allocator.
+         * \brief Create a new shader binding table.
          * \param settings Settings.
-         * \throws VulkanError Thrown if allocator creation failed.
-         * \return Vulkan memory allocator.
+         * \throws VulkanError Thrown if creation failed.
+         * \return Shader binding table.
          */
-        [[nodiscard]] static VulkanMemoryAllocatorSharedPtr createShared(const Settings& settings);
+        [[nodiscard]] static VulkanShaderBindingTableSharedPtr createShared(const Settings& settings);
 
         ////////////////////////////////////////////////////////////////
         // Getters.
@@ -97,27 +101,25 @@ namespace sol
          */
         [[nodiscard]] const VulkanDevice& getDevice() const noexcept;
 
-        /**
-         * \brief Get the allocator handle managed by this object.
-         * \return Allocator handle.
-         */
-        [[nodiscard]] const VmaAllocator& get() const noexcept;
+        [[nodiscard]] VkStridedDeviceAddressRegionKHR getRegion(size_t i) const noexcept;
 
     private:
-        [[nodiscard]] static VmaAllocator createImpl(const Settings& settings);
+        [[nodiscard]] static std::vector<VulkanBufferPtr> createImpl(const Settings& settings);
 
-        ////////////////////////////////////////////////////////////////
-        // Member variables.
-        ////////////////////////////////////////////////////////////////
-
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
          * \brief Settings with which this object was created.
          */
         Settings settings;
-
+#else
         /**
-         * \brief Vulkan memory allocator.
+         * \brief Vulkan ray tracing pipeline.
          */
-        VmaAllocator allocator = VK_NULL_HANDLE;
+        VulkanRayTracingPipeline* pipeline = nullptr;
+#endif
+
+        std::vector<VulkanBufferPtr> buffers;
+
+        std::vector<VkStridedDeviceAddressRegionKHR> regions;
     };
 }  // namespace sol

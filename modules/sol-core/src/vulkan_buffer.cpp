@@ -94,9 +94,17 @@ namespace sol
             allocInfo.requiredFlags           = settings.requiredFlags;
             allocInfo.preferredFlags          = settings.preferredFlags;
             allocInfo.flags                   = settings.flags;
-            handleVulkanError(vmaCreateBuffer(
-              settings.allocator, &bufferInfo, &allocInfo, &vkBuffer, &vmaAllocation, &vmaAllocationInfo));
-
+            if (settings.alignment == 0)
+                handleVulkanError(vmaCreateBuffer(
+                  settings.allocator, &bufferInfo, &allocInfo, &vkBuffer, &vmaAllocation, &vmaAllocationInfo));
+            else
+                handleVulkanError(vmaCreateBufferWithAlignment(settings.allocator,
+                                                               &bufferInfo,
+                                                               &allocInfo,
+                                                               settings.alignment,
+                                                               &vkBuffer,
+                                                               &vmaAllocation,
+                                                               &vmaAllocationInfo));
 
             if (settings.flags & VMA_ALLOCATION_CREATE_MAPPED_BIT) pMappedData = vmaAllocationInfo.pMappedData;
         }
@@ -139,6 +147,14 @@ namespace sol
 #else
         return size;
 #endif
+    }
+
+    VkDeviceAddress VulkanBuffer::getDeviceAddress() const noexcept
+    {
+        VkBufferDeviceAddressInfo addressInfo{};
+        addressInfo.sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+        addressInfo.buffer = buffer;
+        return vkGetBufferDeviceAddress(getDevice().get(), &addressInfo);
     }
 
     bool VulkanBuffer::hasAllocator() const noexcept
