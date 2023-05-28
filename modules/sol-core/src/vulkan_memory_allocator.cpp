@@ -53,6 +53,7 @@ namespace sol
         allocatorInfo.instance               = instance.get();
         allocatorInfo.physicalDevice         = physicalDevice.get();
         allocatorInfo.device                 = settings.device;
+        allocatorInfo.flags                  = settings.flags;
 
         // Create allocator.
         VmaAllocator alloc;

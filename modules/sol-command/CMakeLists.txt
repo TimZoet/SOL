@@ -11,6 +11,7 @@ set(HEADERS
     ${INCLUDE_DIR}/i_command.h
     ${INCLUDE_DIR}/material/compute/update_compute_material_manager_command.h
     ${INCLUDE_DIR}/material/forward/update_forward_material_manager_command.h
+    ${INCLUDE_DIR}/material/ray_tracing/update_ray_tracing_material_manager_command.h
     ${INCLUDE_DIR}/mesh/update_mesh_manager_command.h
     ${INCLUDE_DIR}/other/custom_command.h
     ${INCLUDE_DIR}/other/fence_command.h
@@ -21,6 +22,8 @@ set(HEADERS
     ${INCLUDE_DIR}/render/compute/compute_traverse_command.h
     ${INCLUDE_DIR}/render/forward/forward_render_command.h
     ${INCLUDE_DIR}/render/forward/forward_traverse_command.h
+    ${INCLUDE_DIR}/render/ray_tracing/ray_tracing_render_command.h
+    ${INCLUDE_DIR}/render/ray_tracing/ray_tracing_traverse_command.h
     ${INCLUDE_DIR}/texture/update_texture_manager_command.h
 )
 
@@ -29,6 +32,7 @@ set(SOURCES
     ${SRC_DIR}/i_command.cpp
     ${SRC_DIR}/material/compute/update_compute_material_manager_command.cpp
     ${SRC_DIR}/material/forward/update_forward_material_manager_command.cpp
+    ${SRC_DIR}/material/ray_tracing/update_ray_tracing_material_manager_command.cpp
     ${SRC_DIR}/mesh/update_mesh_manager_command.cpp
     ${SRC_DIR}/other/custom_command.cpp
     ${SRC_DIR}/other/fence_command.cpp
@@ -39,6 +43,8 @@ set(SOURCES
     ${SRC_DIR}/render/compute/compute_traverse_command.cpp
     ${SRC_DIR}/render/forward/forward_render_command.cpp
     ${SRC_DIR}/render/forward/forward_traverse_command.cpp
+    ${SRC_DIR}/render/ray_tracing/ray_tracing_render_command.cpp
+    ${SRC_DIR}/render/ray_tracing/ray_tracing_traverse_command.cpp
     ${SRC_DIR}/texture/update_texture_manager_command.cpp
 )
 
