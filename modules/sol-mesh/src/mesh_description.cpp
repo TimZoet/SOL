@@ -54,6 +54,12 @@ namespace sol
         return vertexBuffers[buffer].elementOffset;
     }
 
+    VkBufferUsageFlags MeshDescription::getVertexFlags(const size_t buffer) const
+    {
+        if (buffer >= vertexBuffers.size()) throw SolError("Buffer index out of range.");
+        return vertexBuffers[buffer].additionalFlags;
+    }
+
     size_t MeshDescription::getVertexBufferCount() const noexcept { return vertexBuffers.size(); }
 
     const VulkanBuffer& MeshDescription::getVertexBuffer(const size_t buffer) const
@@ -78,6 +84,12 @@ namespace sol
     {
         if (!isIndexed()) throw SolError("No index buffer.");
         return indexBuffer.elementOffset;
+    }
+
+    VkBufferUsageFlags MeshDescription::getIndexFlags() const
+    {
+        if (!isIndexed()) throw SolError("No index buffer.");
+        return indexBuffer.additionalFlags;
     }
 
     const VulkanBuffer& MeshDescription::getIndexBuffer() const
@@ -138,12 +150,17 @@ namespace sol
     // Buffers.
     ////////////////////////////////////////////////////////////////
 
-    size_t MeshDescription::addVertexBuffer(const size_t vertexSize, const uint32_t vertexCount)
+    size_t MeshDescription::addVertexBuffer(const size_t             vertexSize,
+                                            const uint32_t           vertexCount,
+                                            const VkBufferUsageFlags additionalFlags)
     {
-        return addVertexBuffer(vertexSize, vertexCount, 0);
+        return addVertexBuffer(vertexSize, vertexCount, 0, additionalFlags);
     }
 
-    size_t MeshDescription::addVertexBuffer(size_t vertexSize, uint32_t vertexCount, uint32_t vertexOffset)
+    size_t MeshDescription::addVertexBuffer(size_t                   vertexSize,
+                                            uint32_t                 vertexCount,
+                                            uint32_t                 vertexOffset,
+                                            const VkBufferUsageFlags additionalFlags)
     {
         if (vertexSize == 0) throw SolError("Cannot add vertex buffer with vertex size 0.");
         if (vertexCount == 0) throw SolError("Cannot add vertex buffer with vertex count 0.");
@@ -157,17 +174,23 @@ namespace sol
         bufferSettings.flags       = VMA_ALLOCATION_CREATE_MAPPED_BIT;
         bufferSettings.size        = vertexSize * vertexCount;
 
-        vertexBuffers.emplace_back(VulkanBuffer::create(bufferSettings), vertexSize, vertexCount, vertexOffset);
+        vertexBuffers.emplace_back(
+          VulkanBuffer::create(bufferSettings), vertexSize, vertexCount, vertexOffset, additionalFlags);
 
         return vertexBuffers.size() - 1;
     }
 
-    void MeshDescription::addIndexBuffer(const size_t indexSize, const uint32_t indexCount)
+    void MeshDescription::addIndexBuffer(const size_t             indexSize,
+                                         const uint32_t           indexCount,
+                                         const VkBufferUsageFlags additionalFlags)
     {
-        addIndexBuffer(indexSize, indexCount, 0);
+        addIndexBuffer(indexSize, indexCount, 0, additionalFlags);
     }
 
-    void MeshDescription::addIndexBuffer(const size_t indexSize, const uint32_t indexCount, const uint32_t indexOffset)
+    void MeshDescription::addIndexBuffer(const size_t             indexSize,
+                                         const uint32_t           indexCount,
+                                         const uint32_t           indexOffset,
+                                         const VkBufferUsageFlags additionalFlags)
     {
         if (indexBuffer.buffer) throw SolError("Cannot add index buffer. MeshDescription already has one.");
         if (indexSize == 0) throw SolError("Cannot add index buffer with index size 0.");
@@ -182,10 +205,11 @@ namespace sol
         bufferSettings.flags       = VMA_ALLOCATION_CREATE_MAPPED_BIT;
         bufferSettings.size        = indexSize * indexCount;
 
-        indexBuffer.buffer        = VulkanBuffer::create(bufferSettings);
-        indexBuffer.elementSize   = indexSize;
-        indexBuffer.elementCount  = indexCount;
-        indexBuffer.elementOffset = indexOffset;
+        indexBuffer.buffer          = VulkanBuffer::create(bufferSettings);
+        indexBuffer.elementSize     = indexSize;
+        indexBuffer.elementCount    = indexCount;
+        indexBuffer.elementOffset   = indexOffset;
+        indexBuffer.additionalFlags = additionalFlags;
     }
 
 }  // namespace sol

@@ -106,9 +106,10 @@ namespace sol
 
         // Create vertex buffer.
         VulkanBuffer::Settings bufferSettings;
-        bufferSettings.device      = memoryManager->getDevice();
-        bufferSettings.size        = meshDescription->getVertexCount(0) * meshDescription->getVertexSize(0);
-        bufferSettings.bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        bufferSettings.device = memoryManager->getDevice();
+        bufferSettings.size   = meshDescription->getVertexCount(0) * meshDescription->getVertexSize(0);
+        bufferSettings.bufferUsage =
+          VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | meshDescription->getVertexFlags(0);
         bufferSettings.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         bufferSettings.allocator   = memoryManager->getAllocator();
         bufferSettings.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -169,18 +170,21 @@ namespace sol
 
         // Create vertex buffer.
         VulkanBuffer::Settings bufferSettings;
-        bufferSettings.device      = memoryManager->getDevice();
-        bufferSettings.size        = meshDescription->getVertexCount(0) * meshDescription->getVertexSize(0);
-        bufferSettings.bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        bufferSettings.device = memoryManager->getDevice();
+        bufferSettings.size   = meshDescription->getVertexCount(0) * meshDescription->getVertexSize(0);
+        bufferSettings.bufferUsage =
+          VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | meshDescription->getVertexFlags(0);
         bufferSettings.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         bufferSettings.allocator   = memoryManager->getAllocator();
         bufferSettings.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
         bufferSettings.flags       = 0;
         mesh.setVertexBuffer(VulkanBuffer::create(bufferSettings));
+        mesh.setVertexCount(meshDescription->getVertexCount(0));
 
         // Create index buffer.
-        bufferSettings.size        = meshDescription->getIndexCount() * meshDescription->getIndexSize();
-        bufferSettings.bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+        bufferSettings.size = meshDescription->getIndexCount() * meshDescription->getIndexSize();
+        bufferSettings.bufferUsage =
+          VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | meshDescription->getIndexFlags();
         mesh.setIndexBuffer(VulkanBuffer::create(bufferSettings));
         mesh.setIndexCount(meshDescription->getIndexCount());
         mesh.setIndexType(meshDescription->getIndexType());
@@ -246,13 +250,14 @@ namespace sol
         // Create vertex buffers.
         VulkanBuffer::Settings bufferSettings;
         bufferSettings.device      = memoryManager->getDevice();
-        bufferSettings.bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
         bufferSettings.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         bufferSettings.allocator   = memoryManager->getAllocator();
         bufferSettings.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
         bufferSettings.flags       = 0;
         for (size_t i = 0; i < meshDescription->getVertexBufferCount(); i++)
         {
+            bufferSettings.bufferUsage =
+              VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | meshDescription->getVertexFlags(i);
             bufferSettings.size = meshDescription->getVertexCount(i) * meshDescription->getVertexSize(i);
             mesh.addVertexBuffer(VulkanBuffer::create(bufferSettings));
         }
@@ -260,8 +265,9 @@ namespace sol
         // Create index buffer.
         if (meshDescription->isIndexed())
         {
-            bufferSettings.size        = meshDescription->getIndexCount() * meshDescription->getIndexSize();
-            bufferSettings.bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+            bufferSettings.size = meshDescription->getIndexCount() * meshDescription->getIndexSize();
+            bufferSettings.bufferUsage =
+              VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | meshDescription->getIndexFlags();
             mesh.setIndexBuffer(VulkanBuffer::create(bufferSettings));
             mesh.setIndexCount(meshDescription->getIndexCount());
             mesh.setIndexType(meshDescription->getIndexType());

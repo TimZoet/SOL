@@ -53,7 +53,7 @@ namespace sol
 
     VkIndexType IndexedMesh::getIndexType() const noexcept { return indexType; }
 
-    uint32_t IndexedMesh::getVertexCount() const noexcept { return 0; }
+    uint32_t IndexedMesh::getVertexCount() const noexcept { return vertexCount; }
 
     uint32_t IndexedMesh::getFirstVertex() const noexcept { return 0; }
 
@@ -84,6 +84,8 @@ namespace sol
     void IndexedMesh::setVertexBuffer(VulkanBufferPtr buffer) noexcept { vertexBuffer = std::move(buffer); }
 
     void IndexedMesh::setVertexBufferOffset(const size_t offset) noexcept { vertexBufferOffset = offset; }
+
+    void IndexedMesh::setVertexCount(const uint32_t count) noexcept { vertexCount = count; }
 
     void IndexedMesh::setIndexBuffer(VulkanBufferPtr buffer) noexcept { indexBuffer = std::move(buffer); }
 

@@ -38,6 +38,11 @@ namespace sol
              * \brief Offset to the first element in the target buffer to copy to.
              */
             uint32_t elementOffset = 0;
+
+            /**
+             * \brief Additional flags for the final buffer.
+             */
+            VkBufferUsageFlags additionalFlags = 0;
         };
 
     public:
@@ -100,6 +105,12 @@ namespace sol
         [[nodiscard]] uint32_t getVertexOffset(size_t buffer) const;
 
         /**
+         * \brief Get the additional vertex buffer usage flags.
+         * \return Flags.
+         */
+        [[nodiscard]] VkBufferUsageFlags getVertexFlags(size_t buffer) const;
+
+        /**
          * \brief Get the number of vertex buffers.
          * \return Number of vertex buffers.
          */
@@ -129,6 +140,12 @@ namespace sol
          * \return Offset.
          */
         [[nodiscard]] uint32_t getIndexOffset() const;
+
+        /**
+         * \brief Get the additional index buffer usage flags.
+         * \return Flags.
+         */
+        [[nodiscard]] VkBufferUsageFlags getIndexFlags() const;
 
         /**
          * \brief Get the index staging buffer.
@@ -186,36 +203,45 @@ namespace sol
          * \brief Add a vertex buffer.
          * \param vertexSize Size of a single vertex in bytes.
          * \param vertexCount Number of vertices.
+         * \param additionalFlags Additional buffer usage flags to assign to vertex buffer.
          * \return Index of the new buffer.
          */
-        size_t addVertexBuffer(size_t vertexSize, uint32_t vertexCount);
+        size_t addVertexBuffer(size_t vertexSize, uint32_t vertexCount, VkBufferUsageFlags additionalFlags = 0);
 
         /**
          * \brief Add a vertex buffer.
          * \param vertexSize Size of a single vertex in bytes.
          * \param vertexCount Number of vertices.
          * \param vertexOffset Offset to the first vertex in the target buffer to copy to.
+         * \param additionalFlags Additional buffer usage flags to assign to vertex buffer.
          * \return Index of the new buffer.
          */
-        size_t addVertexBuffer(size_t vertexSize, uint32_t vertexCount, uint32_t vertexOffset);
+        size_t addVertexBuffer(size_t             vertexSize,
+                               uint32_t           vertexCount,
+                               uint32_t           vertexOffset,
+                               VkBufferUsageFlags additionalFlags = 0);
 
         /**
          * \brief Add an index buffer.
          * \param indexSize Size of a single index in bytes.
+         * \param additionalFlags Additional buffer usage flags to assign to vertex buffer.
          * \param indexCount Number of indices.
          */
-        void addIndexBuffer(size_t indexSize, uint32_t indexCount);
+        void addIndexBuffer(size_t indexSize, uint32_t indexCount, VkBufferUsageFlags additionalFlags = 0);
 
         /**
          * \brief Add an index buffer.
          * \param indexSize Size of a single index in bytes.
          * \param indexCount Number of indices.
          * \param indexOffset Offset to the first index in the target buffer to copy to.
+         * \param additionalFlags Additional buffer usage flags to assign to vertex buffer.
          */
-        void addIndexBuffer(size_t indexSize, uint32_t indexCount, uint32_t indexOffset);
+        void addIndexBuffer(size_t             indexSize,
+                            uint32_t           indexCount,
+                            uint32_t           indexOffset,
+                            VkBufferUsageFlags additionalFlags = 0);
 
     private:
-
         ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////
