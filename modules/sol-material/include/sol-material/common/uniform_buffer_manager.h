@@ -66,19 +66,19 @@ namespace sol
         // ...
         ////////////////////////////////////////////////////////////////
 
-        UniformBuffer* create(const Material&               material,
-                              uint32_t                      setIndex,
-                              uint32_t                      bindingIndex,
-                              MaterialLayout::SharingMethod sharingMethod,
-                              size_t                        slotCount,
-                              size_t                        bufferSize);
+        UniformBuffer* create(const Material&                          material,
+                              uint32_t                                 setIndex,
+                              uint32_t                                 bindingIndex,
+                              MaterialLayoutDescription::SharingMethod sharingMethod,
+                              size_t                                   slotCount,
+                              size_t                                   bufferSize);
 
-        UniformBuffer* getOrCreate(const Material&               material,
-                                   uint32_t                      setIndex,
-                                   uint32_t                      bindingIndex,
-                                   MaterialLayout::SharingMethod sharingMethod,
-                                   size_t                        slotCount,
-                                   size_t                        bufferSize);
+        UniformBuffer* getOrCreate(const Material&                          material,
+                                   uint32_t                                 setIndex,
+                                   uint32_t                                 bindingIndex,
+                                   MaterialLayoutDescription::SharingMethod sharingMethod,
+                                   size_t                                   slotCount,
+                                   size_t                                   bufferSize);
 
         void mapAll(uint32_t setIndex);
 

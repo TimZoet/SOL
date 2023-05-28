@@ -6,6 +6,7 @@
 
 #include <numeric>
 #include <ranges>
+#include <span>
 
 ////////////////////////////////////////////////////////////////
 // Module includes.
@@ -42,6 +43,16 @@ namespace
         poolSettings.device  = device;
         poolSettings.maxSets = static_cast<uint32_t>(count);
 
+
+
+        // Combined image samplers.
+        if (layout.getCombinedImageSamplerCount() > 0)
+        {
+            poolSettings.poolSizes.emplace_back(VkDescriptorPoolSize{
+              .type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+              .descriptorCount = static_cast<uint32_t>(count * layout.getCombinedImageSamplerCount())});
+        }
+
         // Uniform buffers.
         if (layout.getUniformBufferCount() > 0)
         {
@@ -50,15 +61,7 @@ namespace
                                    .descriptorCount = static_cast<uint32_t>(count * layout.getUniformBufferCount())});
         }
 
-        // Combined image samplers.
-        if (layout.getSamplerCount() > 0)
-        {
-            poolSettings.poolSizes.emplace_back(
-              VkDescriptorPoolSize{.type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                   .descriptorCount = static_cast<uint32_t>(count * layout.getSamplerCount())});
-        }
-
-        return sol::VulkanDescriptorPool::create(std::move(poolSettings));
+        return sol::VulkanDescriptorPool::create(poolSettings);
     }
 
     void allocateDescriptorSets(const sol::VulkanDevice&                   device,
@@ -68,7 +71,7 @@ namespace
         const auto& materialInstance = *instanceData.materialInstance;
         const auto& material         = materialInstance.getForwardMaterial();
         const auto& mtlLayout        = material.getLayout();
-        const auto  setLayout = mtlLayout.getFinalizedDescriptorSetLayouts()[materialInstance.getSetIndex()]->get();
+        const auto  setLayout        = mtlLayout.getDescriptorSetLayouts()[materialInstance.getSetIndex()]->get();
 
         // Repeat layout for each set that needs to be allocated.
         const std::vector vkLayouts(count, setLayout);
@@ -86,9 +89,10 @@ namespace
     }
 
     void createNoneUniformBuffers(
-      sol::ForwardMaterialManager::InstanceData&                                               instanceData,
-      sol::UniformBufferManager&                                                               manager,
-      const std::vector<std::pair<sol::ForwardMaterialLayout::UniformBufferBinding*, size_t>>& uniformBufferBindings)
+      sol::ForwardMaterialManager::InstanceData& instanceData,
+      sol::UniformBufferManager&                 manager,
+      const std::vector<std::pair<const sol::MaterialLayoutDescription::UniformBufferBinding*, size_t>>&
+        uniformBufferBindings)
     {
         for (const auto& [ubb, index] : uniformBufferBindings)
         {
@@ -96,7 +100,7 @@ namespace
             auto* uniformBuffer = manager.create(instanceData.materialInstance->getMaterial(),
                                                  instanceData.materialInstance->getSetIndex(),
                                                  ubb->binding,
-                                                 sol::ForwardMaterialLayout::SharingMethod::None,
+                                                 sol::MaterialLayoutDescription::SharingMethod::None,
                                                  1,
                                                  ubb->size * ubb->count);
 
@@ -108,9 +112,10 @@ namespace
     }
 
     void createInstanceUniformBuffers(
-      sol::ForwardMaterialManager::InstanceData&                                               instanceData,
-      sol::UniformBufferManager&                                                               manager,
-      const std::vector<std::pair<sol::ForwardMaterialLayout::UniformBufferBinding*, size_t>>& uniformBufferBindings)
+      sol::ForwardMaterialManager::InstanceData& instanceData,
+      sol::UniformBufferManager&                 manager,
+      const std::vector<std::pair<const sol::MaterialLayoutDescription::UniformBufferBinding*, size_t>>&
+        uniformBufferBindings)
     {
         // Sum sizes of all bindings.
         size_t size = 0;
@@ -123,7 +128,7 @@ namespace
         auto* uniformBuffer = manager.create(instanceData.materialInstance->getMaterial(),
                                              instanceData.materialInstance->getSetIndex(),
                                              firstBinding,
-                                             sol::ForwardMaterialLayout::SharingMethod::Instance,
+                                             sol::MaterialLayoutDescription::SharingMethod::Instance,
                                              1,
                                              size);
 
@@ -139,9 +144,10 @@ namespace
     }
 
     void createBindingUniformBuffers(
-      sol::ForwardMaterialManager::InstanceData&                                               instanceData,
-      sol::UniformBufferManager&                                                               manager,
-      const std::vector<std::pair<sol::ForwardMaterialLayout::UniformBufferBinding*, size_t>>& uniformBufferBindings)
+      sol::ForwardMaterialManager::InstanceData& instanceData,
+      sol::UniformBufferManager&                 manager,
+      const std::vector<std::pair<const sol::MaterialLayoutDescription::UniformBufferBinding*, size_t>>&
+        uniformBufferBindings)
     {
         for (const auto& [ubb, index] : uniformBufferBindings)
         {
@@ -149,7 +155,7 @@ namespace
             auto* uniformBuffer = manager.getOrCreate(instanceData.materialInstance->getMaterial(),
                                                       instanceData.materialInstance->getSetIndex(),
                                                       ubb->binding,
-                                                      sol::ForwardMaterialLayout::SharingMethod::Binding,
+                                                      sol::MaterialLayoutDescription::SharingMethod::Binding,
                                                       ubb->sharing.count,
                                                       ubb->size * ubb->count);
 
@@ -161,9 +167,10 @@ namespace
     }
 
     void createInstanceAndBindingUniformBuffers(
-      sol::ForwardMaterialManager::InstanceData&                                               instanceData,
-      sol::UniformBufferManager&                                                               manager,
-      const std::vector<std::pair<sol::ForwardMaterialLayout::UniformBufferBinding*, size_t>>& uniformBufferBindings)
+      sol::ForwardMaterialManager::InstanceData& instanceData,
+      sol::UniformBufferManager&                 manager,
+      const std::vector<std::pair<const sol::MaterialLayoutDescription::UniformBufferBinding*, size_t>>&
+        uniformBufferBindings)
     {
         // Sum sizes of all bindings.
         size_t size = 0;
@@ -177,7 +184,7 @@ namespace
         auto* uniformBuffer = manager.getOrCreate(instanceData.materialInstance->getMaterial(),
                                                   instanceData.materialInstance->getSetIndex(),
                                                   firstBinding,
-                                                  sol::ForwardMaterialLayout::SharingMethod::InstanceAndBinding,
+                                                  sol::MaterialLayoutDescription::SharingMethod::InstanceAndBinding,
                                                   sharingCount,
                                                   size);
 
@@ -192,88 +199,88 @@ namespace
     }
 
     void updateDescriptorSets(
-      const sol::ForwardMaterialManager::InstanceData&                                     instanceData,
-      sol::MemoryManager&                                                                  manager,
-      const std::pair<const sol::ForwardMaterialLayout::UniformBufferBindingPtr*, size_t>& uniformBufferBindings,
-      const std::pair<const sol::ForwardMaterialLayout::SamplerBindingPtr*, size_t>&       samplerBindings)
+      const sol::ForwardMaterialManager::InstanceData&                                   instanceData,
+      sol::MemoryManager&                                                                manager,
+      const std::span<const sol::MaterialLayoutDescription::UniformBufferBinding>        uniformBufferBindings,
+      const std::span<const sol::MaterialLayoutDescription::CombinedImageSamplerBinding> combinedImageSamplerBindings)
     {
-        const auto perSetBufferInfoCount =
-          std::accumulate(uniformBufferBindings.first,
-                          uniformBufferBindings.first + uniformBufferBindings.second,
-                          0,
-                          [](uint32_t sum, const auto& elem) { return sum + elem->count; });
-        const auto perSetImageInfoCount = std::accumulate(
-          samplerBindings.first, samplerBindings.first + samplerBindings.second, 0, [](uint32_t sum, const auto& elem) {
-              return sum + elem->count;
+        const auto perSetBufferInfoCount = std::accumulate(
+          uniformBufferBindings.begin(), uniformBufferBindings.end(), 0, [](uint32_t sum, const auto& elem) {
+              return sum + elem.count;
           });
+        const auto perSetImageInfoCount =
+          std::accumulate(combinedImageSamplerBindings.begin(),
+                          combinedImageSamplerBindings.end(),
+                          0,
+                          [](uint32_t sum, const auto& elem) { return sum + elem.count; });
         std::vector bufferInfos(perSetBufferInfoCount * instanceData.descriptorSets.size(), VkDescriptorBufferInfo{});
         std::vector imageInfos(perSetImageInfoCount * instanceData.descriptorSets.size(), VkDescriptorImageInfo{});
 
         // Create descriptor writes. Objects are laid out per set, and then per binding:
         // set<0>{ binding<0>, binding<1>, ..., binding<N> }, set<1>{...}, set<M>{ binding<0>, binding<1>, ..., binding<N>}
-        const size_t bindingCount = uniformBufferBindings.second + samplerBindings.second;
+        const size_t bindingCount = uniformBufferBindings.size() + combinedImageSamplerBindings.size();
         std::vector  descriptorWrites(bindingCount * instanceData.descriptorSets.size(), VkWriteDescriptorSet{});
 
         for (size_t set = 0; set < instanceData.descriptorSets.size(); set++)
         {
             size_t bufferInfoOffset = 0;
 
-            for (size_t i = 0; i < uniformBufferBindings.second; i++)
+            for (size_t i = 0; i < uniformBufferBindings.size(); i++)
             {
-                const auto& ubb                           = uniformBufferBindings.first[i];
+                const auto& ubb                           = uniformBufferBindings[i];
                 const auto& [uniformBuffer, slot, offset] = instanceData.uniformBuffers[i];
 
-                for (size_t elem = 0; elem < ubb->count; elem++)
+                for (size_t elem = 0; elem < ubb.count; elem++)
                 {
                     auto& bufferInfo  = bufferInfos[set * perSetBufferInfoCount + bufferInfoOffset + elem];
                     bufferInfo.buffer = uniformBuffer->getBuffer(set).get();
-                    bufferInfo.offset = offset + elem * ubb->size;
-                    bufferInfo.range  = ubb->size;
+                    bufferInfo.offset = offset + elem * ubb.size;
+                    bufferInfo.range  = ubb.size;
                 }
 
-                auto& write            = descriptorWrites[set * bindingCount + ubb->binding];
+                auto& write            = descriptorWrites[set * bindingCount + ubb.binding];
                 write.sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                 write.pNext            = nullptr;
                 write.dstSet           = instanceData.descriptorSets[set];
-                write.dstBinding       = ubb->binding;
+                write.dstBinding       = ubb.binding;
                 write.dstArrayElement  = 0;
-                write.descriptorCount  = ubb->count;
+                write.descriptorCount  = ubb.count;
                 write.descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                 write.pImageInfo       = nullptr;
                 write.pBufferInfo      = bufferInfos.data() + set * perSetBufferInfoCount + bufferInfoOffset;
                 write.pTexelBufferView = nullptr;
 
-                bufferInfoOffset += ubb->count;
+                bufferInfoOffset += ubb.count;
             }
 
 
             size_t imageInfoOffset = 0;
 
-            for (size_t i = 0; i < samplerBindings.second; i++)
+            for (size_t i = 0; i < combinedImageSamplerBindings.size(); i++)
             {
-                const auto& sampler = samplerBindings.first[i];
-                for (size_t elem = 0; elem < sampler->count; elem++)
+                const auto& sampler = combinedImageSamplerBindings[i];
+                for (size_t elem = 0; elem < sampler.count; elem++)
                 {
                     auto& imageInfo       = imageInfos[set * perSetImageInfoCount + imageInfoOffset + elem];
-                    auto& texture         = *instanceData.materialInstance->getTextureData(sampler->binding);
+                    auto& texture         = *instanceData.materialInstance->getTextureData(sampler.binding);
                     imageInfo.sampler     = texture.getSampler().get();
                     imageInfo.imageView   = texture.getImageView()->get();
                     imageInfo.imageLayout = texture.getImage()->getImageLayout();
                 }
 
-                auto& write            = descriptorWrites[set * bindingCount + sampler->binding];
+                auto& write            = descriptorWrites[set * bindingCount + sampler.binding];
                 write.sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                 write.pNext            = nullptr;
                 write.dstSet           = instanceData.descriptorSets[set];
-                write.dstBinding       = sampler->binding;
+                write.dstBinding       = sampler.binding;
                 write.dstArrayElement  = 0;
-                write.descriptorCount  = sampler->count;
+                write.descriptorCount  = sampler.count;
                 write.descriptorType   = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                 write.pImageInfo       = imageInfos.data() + set * perSetImageInfoCount + imageInfoOffset;
                 write.pBufferInfo      = nullptr;
                 write.pTexelBufferView = nullptr;
 
-                imageInfoOffset += sampler->count;
+                imageInfoOffset += sampler.count;
             }
         }
 
@@ -413,11 +420,12 @@ namespace sol
         instance->setMaterialManager(*this);
         instance->setMaterial(material);
 
-        const auto& mtl                              = instance->getForwardMaterial();
-        const auto& mtlLayout                        = mtl.getLayout();
-        const auto  setIndex                         = instance->getSetIndex();
-        const auto [uniformBufferBindings, ubbCount] = mtlLayout.getUniformBuffers(setIndex);
-        const auto [samplerBindings, sCount]         = mtlLayout.getSamplers(setIndex);
+        const auto& mtl       = instance->getForwardMaterial();
+        const auto& mtlLayout = mtl.getLayout();
+        const auto  setIndex  = instance->getSetIndex();
+
+        const auto combinedImageSamplers = mtlLayout.getCombinedImageSamplers(setIndex);
+        const auto uniformBuffers        = mtlLayout.getUniformBuffers(setIndex);
 
         // Create new instance data.
         auto& instanceData =
@@ -432,26 +440,26 @@ namespace sol
         allocateDescriptorSets(memoryManager->getDevice(), instanceData, dataSetCount);
 
         // Allocate a reference to a uniform buffer for each binding.
-        instanceData.uniformBuffers.resize(ubbCount);
+        instanceData.uniformBuffers.resize(uniformBuffers.size());
 
         // Initially mark all bindings in all data sets as stale and initialize checksums to 0.
-        instanceData.stale.resize(ubbCount * dataSetCount, 1);
-        instanceData.checksum.resize(ubbCount, 0);
+        instanceData.stale.resize(uniformBuffers.size() * dataSetCount, 1);
+        instanceData.checksum.resize(uniformBuffers.size(), 0);
 
         // Group uniformBufferBindings by SharingMode.
-        using list_t = std::vector<std::pair<ForwardMaterialLayout::UniformBufferBinding*, size_t>>;
+        using list_t = std::vector<std::pair<const MaterialLayoutDescription::UniformBufferBinding*, size_t>>;
         list_t ubbsNone;
         list_t ubbsInstance;
         list_t ubbsBinding;
         list_t ubbsBoth;
-        for (size_t i = 0; i < ubbCount; i++)
+        for (size_t i = 0; i < uniformBuffers.size(); i++)
         {
-            switch (const auto& ubb = uniformBufferBindings[i]; ubb->sharing.method)
+            switch (const auto& ubb = uniformBuffers[i]; ubb.sharing.method)
             {
-            case ForwardMaterialLayout::SharingMethod::None: ubbsNone.emplace_back(ubb.get(), i); break;
-            case ForwardMaterialLayout::SharingMethod::Instance: ubbsInstance.emplace_back(ubb.get(), i); break;
-            case ForwardMaterialLayout::SharingMethod::Binding: ubbsBinding.emplace_back(ubb.get(), i); break;
-            case ForwardMaterialLayout::SharingMethod::InstanceAndBinding: ubbsBoth.emplace_back(ubb.get(), i); break;
+            case MaterialLayoutDescription::SharingMethod::None: ubbsNone.emplace_back(&ubb, i); break;
+            case MaterialLayoutDescription::SharingMethod::Instance: ubbsInstance.emplace_back(&ubb, i); break;
+            case MaterialLayoutDescription::SharingMethod::Binding: ubbsBinding.emplace_back(&ubb, i); break;
+            case MaterialLayoutDescription::SharingMethod::InstanceAndBinding: ubbsBoth.emplace_back(&ubb, i); break;
             }
         }
 
@@ -461,8 +469,7 @@ namespace sol
         if (!ubbsBinding.empty()) createBindingUniformBuffers(instanceData, *uniformBufferManager, ubbsBinding);
         if (!ubbsBoth.empty()) createInstanceAndBindingUniformBuffers(instanceData, *uniformBufferManager, ubbsBoth);
 
-        updateDescriptorSets(
-          instanceData, *memoryManager, {uniformBufferBindings, ubbCount}, {samplerBindings, sCount});
+        updateDescriptorSets(instanceData, *memoryManager, uniformBuffers, combinedImageSamplers);
     }
 
     VulkanGraphicsPipelinePtr ForwardMaterialManager::createPipelineImpl(const ForwardMaterial& material,
@@ -474,13 +481,13 @@ namespace sol
 
         // TODO: To what extent are the RenderSettings needed here? Things like culling should perhaps be put in the ForwardMaterial class instead.
         VulkanGraphicsPipeline::Settings pipelineSettings;
-        pipelineSettings.renderPass           = renderPass;
-        pipelineSettings.vertexShader         = const_cast<VulkanShaderModule&>(material.getVertexShader());//TODO: const_cast
+        pipelineSettings.renderPass   = renderPass;
+        pipelineSettings.vertexShader = const_cast<VulkanShaderModule&>(material.getVertexShader());  //TODO: const_cast
         pipelineSettings.fragmentShader       = const_cast<VulkanShaderModule&>(material.getFragmentShader());
         pipelineSettings.vertexAttributes     = meshLayout->getAttributeDescriptions();
         pipelineSettings.vertexBindings       = meshLayout->getBindingDescriptions();
-        pipelineSettings.descriptorSetLayouts = material.getLayout().getFinalizedDescriptorSetLayouts();
-        pipelineSettings.pushConstants        = material.getLayout().getFinalizedPushConstants();
+        pipelineSettings.descriptorSetLayouts = material.getLayout().getDescriptorSetLayouts();
+        pipelineSettings.pushConstants        = material.getLayout().getPushConstants();
         pipelineSettings.colorBlending        = material.getLayout().getColorBlending();
 
         VkPipelineRasterizationStateCreateInfo rasterization{};
@@ -525,14 +532,14 @@ namespace sol
             const auto& materialInstance = *instanceData->materialInstance;
             const auto& material         = materialInstance.getForwardMaterial();
             const auto& layout           = material.getLayout();
-            const auto [buffers, count]  = layout.getUniformBuffers(materialInstance.getSetIndex());
+            const auto  buffers          = layout.getUniformBuffers(materialInstance.getSetIndex());
 
-            for (size_t i = 0; i < count; i++)
+            for (size_t i = 0; i < buffers.size(); i++)
             {
-                const auto& ubb = *buffers[i];
+                const auto& ubb = buffers[i];
 
                 // Skip if data is never updated.
-                if (ubb.usage.updateFrequency == ForwardMaterialLayout::UpdateFrequency::Never) continue;
+                if (ubb.usage.updateFrequency == MaterialLayoutDescription::UpdateFrequency::Never) continue;
 
                 bool     stale = false;
                 uint32_t checksum;
@@ -540,11 +547,11 @@ namespace sol
                 // Determine if data is stale using the required update detection method.
                 switch (ubb.usage.updateDetection)
                 {
-                case ForwardMaterialLayout::UpdateDetection::Manual:
+                case MaterialLayoutDescription::UpdateDetection::Manual:
                     // Query material instance to see if data was updated.
                     stale = materialInstance.isUniformBufferStale(ubb.binding);
                     break;
-                case ForwardMaterialLayout::UpdateDetection::Automatic:
+                case MaterialLayoutDescription::UpdateDetection::Automatic:
                     // Calculate checksum of data and compare to previously recorded checksum.
                     checksum = crc32(static_cast<const uint8_t*>(materialInstance.getUniformBufferData(ubb.binding)),
                                      ubb.size * ubb.count);
@@ -554,7 +561,7 @@ namespace sol
                         instanceData->checksum[i] = checksum;
                     }
                     break;
-                case ForwardMaterialLayout::UpdateDetection::Always:
+                case MaterialLayoutDescription::UpdateDetection::Always:
                     // Always update data.
                     stale = true;
                     break;
@@ -563,7 +570,8 @@ namespace sol
                 // Mark binding as stale for all data sets.
                 if (stale)
                 {
-                    for (size_t set = 0; set < dataSetCount; set++) instanceData->stale[set * count + i] = true;
+                    for (size_t set = 0; set < dataSetCount; set++)
+                        instanceData->stale[set * buffers.size() + i] = true;
                 }
             }
         }
@@ -573,18 +581,18 @@ namespace sol
             const auto& materialInstance = *instanceData->materialInstance;
             const auto& material         = materialInstance.getForwardMaterial();
             const auto& layout           = material.getLayout();
-            const auto [buffers, count]  = layout.getUniformBuffers(materialInstance.getSetIndex());
+            const auto  buffers          = layout.getUniformBuffers(materialInstance.getSetIndex());
 
-            for (size_t i = 0; i < count; i++)
+            for (size_t i = 0; i < buffers.size(); i++)
             {
-                const auto& ubb  = *buffers[i];
+                const auto& ubb  = buffers[i];
                 const auto* data = materialInstance.getUniformBufferData(ubb.binding);
 
-                if (instanceData->stale[index * count + i])
+                if (instanceData->stale[index * buffers.size() + i])
                 {
                     const auto& tuple = instanceData->uniformBuffers[i];
                     tuple.uniformBuffer->getBuffer(index).setData(data, ubb.size * ubb.count, tuple.offset);
-                    instanceData->stale[index * count + i] = false;
+                    instanceData->stale[index * buffers.size() + i] = false;
                 }
             }
         }

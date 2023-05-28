@@ -76,7 +76,7 @@ namespace
         const auto& materialInstance = *instanceData.materialInstance;
         const auto& material         = materialInstance.getRayTracingMaterial();
         const auto& mtlLayout        = material.getLayout();
-        const auto  setLayout = mtlLayout.getFinalizedDescriptorSetLayouts()[materialInstance.getSetIndex()]->get();
+        const auto  setLayout        = mtlLayout.getDescriptorSetLayouts()[materialInstance.getSetIndex()]->get();
 
         // Repeat layout for each set that needs to be allocated.
         const std::vector vkLayouts(count, setLayout);
@@ -94,32 +94,29 @@ namespace
     }
 
     void updateDescriptorSets(
-      const sol::RayTracingMaterialManager::InstanceData&                                     instanceData,
-      sol::MemoryManager&                                                                     manager,
-      const std::pair<const sol::RayTracingMaterialLayout::StorageImageBindingPtr*, size_t>&  storageImageBindings,
-      const std::pair<const sol::RayTracingMaterialLayout::StorageBufferBindingPtr*, size_t>& storageBufferBindings,
-      const std::pair<const sol::RayTracingMaterialLayout::AccelerationStructureBindingPtr*, size_t>&
-        accelerationStructureBindings)
+      const sol::RayTracingMaterialManager::InstanceData&                                 instanceData,
+      sol::MemoryManager&                                                                 manager,
+      const std::span<const sol::MaterialLayoutDescription::StorageImageBinding>          storageImageBindings,
+      const std::span<const sol::MaterialLayoutDescription::StorageBufferBinding>         storageBufferBindings,
+      const std::span<const sol::MaterialLayoutDescription::AccelerationStructureBinding> accelerationStructureBindings)
     {
         const auto perSetStorageImageInfoCount = std::accumulate(
-          storageImageBindings.first,
-          storageImageBindings.first + storageImageBindings.second,
-          0,
-          [](uint32_t sum, const auto& elem) { return sum + 1; });  // TODO: elem->count once array support is added.
+          storageImageBindings.begin(), storageImageBindings.end(), 0, [](uint32_t sum, const auto& elem) {
+              return sum + 1;
+          });  // TODO: elem->count once array support is added.
         std::vector storageImageInfos(perSetStorageImageInfoCount * instanceData.descriptorSets.size(),
                                       VkDescriptorImageInfo{});
 
         const auto perSetStorageBufferInfoCount = std::accumulate(
-          storageBufferBindings.first,
-          storageBufferBindings.first + storageBufferBindings.second,
-          0,
-          [](uint32_t sum, const auto& elem) { return sum + 1; });  // TODO: elem->count once array support is added.
+          storageBufferBindings.begin(), storageBufferBindings.end(), 0, [](uint32_t sum, const auto& elem) {
+              return sum + 1;
+          });  // TODO: elem->count once array support is added.
         std::vector storageBufferInfos(perSetStorageBufferInfoCount * instanceData.descriptorSets.size(),
                                        VkDescriptorBufferInfo{});
 
         const auto perSetAccelerationStructureInfoCount = std::accumulate(
-          accelerationStructureBindings.first,
-          accelerationStructureBindings.first + accelerationStructureBindings.second,
+          accelerationStructureBindings.begin(),
+          accelerationStructureBindings.end(),
           0,
           [](uint32_t sum, const auto& elem) { return sum + 1; });  // TODO: elem->count once array support is added.
         std::vector accelerationStructureInfos(
@@ -130,7 +127,7 @@ namespace
         // Create descriptor writes. Objects are laid out per set, and then per binding:
         // set<0>{ binding<0>, binding<1>, ..., binding<N> }, set<1>{...}, set<M>{ binding<0>, binding<1>, ..., binding<N>}
         const size_t bindingCount =
-          storageImageBindings.second + storageBufferBindings.second + accelerationStructureBindings.second;
+          storageImageBindings.size() + storageBufferBindings.size() + accelerationStructureBindings.size();
         std::vector descriptorWrites(bindingCount * instanceData.descriptorSets.size(),
                                      VkWriteDescriptorSet{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET});
 
@@ -138,21 +135,21 @@ namespace
         {
             size_t offset = 0;
 
-            for (size_t i = 0; i < storageImageBindings.second; i++)
+            for (size_t i = 0; i < storageImageBindings.size(); i++)
             {
-                const auto& binding   = storageImageBindings.first[i];
+                const auto& binding   = storageImageBindings[i];
                 auto&       imageInfo = storageImageInfos[set * perSetStorageImageInfoCount + offset];
-                auto&       texture   = *instanceData.materialInstance->getTextureData(binding->binding);
+                auto&       texture   = *instanceData.materialInstance->getTextureData(binding.binding);
                 // TODO: We use Texture2D here, which always has a sampler. While we don't access it here,
                 // it seems the Texture2D class always constructs a sampler. Introduce a new, sampler-less
                 // image+imageview class and use that here and in materials?
                 imageInfo.imageView   = texture.getImageView()->get();
                 imageInfo.imageLayout = texture.getImage()->getImageLayout();
 
-                auto& write            = descriptorWrites[set * bindingCount + binding->binding];
+                auto& write            = descriptorWrites[set * bindingCount + binding.binding];
                 write.pNext            = nullptr;
                 write.dstSet           = instanceData.descriptorSets[set];
-                write.dstBinding       = binding->binding;
+                write.dstBinding       = binding.binding;
                 write.dstArrayElement  = 0;
                 write.descriptorCount  = 1;  // TODO: No array support yet.
                 write.descriptorType   = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
@@ -165,19 +162,19 @@ namespace
 
             offset = 0;
 
-            for (size_t i = 0; i < storageBufferBindings.second; i++)
+            for (size_t i = 0; i < storageBufferBindings.size(); i++)
             {
-                const auto& binding    = storageBufferBindings.first[i];
+                const auto& binding    = storageBufferBindings[i];
                 auto&       bufferInfo = storageBufferInfos[set * perSetStorageBufferInfoCount + offset];
-                auto&       buffer     = *instanceData.materialInstance->getStorageBufferData(binding->binding);
+                auto&       buffer     = *instanceData.materialInstance->getStorageBufferData(binding.binding);
                 bufferInfo.buffer      = buffer.get();
                 bufferInfo.offset      = 0;
                 bufferInfo.range       = VK_WHOLE_SIZE;
 
-                auto& write            = descriptorWrites[set * bindingCount + binding->binding];
+                auto& write            = descriptorWrites[set * bindingCount + binding.binding];
                 write.pNext            = nullptr;
                 write.dstSet           = instanceData.descriptorSets[set];
-                write.dstBinding       = binding->binding;
+                write.dstBinding       = binding.binding;
                 write.dstArrayElement  = 0;
                 write.descriptorCount  = 1;  // TODO: No array support yet.
                 write.descriptorType   = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
@@ -190,18 +187,18 @@ namespace
 
             offset = 0;
 
-            for (size_t i = 0; i < accelerationStructureBindings.second; i++)
+            for (size_t i = 0; i < accelerationStructureBindings.size(); i++)
             {
-                const auto& binding = accelerationStructureBindings.first[i];
+                const auto& binding = accelerationStructureBindings[i];
                 auto&       asInfo  = accelerationStructureInfos[set * perSetAccelerationStructureInfoCount + offset];
-                auto&       as      = *instanceData.materialInstance->getAccelerationStructureData(binding->binding);
+                auto&       as      = *instanceData.materialInstance->getAccelerationStructureData(binding.binding);
                 asInfo.accelerationStructureCount = 1;
                 asInfo.pAccelerationStructures    = &as.get();
 
-                auto& write            = descriptorWrites[set * bindingCount + binding->binding];
+                auto& write            = descriptorWrites[set * bindingCount + binding.binding];
                 write.pNext            = &asInfo;
                 write.dstSet           = instanceData.descriptorSets[set];
-                write.dstBinding       = binding->binding;
+                write.dstBinding       = binding.binding;
                 write.dstArrayElement  = 0;
                 write.descriptorCount  = 1;  // TODO: No array support yet.
                 write.descriptorType   = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;

@@ -4,7 +4,25 @@
 // Standard includes.
 ////////////////////////////////////////////////////////////////
 
-#include <cstdint>
+#include <span>
+
+////////////////////////////////////////////////////////////////
+// External includes.
+////////////////////////////////////////////////////////////////
+
+#include <vulkan/vulkan.hpp>
+
+////////////////////////////////////////////////////////////////
+// Module includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-core/fwd.h"
+
+////////////////////////////////////////////////////////////////
+// Current target includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-material/material_layout_description.h"
 
 namespace sol
 {
@@ -12,87 +30,166 @@ namespace sol
     {
     public:
         ////////////////////////////////////////////////////////////////
-        // Types.
-        ////////////////////////////////////////////////////////////////
-
-        enum class UpdateDetection : uint32_t
-        {
-            /**
-             * \brief Query material instance to see if data was updated.
-             */
-            Manual = 0,
-
-            /**
-             * \brief Automatically detect if the data changed by comparing it with the previous data.
-             */
-            Automatic = 1,
-
-            /**
-             * \brief Always update data, regardless of any changes.
-             */
-            Always = 2
-        };
-
-        enum class UpdateFrequency : uint32_t
-        {
-            /**
-             * \brief Data is never updated after it is set for the first time.
-             */
-            Never = 0,
-
-            /**
-             * \brief Data is not expected to be updated often.
-             */
-            Low = 1,
-
-            /**
-             * \brief Data is expected to be updated at a high frequency, though not every frame.
-             */
-            High = 2,
-
-            /**
-             * \brief Data is expected to update every frame.
-             */
-            Frame = 3
-        };
-
-        enum class SharingMethod
-        {
-            /**
-             * \brief Do not share any buffers.
-             */
-            None = 0,
-
-            /**
-             * \brief Share buffers for all bindings of a single material instance.
-             */
-            Instance = 1,
-
-            /**
-             * \brief Share buffers for the same binding of multiple material instances.
-             */
-            Binding = 2,
-
-            /**
-             * \brief Share buffers for multiple bindings of multiple material instances.
-             */
-            InstanceAndBinding = 3
-        };
-
-        ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        MaterialLayout() = default;
+        MaterialLayout() = delete;
+
+        explicit MaterialLayout(VulkanDevice& vkDevice);
 
         MaterialLayout(const MaterialLayout&) = delete;
 
         MaterialLayout(MaterialLayout&&) = delete;
 
-        virtual ~MaterialLayout() = default;
+        virtual ~MaterialLayout() noexcept;
 
         MaterialLayout& operator=(const MaterialLayout&) = delete;
 
         MaterialLayout& operator=(MaterialLayout&&) = delete;
+
+        ////////////////////////////////////////////////////////////////
+        // Getters.
+        ////////////////////////////////////////////////////////////////
+
+        [[nodiscard]] bool isFinalized() const noexcept;
+
+        [[nodiscard]] const MaterialLayoutDescription& getDescription() const noexcept;
+
+        /**
+         * \brief Get the number of descriptor sets.
+         * \return Number of sets.
+         */
+        [[nodiscard]] size_t getSetCount() const noexcept;
+
+        /**
+         * \brief Get the total number of acceleration structures across all descriptor sets.
+         * \return Number of acceleration structures.
+         */
+        [[nodiscard]] size_t getAccelerationStructureCount() const noexcept;
+
+        /**
+         * \brief Get the total number of combined image samplers across all descriptor sets.
+         * \return Number of combined image samplers.
+         */
+        [[nodiscard]] size_t getCombinedImageSamplerCount() const noexcept;
+
+        /**
+         * \brief Get the total number of storage buffers across all descriptor sets.
+         * \return Number of buffers.
+         */
+        [[nodiscard]] size_t getStorageBufferCount() const noexcept;
+
+        /**
+         * \brief Get the total number of storage images across all descriptor sets.
+         * \return Number of images.
+         */
+        [[nodiscard]] size_t getStorageImageCount() const noexcept;
+
+        /**
+         * \brief Get the total number of uniform buffers across all descriptor sets.
+         * \return Number of buffers.
+         */
+        [[nodiscard]] size_t getUniformBufferCount() const noexcept;
+
+        /**
+         * \brief Get the list of all acceleration structure bindings for the given set.
+         * \param set Descriptor set index.
+         * \return List of bindings.
+         */
+        [[nodiscard]] std::span<const MaterialLayoutDescription::AccelerationStructureBinding>
+          getAccelerationStructures(uint32_t set) const;
+
+        /**
+         * \brief Get the list of all combined image sampler bindings for the given set.
+         * \param set Descriptor set index.
+         * \return List of bindings.
+         */
+        [[nodiscard]] std::span<const MaterialLayoutDescription::CombinedImageSamplerBinding>
+          getCombinedImageSamplers(uint32_t set) const;
+
+        /**
+         * \brief Get the list of all storage buffer bindings for the given set.
+         * \param set Descriptor set index.
+         * \return List of bindings.
+         */
+        [[nodiscard]] std::span<const MaterialLayoutDescription::StorageBufferBinding>
+          getStorageBuffers(uint32_t set) const;
+
+        /**
+         * \brief Get the list of all image buffer bindings for the given set.
+         * \param set Descriptor set index.
+         * \return List of bindings.
+         */
+        [[nodiscard]] std::span<const MaterialLayoutDescription::StorageImageBinding>
+          getStorageImages(uint32_t set) const;
+
+        /**
+         * \brief Get the list of all uniform buffer bindings for the given set.
+         * \param set Descriptor set index.
+         * \return List of bindings.
+         */
+        [[nodiscard]] std::span<const MaterialLayoutDescription::UniformBufferBinding>
+          getUniformBuffers(uint32_t set) const;
+
+        /**
+         * \brief Get the number of push constant ranges.
+         * \return Number of ranges.
+         */
+        [[nodiscard]] size_t getPushConstantCount() const noexcept;
+
+        /**
+         * \brief Get the total size of the push constant ranges.
+         * \return Total size in bytes.
+         */
+        [[nodiscard]] size_t getPushConstantTotalSize() const noexcept;
+
+        /**
+         * \brief Get the list of finalized VulkanDescriptorSetLayouts.
+         * \throws SolError Thrown if layout was not yet finalized.
+         * \return VulkanDescriptorSetLayouts.
+         */
+        [[nodiscard]] const std::vector<VulkanDescriptorSetLayoutPtr>& getDescriptorSetLayouts() const;
+
+        /**
+         * \brief Get the list of finalized VkPushConstantRanges.
+         * \throws SolError Thrown if layout was not yet finalized.
+         * \return VkPushConstantRanges.
+         */
+        [[nodiscard]] const std::vector<VkPushConstantRange>& getPushConstants() const;
+
+        ////////////////////////////////////////////////////////////////
+        // Modifiers.
+        ////////////////////////////////////////////////////////////////
+
+        /**
+         * \brief Finalize this layout. The layout will no longer be modifiable.
+         * \param desc Layout description.
+         */
+        virtual void finalize(MaterialLayoutDescription desc);
+
+        void requireFinalized() const;
+
+        void requireNonFinalized() const;
+
+    private:
+        ////////////////////////////////////////////////////////////////
+        // Member variables.
+        ////////////////////////////////////////////////////////////////
+
+        VulkanDevice* device = nullptr;
+
+        MaterialLayoutDescription description;
+
+        bool finalized = false;
+
+        /**
+         * \brief Finalized descriptor set layouts.
+         */
+        std::vector<VulkanDescriptorSetLayoutPtr> layouts;
+
+        /**
+         * \brief Finalized push constants.
+         */
+        std::vector<VkPushConstantRange> pushConstants;
     };
 }  // namespace sol

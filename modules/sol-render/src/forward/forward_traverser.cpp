@@ -246,10 +246,12 @@ namespace
                 {
                     const auto& currentMtlLayout = currentMtl.getLayout();
                     // Check push constant compatibility.
-                    if (!activeMtlLayout.isPushConstantCompatible(currentMtlLayout)) compatible = false;
+                    if (!activeMtlLayout.getDescription().isPushConstantCompatible(currentMtlLayout.getDescription()))
+                        compatible = false;
 
                     // Check if layout is compatible at least up to setIndex.
-                    if (const auto compatibleSets = activeMtlLayout.getDescriptorSetCompatibility(currentMtlLayout);
+                    if (const auto compatibleSets = activeMtlLayout.getDescription().getDescriptorSetCompatibility(
+                          currentMtlLayout.getDescription());
                         compatibleSets <= setIndex)
                         compatible = false;
                 }
@@ -290,7 +292,8 @@ namespace
             if (&currentMtl != &activeMtl)
             {
                 const auto& currentMtlLayout = currentMtl.getLayout();
-                if (!activeMtlLayout.isPushConstantCompatible(currentMtlLayout)) continue;
+                if (!activeMtlLayout.getDescription().isPushConstantCompatible(currentMtlLayout.getDescription()))
+                    continue;
             }
 
             pushConstantIndices.push_back(pcItemIndex);
@@ -299,7 +302,7 @@ namespace
             if (pcItem->parentIndex != no_parent)
             {
                 pcItemIndex = pcItem->parentIndex;
-                pcItem = &stack.pushConstants[pcItemIndex];
+                pcItem      = &stack.pushConstants[pcItemIndex];
             }
             else
                 pcItem = nullptr;

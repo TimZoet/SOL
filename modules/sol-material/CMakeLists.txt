@@ -10,6 +10,7 @@ set(HEADERS
     ${INCLUDE_DIR}/material.h
     ${INCLUDE_DIR}/material_instance.h
     ${INCLUDE_DIR}/material_layout.h
+    ${INCLUDE_DIR}/material_layout_description.h
     
     ${INCLUDE_DIR}/common/uniform_buffer.h
     ${INCLUDE_DIR}/common/uniform_buffer_manager.h
@@ -34,6 +35,7 @@ set(SOURCES
     ${SRC_DIR}/material.cpp
     ${SRC_DIR}/material_instance.cpp
     ${SRC_DIR}/material_layout.cpp
+    ${SRC_DIR}/material_layout_description.cpp
     
     ${SRC_DIR}/common/uniform_buffer.cpp
     ${SRC_DIR}/common/uniform_buffer_manager.cpp

@@ -259,7 +259,8 @@ namespace
                     //if (!activeMtlLayout.isPushConstantCompatible(currentMtlLayout)) compatible = false;
 
                     // Check if layout is compatible at least up to setIndex.
-                    if (const auto compatibleSets = activeMtlLayout.getDescriptorSetCompatibility(currentMtlLayout);
+                    if (const auto compatibleSets = activeMtlLayout.getDescription().getDescriptorSetCompatibility(
+                          currentMtlLayout.getDescription());
                         compatibleSets <= setIndex)
                         compatible = false;
                 }

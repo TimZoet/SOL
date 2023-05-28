@@ -29,6 +29,12 @@ namespace sol
         initializeCommandPools();
     }
 
+    MemoryManager::MemoryManager(VulkanMemoryAllocatorPtr alloc) :
+        device(&alloc->getDevice()), allocator(std::move(alloc))
+    {
+        initializeCommandPools();
+    }
+
     MemoryManager::~MemoryManager() noexcept = default;
 
     ////////////////////////////////////////////////////////////////

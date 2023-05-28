@@ -70,7 +70,7 @@ namespace
         const auto& materialInstance = *instanceData.materialInstance;
         const auto& material         = materialInstance.getComputeMaterial();
         const auto& mtlLayout        = material.getLayout();
-        const auto  setLayout = mtlLayout.getFinalizedDescriptorSetLayouts()[materialInstance.getSetIndex()]->get();
+        const auto  setLayout        = mtlLayout.getDescriptorSetLayouts()[materialInstance.getSetIndex()]->get();
 
         // Repeat layout for each set that needs to be allocated.
         const std::vector vkLayouts(count, setLayout);
@@ -88,43 +88,42 @@ namespace
     }
 
     void updateDescriptorSets(
-      const sol::ComputeMaterialManager::InstanceData&                                    instanceData,
-      sol::MemoryManager&                                                                 manager,
-      const std::pair<const sol::ComputeMaterialLayout::StorageImageBindingPtr*, size_t>& storageImageBindings)
+      const sol::ComputeMaterialManager::InstanceData&                           instanceData,
+      sol::MemoryManager&                                                        manager,
+      const std::span<const sol::MaterialLayoutDescription::StorageImageBinding> storageImageBindings)
     {
         const auto perSetStorageImageInfoCount = std::accumulate(
-          storageImageBindings.first,
-          storageImageBindings.first + storageImageBindings.second,
-          0,
-          [](uint32_t sum, const auto& elem) { return sum + 1; });  // TODO: elem->count once array support is added.
+          storageImageBindings.begin(), storageImageBindings.end(), 0, [](uint32_t sum, const auto& elem) {
+              return sum + 1;
+          });  // TODO: elem->count once array support is added.
         std::vector storageImageInfos(perSetStorageImageInfoCount * instanceData.descriptorSets.size(),
                                       VkDescriptorImageInfo{});
 
         // Create descriptor writes. Objects are laid out per set, and then per binding:
         // set<0>{ binding<0>, binding<1>, ..., binding<N> }, set<1>{...}, set<M>{ binding<0>, binding<1>, ..., binding<N>}
-        const size_t bindingCount = storageImageBindings.second;
+        const size_t bindingCount = storageImageBindings.size();
         std::vector  descriptorWrites(bindingCount * instanceData.descriptorSets.size(), VkWriteDescriptorSet{});
 
         for (size_t set = 0; set < instanceData.descriptorSets.size(); set++)
         {
             size_t offset = 0;
 
-            for (size_t i = 0; i < storageImageBindings.second; i++)
+            for (size_t i = 0; i < storageImageBindings.size(); i++)
             {
-                const auto& binding   = storageImageBindings.first[i];
+                const auto& binding   = storageImageBindings[i];
                 auto&       imageInfo = storageImageInfos[set * perSetStorageImageInfoCount + offset];
-                auto&       texture   = *instanceData.materialInstance->getTextureData(binding->binding);
+                auto&       texture   = *instanceData.materialInstance->getTextureData(binding.binding);
                 // TODO: We use Texture2D here, which always has a sampler. While we don't access it here,
                 // it seems the Texture2D class always constructs a sampler. Introduce a new, sampler-less
                 // image+imageview class and use that here and in materials?
                 imageInfo.imageView   = texture.getImageView()->get();
                 imageInfo.imageLayout = texture.getImage()->getImageLayout();
 
-                auto& write            = descriptorWrites[set * bindingCount + binding->binding];
+                auto& write            = descriptorWrites[set * bindingCount + binding.binding];
                 write.sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                 write.pNext            = nullptr;
                 write.dstSet           = instanceData.descriptorSets[set];
-                write.dstBinding       = binding->binding;
+                write.dstBinding       = binding.binding;
                 write.dstArrayElement  = 0;
                 write.descriptorCount  = 1;  // TODO: No array support yet.
                 write.descriptorType   = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
@@ -225,10 +224,10 @@ namespace sol
         instance->setMaterialManager(*this);
         instance->setMaterial(material);
 
-        const auto& mtl                                      = instance->getComputeMaterial();
-        const auto& mtlLayout                                = mtl.getLayout();
-        const auto  setIndex                                 = instance->getSetIndex();
-        const auto [storageImageBindings, storageImageCount] = mtlLayout.getStorageImages(setIndex);
+        const auto& mtl                  = instance->getComputeMaterial();
+        const auto& mtlLayout            = mtl.getLayout();
+        const auto  setIndex             = instance->getSetIndex();
+        const auto  storageImageBindings = mtlLayout.getStorageImages(setIndex);
 
         // Create new instance data.
         auto& instanceData =
@@ -242,7 +241,7 @@ namespace sol
         instanceData.pool = createDescriptorPool(memoryManager->getDevice(), mtlLayout, dataSetCount);
         allocateDescriptorSets(memoryManager->getDevice(), instanceData, dataSetCount);
 
-        updateDescriptorSets(instanceData, *memoryManager, {storageImageBindings, storageImageCount});
+        updateDescriptorSets(instanceData, *memoryManager, storageImageBindings);
     }
 
 

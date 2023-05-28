@@ -19,12 +19,12 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    UniformBuffer::UniformBuffer(const MaterialLayout::SharingMethod shareMethod,
-                                 const uint32_t                      setIndex,
-                                 const uint32_t                      bindingIndex,
-                                 const size_t                        slotCount,
-                                 const size_t                        bufferSize,
-                                 std::vector<VulkanBufferPtr>        bufferList) :
+    UniformBuffer::UniformBuffer(const MaterialLayoutDescription::SharingMethod shareMethod,
+                                 const uint32_t                                 setIndex,
+                                 const uint32_t                                 bindingIndex,
+                                 const size_t                                   slotCount,
+                                 const size_t                                   bufferSize,
+                                 std::vector<VulkanBufferPtr>                   bufferList) :
         sharingMethod(shareMethod),
         set(setIndex),
         binding(bindingIndex),
@@ -40,7 +40,7 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    MaterialLayout::SharingMethod UniformBuffer::getSharingMethod() const noexcept { return sharingMethod; }
+    MaterialLayoutDescription::SharingMethod UniformBuffer::getSharingMethod() const noexcept { return sharingMethod; }
 
     uint32_t UniformBuffer::getSet() const noexcept { return set; }
 

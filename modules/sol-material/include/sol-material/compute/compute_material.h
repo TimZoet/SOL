@@ -31,7 +31,7 @@ namespace sol
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        ComputeMaterial() = default;
+        ComputeMaterial() = delete;
 
         explicit ComputeMaterial(VulkanShaderModule& computeModule);
 
