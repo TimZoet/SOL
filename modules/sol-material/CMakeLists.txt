@@ -23,6 +23,11 @@ set(HEADERS
     ${INCLUDE_DIR}/forward/forward_material_instance.h
     ${INCLUDE_DIR}/forward/forward_material_layout.h
     ${INCLUDE_DIR}/forward/i_forward_material_manager.h
+
+    ${INCLUDE_DIR}/ray_tracing/ray_tracing_material.h
+    ${INCLUDE_DIR}/ray_tracing/ray_tracing_material_instance.h
+    ${INCLUDE_DIR}/ray_tracing/ray_tracing_material_layout.h
+    ${INCLUDE_DIR}/ray_tracing/i_ray_tracing_material_manager.h
 )
 
 set(SOURCES
@@ -42,6 +47,11 @@ set(SOURCES
     ${SRC_DIR}/forward/forward_material_instance.cpp
     ${SRC_DIR}/forward/forward_material_layout.cpp
     ${SRC_DIR}/forward/i_forward_material_manager.cpp
+
+    ${SRC_DIR}/ray_tracing/ray_tracing_material.cpp
+    ${SRC_DIR}/ray_tracing/ray_tracing_material_instance.cpp
+    ${SRC_DIR}/ray_tracing/ray_tracing_material_layout.cpp
+    ${SRC_DIR}/ray_tracing/i_ray_tracing_material_manager.cpp
 )
 
 set(DEPS_PUBLIC
