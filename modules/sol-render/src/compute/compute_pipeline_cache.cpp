@@ -57,8 +57,8 @@ namespace sol
     VulkanComputePipelinePtr ComputePipelineCache::createPipelineImpl(const ComputeMaterial& material)
     {
         VulkanComputePipeline::Settings settings;
-        settings.computeShader        = const_cast<VulkanShaderModule&>(material.getComputeShader());//TODO: const_cast
-        settings.descriptorSetLayouts = material.getLayout().getFinalizedDescriptorSetLayouts();
+        settings.computeShader = const_cast<VulkanShaderModule&>(material.getComputeShader());  //TODO: const_cast
+        settings.descriptorSetLayouts = material.getLayout().getDescriptorSetLayouts();
         // TODO: Push constants.
 
         return VulkanComputePipeline::create(settings);

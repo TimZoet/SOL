@@ -31,7 +31,7 @@ namespace sol
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        RayTracingMaterial() = default;
+        RayTracingMaterial() = delete;
 
         RayTracingMaterial(VulkanShaderModule* raygenModule,
                            VulkanShaderModule* missModule,

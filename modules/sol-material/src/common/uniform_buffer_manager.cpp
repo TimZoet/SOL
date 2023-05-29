@@ -43,12 +43,12 @@ namespace sol
     // ...
     ////////////////////////////////////////////////////////////////
 
-    UniformBuffer* UniformBufferManager::create(const Material&                     material,
-                                                const uint32_t                      setIndex,
-                                                const uint32_t                      bindingIndex,
-                                                const MaterialLayout::SharingMethod sharingMethod,
-                                                const size_t                        slotCount,
-                                                const size_t                        bufferSize)
+    UniformBuffer* UniformBufferManager::create(const Material&                                material,
+                                                const uint32_t                                 setIndex,
+                                                const uint32_t                                 bindingIndex,
+                                                const MaterialLayoutDescription::SharingMethod sharingMethod,
+                                                const size_t                                   slotCount,
+                                                const size_t                                   bufferSize)
     {
         // Allocate buffers.
         std::vector<VulkanBufferPtr> buffers(setCount);
@@ -77,12 +77,12 @@ namespace sol
         return ub;
     }
 
-    UniformBuffer* UniformBufferManager::getOrCreate(const Material&                     material,
-                                                     const uint32_t                      setIndex,
-                                                     const uint32_t                      bindingIndex,
-                                                     const MaterialLayout::SharingMethod sharingMethod,
-                                                     const size_t                        slotCount,
-                                                     const size_t                        bufferSize)
+    UniformBuffer* UniformBufferManager::getOrCreate(const Material&                                material,
+                                                     const uint32_t                                 setIndex,
+                                                     const uint32_t                                 bindingIndex,
+                                                     const MaterialLayoutDescription::SharingMethod sharingMethod,
+                                                     const size_t                                   slotCount,
+                                                     const size_t                                   bufferSize)
     {
         const auto it = bufferMap.find(&material);
         if (it == bufferMap.end())

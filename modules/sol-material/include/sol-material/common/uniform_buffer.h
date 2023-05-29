@@ -16,7 +16,7 @@
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-material/material_layout.h"
+#include "sol-material/material_layout_description.h"
 
 namespace sol
 {
@@ -29,12 +29,12 @@ namespace sol
 
         UniformBuffer() = default;
 
-        UniformBuffer(MaterialLayout::SharingMethod shareMethod,
-                      uint32_t                      setIndex,
-                      uint32_t                      bindingIndex,
-                      size_t                        slotCount,
-                      size_t                        bufferSize,
-                      std::vector<VulkanBufferPtr>  bufferList);
+        UniformBuffer(MaterialLayoutDescription::SharingMethod shareMethod,
+                      uint32_t                                 setIndex,
+                      uint32_t                                 bindingIndex,
+                      size_t                                   slotCount,
+                      size_t                                   bufferSize,
+                      std::vector<VulkanBufferPtr>             bufferList);
 
         UniformBuffer(const UniformBuffer&) = delete;
 
@@ -50,7 +50,7 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] MaterialLayout::SharingMethod getSharingMethod() const noexcept;
+        [[nodiscard]] MaterialLayoutDescription::SharingMethod getSharingMethod() const noexcept;
 
         [[nodiscard]] uint32_t getSet() const noexcept;
 
@@ -109,7 +109,7 @@ namespace sol
         /**
          * \brief Sharing method.
          */
-        MaterialLayout::SharingMethod sharingMethod = MaterialLayout::SharingMethod ::None;
+        MaterialLayoutDescription::SharingMethod sharingMethod = MaterialLayoutDescription::SharingMethod ::None;
 
         /**
          * \brief Set index.

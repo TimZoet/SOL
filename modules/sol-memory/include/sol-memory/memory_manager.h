@@ -31,6 +31,8 @@ namespace sol
 
         explicit MemoryManager(VulkanDevice& vkDevice);
 
+        explicit MemoryManager(VulkanMemoryAllocatorPtr alloc);
+
         MemoryManager(const MemoryManager&) = delete;
 
         MemoryManager(MemoryManager&&) = delete;

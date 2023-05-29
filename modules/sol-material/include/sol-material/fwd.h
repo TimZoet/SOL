@@ -18,6 +18,8 @@ namespace sol
     class IForwardMaterialManager;
     class Material;
     class MaterialInstance;
+    class MaterialLayout;
+    class MaterialLayoutDescription;
     class RayTracingMaterial;
     class RayTracingMaterialInstance;
     class RayTracingMaterialLayout;

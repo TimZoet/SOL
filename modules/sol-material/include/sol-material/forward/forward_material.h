@@ -32,7 +32,7 @@ namespace sol
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        ForwardMaterial() = default;
+        ForwardMaterial() = delete;
 
         ForwardMaterial(VulkanShaderModule& vertexModule, VulkanShaderModule& fragmentModule);
 

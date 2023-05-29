@@ -70,7 +70,7 @@ namespace sol
             settings.anyHitShader = const_cast<VulkanShaderModule&>(material.getAnyHitShader());
         if (material.hasIntersectionShader())
             settings.intersectionShader = const_cast<VulkanShaderModule&>(material.getIntersectionShader());
-        settings.descriptorSetLayouts = material.getLayout().getFinalizedDescriptorSetLayouts();
+        settings.descriptorSetLayouts = material.getLayout().getDescriptorSetLayouts();
         // TODO: Push constants.
 
         return VulkanRayTracingPipeline::create(settings);
