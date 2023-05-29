@@ -32,38 +32,11 @@
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
+#include "sol-render/common/descriptors.h"
 #include "sol-render/common/render_settings.h"
 
 namespace
 {
-    [[nodiscard]] sol::VulkanDescriptorPoolPtr
-      createDescriptorPool(sol::VulkanDevice& device, const sol::ForwardMaterialLayout& layout, const size_t count)
-    {
-        sol::VulkanDescriptorPool::Settings poolSettings;
-        poolSettings.device  = device;
-        poolSettings.maxSets = static_cast<uint32_t>(count);
-
-
-
-        // Combined image samplers.
-        if (layout.getCombinedImageSamplerCount() > 0)
-        {
-            poolSettings.poolSizes.emplace_back(VkDescriptorPoolSize{
-              .type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-              .descriptorCount = static_cast<uint32_t>(count * layout.getCombinedImageSamplerCount())});
-        }
-
-        // Uniform buffers.
-        if (layout.getUniformBufferCount() > 0)
-        {
-            poolSettings.poolSizes.emplace_back(
-              VkDescriptorPoolSize{.type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                   .descriptorCount = static_cast<uint32_t>(count * layout.getUniformBufferCount())});
-        }
-
-        return sol::VulkanDescriptorPool::create(poolSettings);
-    }
-
     void allocateDescriptorSets(const sol::VulkanDevice&                   device,
                                 sol::ForwardMaterialManager::InstanceData& instanceData,
                                 const size_t                               count)
@@ -436,7 +409,7 @@ namespace sol
         assert(materialInstances.try_emplace(instance->getUuid(), std::move(instance)).second);
 
         // Create descriptor pool and allocate descriptor sets.
-        instanceData.pool = createDescriptorPool(memoryManager->getDevice(), mtlLayout, dataSetCount);
+        instanceData.pool = createDescriptorPool(memoryManager->getDevice(), mtlLayout, dataSetCount, setIndex);
         allocateDescriptorSets(memoryManager->getDevice(), instanceData, dataSetCount);
 
         // Allocate a reference to a uniform buffer for each binding.

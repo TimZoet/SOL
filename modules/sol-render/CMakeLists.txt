@@ -6,6 +6,7 @@ set(SRC_DIR "src")
 set(HEADERS
     ${INCLUDE_DIR}/fwd.h
     
+    ${INCLUDE_DIR}/common/descriptors.h
     ${INCLUDE_DIR}/common/i_traverser.h
     ${INCLUDE_DIR}/common/render_settings.h
     
@@ -33,6 +34,7 @@ set(HEADERS
 )
 
 set(SOURCES
+    ${SRC_DIR}/common/descriptors.cpp
     ${SRC_DIR}/common/i_traverser.cpp
     ${SRC_DIR}/common/render_settings.cpp
     

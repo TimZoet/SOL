@@ -57,42 +57,16 @@ namespace sol
 
     bool MaterialLayout::isFinalized() const noexcept { return finalized; }
 
-    const MaterialLayoutDescription& MaterialLayout::getDescription() const noexcept { return description; }
+    const MaterialLayoutDescription& MaterialLayout::getDescription() const
+    {
+        requireFinalized();
+        return description;
+    }
 
     size_t MaterialLayout::getSetCount() const noexcept
     {
         requireFinalized();
         return layouts.size();
-    }
-
-    size_t MaterialLayout::getAccelerationStructureCount() const noexcept
-    {
-        requireFinalized();
-        return description.accelerationStructures.size();
-    }
-
-    size_t MaterialLayout::getCombinedImageSamplerCount() const noexcept
-    {
-        requireFinalized();
-        return description.combinedImageSamplers.size();
-    }
-
-    size_t MaterialLayout::getStorageBufferCount() const noexcept
-    {
-        requireFinalized();
-        return description.storageBuffers.size();
-    }
-
-    size_t MaterialLayout::getStorageImageCount() const noexcept
-    {
-        requireFinalized();
-        return description.storageImages.size();
-    }
-
-    size_t MaterialLayout::getUniformBufferCount() const noexcept
-    {
-        requireFinalized();
-        return description.uniformBuffers.size();
     }
 
     std::span<const MaterialLayoutDescription::AccelerationStructureBinding>

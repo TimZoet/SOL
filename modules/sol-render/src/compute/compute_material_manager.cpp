@@ -17,12 +17,11 @@
 #include "sol-core/vulkan_descriptor_set_layout.h"
 #include "sol-core/vulkan_device.h"
 #include "sol-core/vulkan_image_view.h"
-#include "sol-core/vulkan_graphics_pipeline.h"
 #include "sol-core/vulkan_sampler.h"
 #include "sol-error/sol_error.h"
 #include "sol-error/vulkan_error_handler.h"
-#include "sol-material/forward/forward_material.h"
-#include "sol-material/forward/forward_material_instance.h"
+#include "sol-material/compute/compute_material.h"
+#include "sol-material/compute/compute_material_instance.h"
 #include "sol-memory/memory_manager.h"
 #include "sol-texture/image2d.h"
 #include "sol-texture/texture2d.h"
@@ -31,38 +30,11 @@
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-material/compute/compute_material.h"
-#include "sol-material/compute/compute_material_instance.h"
+#include "sol-render/common/descriptors.h"
 #include "sol-render/compute/compute_pipeline_cache.h"
 
 namespace
 {
-    [[nodiscard]] sol::VulkanDescriptorPoolPtr
-      createDescriptorPool(sol::VulkanDevice& device, const sol::ComputeMaterialLayout& layout, const size_t count)
-    {
-        sol::VulkanDescriptorPool::Settings poolSettings;
-        poolSettings.device  = device;
-        poolSettings.maxSets = static_cast<uint32_t>(count);
-
-        // Storage images.
-        if (layout.getStorageImageCount() > 0)
-        {
-            poolSettings.poolSizes.emplace_back(
-              VkDescriptorPoolSize{.type            = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                   .descriptorCount = static_cast<uint32_t>(count * layout.getStorageImageCount())});
-        }
-
-        // Storage buffers.
-        if (layout.getStorageBufferCount() > 0)
-        {
-            poolSettings.poolSizes.emplace_back(
-              VkDescriptorPoolSize{.type            = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                   .descriptorCount = static_cast<uint32_t>(count * layout.getStorageBufferCount())});
-        }
-
-        return sol::VulkanDescriptorPool::create(std::move(poolSettings));
-    }
-
     void allocateDescriptorSets(const sol::VulkanDevice&                   device,
                                 sol::ComputeMaterialManager::InstanceData& instanceData,
                                 const size_t                               count)
@@ -238,7 +210,7 @@ namespace sol
         assert(materialInstances.try_emplace(instance->getUuid(), std::move(instance)).second);
 
         // Create descriptor pool and allocate descriptor sets.
-        instanceData.pool = createDescriptorPool(memoryManager->getDevice(), mtlLayout, dataSetCount);
+        instanceData.pool = createDescriptorPool(memoryManager->getDevice(), mtlLayout, dataSetCount, setIndex);
         allocateDescriptorSets(memoryManager->getDevice(), instanceData, dataSetCount);
 
         updateDescriptorSets(instanceData, *memoryManager, storageImageBindings);

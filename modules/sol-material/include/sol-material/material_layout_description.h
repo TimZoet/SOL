@@ -302,6 +302,71 @@ namespace sol
          */
         [[nodiscard]] size_t getSetCount() const noexcept;
 
+        /**
+         * \brief Get the total number of acceleration structures across all descriptor sets.
+         * \return Number of acceleration structures.
+         */
+        [[nodiscard]] size_t getAccelerationStructureCount() const noexcept;
+
+        /**
+         * \brief Get the number of acceleration structures in the specified descriptor set.
+         * \param set Descriptor set index.
+         * \return Number of acceleration structures.
+         */
+        [[nodiscard]] size_t getAccelerationStructureCount(size_t set) const noexcept;
+
+        /**
+         * \brief Get the total number of combined image samplers across all descriptor sets.
+         * \return Number of combined image samplers.
+         */
+        [[nodiscard]] size_t getCombinedImageSamplerCount() const noexcept;
+
+        /**
+         * \brief Get the number of combined image samplers in the specified descriptor set.
+         * \param set Descriptor set index.
+         * \return Number of combined image samplers.
+         */
+        [[nodiscard]] size_t getCombinedImageSamplerCount(size_t set) const noexcept;
+
+        /**
+         * \brief Get the total number of storage buffers across all descriptor sets.
+         * \return Number of buffers.
+         */
+        [[nodiscard]] size_t getStorageBufferCount() const noexcept;
+
+        /**
+         * \brief Get the number of storage buffers in the specified descriptor set.
+         * \param set Descriptor set index.
+         * \return Number of buffers.
+         */
+        [[nodiscard]] size_t getStorageBufferCount(size_t set) const noexcept;
+
+        /**
+         * \brief Get the total number of storage images across all descriptor sets.
+         * \return Number of images.
+         */
+        [[nodiscard]] size_t getStorageImageCount() const noexcept;
+
+        /**
+         * \brief Get the number of storage images in the specified descriptor set.
+         * \param set Descriptor set index.
+         * \return Number of images.
+         */
+        [[nodiscard]] size_t getStorageImageCount(size_t set) const noexcept;
+
+        /**
+         * \brief Get the total number of uniform buffers across all descriptor sets.
+         * \return Number of buffers.
+         */
+        [[nodiscard]] size_t getUniformBufferCount() const noexcept;
+
+        /**
+         * \brief Get the number of uniform buffers in the specified descriptor set.
+         * \param set Descriptor set index.
+         * \return Number of buffers.
+         */
+        [[nodiscard]] size_t getUniformBufferCount(size_t set) const noexcept;
+
         ////////////////////////////////////////////////////////////////
         // Compatibility.
         ////////////////////////////////////////////////////////////////

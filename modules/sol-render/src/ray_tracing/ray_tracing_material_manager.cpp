@@ -31,44 +31,11 @@
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
+#include "sol-render/common/descriptors.h"
 #include "sol-render/ray_tracing/ray_tracing_pipeline_cache.h"
 
 namespace
 {
-    [[nodiscard]] sol::VulkanDescriptorPoolPtr
-      createDescriptorPool(sol::VulkanDevice& device, const sol::RayTracingMaterialLayout& layout, const size_t count)
-    {
-        sol::VulkanDescriptorPool::Settings poolSettings;
-        poolSettings.device  = device;
-        poolSettings.maxSets = static_cast<uint32_t>(count);
-
-        // Storage images.
-        if (layout.getStorageImageCount() > 0)
-        {
-            poolSettings.poolSizes.emplace_back(
-              VkDescriptorPoolSize{.type            = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                   .descriptorCount = static_cast<uint32_t>(count * layout.getStorageImageCount())});
-        }
-
-        // Storage buffers.
-        if (layout.getStorageBufferCount() > 0)
-        {
-            poolSettings.poolSizes.emplace_back(
-              VkDescriptorPoolSize{.type            = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                   .descriptorCount = static_cast<uint32_t>(count * layout.getStorageBufferCount())});
-        }
-
-        // Acceleration structures.
-        if (layout.getAccelerationStructureCount() > 0)
-        {
-            poolSettings.poolSizes.emplace_back(VkDescriptorPoolSize{
-              .type            = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
-              .descriptorCount = static_cast<uint32_t>(count * layout.getAccelerationStructureCount())});
-        }
-
-        return sol::VulkanDescriptorPool::create(poolSettings);
-    }
-
     void allocateDescriptorSets(const sol::VulkanDevice&                      device,
                                 sol::RayTracingMaterialManager::InstanceData& instanceData,
                                 const size_t                                  count)
@@ -316,11 +283,9 @@ namespace sol
         assert(materialInstances.try_emplace(instance->getUuid(), std::move(instance)).second);
 
         // Create descriptor pool and allocate descriptor sets.
-        instanceData.pool = createDescriptorPool(memoryManager->getDevice(), mtlLayout, dataSetCount);
+        instanceData.pool = createDescriptorPool(memoryManager->getDevice(), mtlLayout, dataSetCount, setIndex);
         allocateDescriptorSets(memoryManager->getDevice(), instanceData, dataSetCount);
 
         updateDescriptorSets(instanceData, *memoryManager, storageImages, storageBuffers, accelerationStructures);
     }
-
-
 }  // namespace sol
