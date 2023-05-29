@@ -121,6 +121,13 @@ namespace sol
         [[nodiscard]] const std::vector<VulkanDescriptorSetLayoutPtr>& getDescriptorSetLayouts() const;
 
         /**
+         * \brief Get a finalized VulkanDescriptorSetLayout by set index.
+         * \param set Descriptor set index.
+         * \return VulkanDescriptorSetLayout.
+         */
+        [[nodiscard]] const VulkanDescriptorSetLayout& getDescriptorSetLayout(size_t set) const;
+
+        /**
          * \brief Get the list of finalized VkPushConstantRanges.
          * \throws SolError Thrown if layout was not yet finalized.
          * \return VkPushConstantRanges.

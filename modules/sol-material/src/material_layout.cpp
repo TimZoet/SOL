@@ -123,6 +123,12 @@ namespace sol
         return layouts;
     }
 
+    const VulkanDescriptorSetLayout& MaterialLayout::getDescriptorSetLayout(const size_t set) const
+    {
+        requireFinalized();
+        return *layouts.at(set);
+    }
+
     const std::vector<VkPushConstantRange>& MaterialLayout::getPushConstants() const
     {
         requireFinalized();
