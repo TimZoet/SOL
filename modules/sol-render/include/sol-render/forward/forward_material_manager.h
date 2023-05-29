@@ -28,6 +28,7 @@
 ////////////////////////////////////////////////////////////////
 
 #include "sol-render/fwd.h"
+#include "sol-render/forward/fwd.h"
 
 namespace sol
 {
@@ -82,12 +83,10 @@ namespace sol
             std::vector<uint32_t> checksum;
         };
 
-        using InstanceDataPtr = std::unique_ptr<InstanceData>;
-
+        using InstanceDataPtr     = std::unique_ptr<InstanceData>;
         using MaterialMap         = std::unordered_map<uuids::uuid, ForwardMaterialPtr>;
         using MaterialInstanceMap = std::unordered_map<uuids::uuid, ForwardMaterialInstancePtr>;
         using InstanceDataMap     = std::unordered_map<const ForwardMaterialInstance*, InstanceDataPtr>;
-        using PipelineMap         = std::unordered_map<const ForwardMaterial*, std::vector<Pipeline>>;
 
         ////////////////////////////////////////////////////////////////
         // Constructors.
@@ -117,13 +116,11 @@ namespace sol
          */
         [[nodiscard]] size_t getDataSetCount() const noexcept;
 
-        [[nodiscard]] const PipelineMap& getPipelines() const noexcept;
-
         [[nodiscard]] const InstanceDataMap& getInstanceData() const noexcept;
 
-        VulkanGraphicsPipeline& getPipeline(const ForwardMaterial& material,
-                                            RenderSettings&        renderSettings,
-                                            VulkanRenderPass&      renderPass) const;
+        VulkanGraphicsPipeline& getPipeline(const ForwardMaterial&  material,
+                                            const RenderSettings&   renderSettings,
+                                            const VulkanRenderPass& renderPass) const;
 
         ////////////////////////////////////////////////////////////////
         // Setters.
@@ -171,8 +168,9 @@ namespace sol
          * \param renderPass RenderPass.
          * \return True if a new pipeline was created, false if one already existed.
          */
-        bool
-          createPipeline(const ForwardMaterial& material, RenderSettings& renderSettings, VulkanRenderPass& renderPass);
+        bool createPipeline(const ForwardMaterial& material,
+                            RenderSettings&        renderSettings,
+                            VulkanRenderPass&      renderPass) const;
 
         void destroyMaterial(ForwardMaterial& material);
 
@@ -193,10 +191,6 @@ namespace sol
 
         void addMaterialInstanceImpl(ForwardMaterial& material, ForwardMaterialInstancePtr instance);
 
-        static VulkanGraphicsPipelinePtr createPipelineImpl(const ForwardMaterial& material,
-                                                            RenderSettings&        renderSettings,
-                                                            VulkanRenderPass&      renderPass);
-
         ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////
@@ -207,7 +201,7 @@ namespace sol
 
         MaterialInstanceMap materialInstances;
 
-        PipelineMap pipelines;
+        ForwardPipelineCachePtr pipelineCache;
 
         std::unique_ptr<UniformBufferManager> uniformBufferManager;
 

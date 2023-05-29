@@ -27,6 +27,7 @@
 
 #include "sol-render/common/descriptors.h"
 #include "sol-render/common/render_settings.h"
+#include "sol-render/forward/forward_pipeline_cache.h"
 
 namespace
 {
@@ -147,7 +148,10 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    ForwardMaterialManager::ForwardMaterialManager(MemoryManager& memManager) : memoryManager(&memManager) {}
+    ForwardMaterialManager::ForwardMaterialManager(MemoryManager& memManager) :
+        memoryManager(&memManager), pipelineCache(std::make_unique<ForwardPipelineCache>())
+    {
+    }
 
     ForwardMaterialManager::~ForwardMaterialManager() noexcept = default;
 
@@ -157,30 +161,16 @@ namespace sol
 
     size_t ForwardMaterialManager::getDataSetCount() const noexcept { return dataSetCount; }
 
-    const ForwardMaterialManager::PipelineMap& ForwardMaterialManager::getPipelines() const noexcept
-    {
-        return pipelines;
-    }
-
     const ForwardMaterialManager::InstanceDataMap& ForwardMaterialManager::getInstanceData() const noexcept
     {
         return instanceDataMap;
     }
 
-    VulkanGraphicsPipeline& ForwardMaterialManager::getPipeline(const ForwardMaterial& material,
-                                                                RenderSettings&        renderSettings,
-                                                                VulkanRenderPass&      renderPass) const
+    VulkanGraphicsPipeline& ForwardMaterialManager::getPipeline(const ForwardMaterial&  material,
+                                                                const RenderSettings&   renderSettings,
+                                                                const VulkanRenderPass& renderPass) const
     {
-        const auto it = pipelines.find(&material);
-        if (it == pipelines.end()) throw SolError("Cannot get pipeline for ForwardMaterial: no pipelines created yet.");
-
-        for (const auto& obj : it->second)
-        {
-            if (obj.renderSettings == &renderSettings && obj.renderPass == &renderPass) return *obj.pipeline;
-        }
-
-        throw SolError(
-          "Cannot get pipeline for ForwardMaterial: no pipeline with compatible settings and renderpass found.");
+        return pipelineCache->getPipeline(material, renderSettings, renderPass);
     }
 
     ////////////////////////////////////////////////////////////////
@@ -202,34 +192,9 @@ namespace sol
 
     bool ForwardMaterialManager::createPipeline(const ForwardMaterial& material,
                                                 RenderSettings&        renderSettings,
-                                                VulkanRenderPass&      renderPass)
+                                                VulkanRenderPass&      renderPass) const
     {
-        // Look for existing pipeline list for this material.
-        const auto it = pipelines.find(&material);
-
-        // None found, create whole new list with new pipeline.
-        if (it == pipelines.end())
-        {
-            std::vector<Pipeline> p;
-            p.emplace_back(Pipeline{.pipeline       = createPipelineImpl(material, renderSettings, renderPass),
-                                    .renderSettings = &renderSettings,
-                                    .renderPass     = &renderPass});
-            pipelines.try_emplace(&material, std::move(p));
-            return true;
-        }
-
-        // Look for pipeline with same settings.
-        for (const auto& obj : it->second)
-        {
-            if (obj.renderSettings == &renderSettings && obj.renderPass == &renderPass) return false;
-        }
-
-        // Create new pipeline and add to list.
-        it->second.emplace_back(Pipeline{.pipeline       = createPipelineImpl(material, renderSettings, renderPass),
-                                         .renderSettings = &renderSettings,
-                                         .renderPass     = &renderPass});
-
-        return true;
+        return pipelineCache->createPipeline(material, renderSettings, renderPass);
     }
 
     void ForwardMaterialManager::destroyMaterial(ForwardMaterial& material)
@@ -237,7 +202,7 @@ namespace sol
         if (&material.getMaterialManager() != this)
             throw SolError("Cannot destroy material that is part of a different manager.");
 
-        assert(pipelines.erase(&material));
+        assert(pipelineCache->destroyPipeline(material));
         for (auto* inst : material.getInstances()) destroyMaterialInstance(*inst);
         assert(materials.erase(material.getUuid()));
     }
@@ -319,53 +284,6 @@ namespace sol
         if (!ubbsBoth.empty()) createInstanceAndBindingUniformBuffers(instanceData, *uniformBufferManager, ubbsBoth);
 
         updateDescriptorSets(instanceData.descriptorSets, *instanceData.materialInstance, instanceData.uniformBuffers);
-    }
-
-    VulkanGraphicsPipelinePtr ForwardMaterialManager::createPipelineImpl(const ForwardMaterial& material,
-                                                                         RenderSettings&        renderSettings,
-                                                                         VulkanRenderPass&      renderPass)
-    {
-        const auto* meshLayout = material.getMeshLayout();
-        if (!meshLayout) throw SolError("Cannot create pipeline: material has no mesh layout.");
-
-        // TODO: To what extent are the RenderSettings needed here? Things like culling should perhaps be put in the ForwardMaterial class instead.
-        VulkanGraphicsPipeline::Settings pipelineSettings;
-        pipelineSettings.renderPass   = renderPass;
-        pipelineSettings.vertexShader = const_cast<VulkanShaderModule&>(material.getVertexShader());  //TODO: const_cast
-        pipelineSettings.fragmentShader       = const_cast<VulkanShaderModule&>(material.getFragmentShader());
-        pipelineSettings.vertexAttributes     = meshLayout->getAttributeDescriptions();
-        pipelineSettings.vertexBindings       = meshLayout->getBindingDescriptions();
-        pipelineSettings.descriptorSetLayouts = material.getLayout().getDescriptorSetLayouts();
-        pipelineSettings.pushConstants        = material.getLayout().getPushConstants();
-        pipelineSettings.colorBlending        = material.getForwardLayout().getColorBlending();
-
-        VkPipelineRasterizationStateCreateInfo rasterization{};
-        rasterization.sType     = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-        rasterization.lineWidth = 1.0f;
-        switch (renderSettings.getPolyonMode())
-        {
-        case RenderSettings::PolygonMode::Fill: rasterization.polygonMode = VK_POLYGON_MODE_FILL; break;
-        case RenderSettings::PolygonMode::Line: rasterization.polygonMode = VK_POLYGON_MODE_LINE; break;
-        case RenderSettings::PolygonMode::Point: rasterization.polygonMode = VK_POLYGON_MODE_POINT; break;
-        }
-        switch (renderSettings.getCullMode())
-        {
-        case RenderSettings::CullMode::None: rasterization.cullMode = VK_CULL_MODE_NONE; break;
-        case RenderSettings::CullMode::Front: rasterization.cullMode = VK_CULL_MODE_FRONT_BIT; break;
-        case RenderSettings::CullMode::Back: rasterization.cullMode = VK_CULL_MODE_BACK_BIT; break;
-        case RenderSettings::CullMode::Both: rasterization.cullMode = VK_CULL_MODE_FRONT_AND_BACK; break;
-        }
-        switch (renderSettings.getFrontFace())
-        {
-        case RenderSettings::FrontFace::Clockwise: rasterization.frontFace = VK_FRONT_FACE_CLOCKWISE; break;
-        case RenderSettings::FrontFace::CounterClockwise:
-            rasterization.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-            break;
-        }
-
-        pipelineSettings.rasterization = rasterization;
-
-        return VulkanGraphicsPipeline::create(pipelineSettings);
     }
 
     ////////////////////////////////////////////////////////////////
