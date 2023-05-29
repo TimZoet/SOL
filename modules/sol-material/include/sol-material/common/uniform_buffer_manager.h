@@ -34,6 +34,25 @@ namespace sol
         // Types.
         ////////////////////////////////////////////////////////////////
 
+        struct UniformBufferReference
+        {
+            //TODO: Slot in uniformBuffer must be released.
+            /**
+             * \brief Uniform buffer.
+             */
+            UniformBuffer* uniformBuffer = nullptr;
+
+            /**
+             * \brief Slot index.
+             */
+            size_t slot = 0;
+
+            /**
+             * \brief Offset in buffer in bytes.
+             */
+            size_t offset = 0;
+        };
+
         using BufferMap = std::unordered_map<const Material*, std::vector<UniformBufferPtr>>;
 
         ////////////////////////////////////////////////////////////////

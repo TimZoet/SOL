@@ -53,6 +53,10 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+        [[nodiscard]] VulkanDevice& getDevice() noexcept override;
+
+        [[nodiscard]] const VulkanDevice& getDevice() const noexcept override;
+
         /**
          * \brief Get the IRayTracingMaterialManager.
          * \return IRayTracingMaterialManager.
@@ -95,7 +99,9 @@ namespace sol
 
         [[nodiscard]] const VulkanShaderModule& getIntersectionShader() const noexcept;
 
-        [[nodiscard]] const RayTracingMaterialLayout& getLayout() const noexcept;
+        [[nodiscard]] const MaterialLayout& getLayout() const noexcept override;
+
+        [[nodiscard]] const RayTracingMaterialLayout& getRayTracingLayout() const noexcept;
 
         [[nodiscard]] const std::vector<RayTracingMaterialInstance*>& getInstances() const noexcept;
 

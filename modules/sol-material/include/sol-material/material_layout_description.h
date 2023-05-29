@@ -303,6 +303,12 @@ namespace sol
         [[nodiscard]] size_t getSetCount() const noexcept;
 
         /**
+         * \brief Get the total number of bindings across all descriptor sets.
+         * \return 
+         */
+        [[nodiscard]] size_t getBindingCount() const noexcept;
+
+        /**
          * \brief Get the total number of acceleration structures across all descriptor sets.
          * \return Number of acceleration structures.
          */

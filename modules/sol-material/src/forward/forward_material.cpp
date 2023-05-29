@@ -25,6 +25,10 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
+    VulkanDevice& ForwardMaterial::getDevice() noexcept { return fragmentShader->getDevice(); }
+
+    const VulkanDevice& ForwardMaterial::getDevice() const noexcept { return fragmentShader->getDevice(); }
+
     IForwardMaterialManager& ForwardMaterial::getMaterialManager() noexcept { return *materialManager; }
 
     const IForwardMaterialManager& ForwardMaterial::getMaterialManager() const noexcept { return *materialManager; }
@@ -33,7 +37,9 @@ namespace sol
 
     const VulkanShaderModule& ForwardMaterial::getFragmentShader() const noexcept { return *fragmentShader; }
 
-    const ForwardMaterialLayout& ForwardMaterial::getLayout() const noexcept { return layout; }
+    const MaterialLayout& ForwardMaterial::getLayout() const noexcept { return layout; }
+
+    const ForwardMaterialLayout& ForwardMaterial::getForwardLayout() const noexcept { return layout; }
 
     const MeshLayout* ForwardMaterial::getMeshLayout() const noexcept { return meshLayout; }
 

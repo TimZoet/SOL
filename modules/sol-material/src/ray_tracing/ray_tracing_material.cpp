@@ -33,6 +33,10 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
+    VulkanDevice& RayTracingMaterial::getDevice() noexcept { return raygenShader->getDevice(); }
+
+    const VulkanDevice& RayTracingMaterial::getDevice() const noexcept { return raygenShader->getDevice(); }
+
     IRayTracingMaterialManager& RayTracingMaterial::getMaterialManager() noexcept { return *materialManager; }
 
     const IRayTracingMaterialManager& RayTracingMaterial::getMaterialManager() const noexcept
@@ -70,7 +74,9 @@ namespace sol
 
     const VulkanShaderModule& RayTracingMaterial::getIntersectionShader() const noexcept { return *intersectionShader; }
 
-    const RayTracingMaterialLayout& RayTracingMaterial::getLayout() const noexcept { return layout; }
+    const MaterialLayout& RayTracingMaterial::getLayout() const noexcept { return layout; }
+
+    const RayTracingMaterialLayout& RayTracingMaterial::getRayTracingLayout() const noexcept { return layout; }
 
     const std::vector<RayTracingMaterialInstance*>& RayTracingMaterial::getInstances() const noexcept
     {

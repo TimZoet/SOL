@@ -50,6 +50,10 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+        [[nodiscard]] VulkanDevice& getDevice() noexcept override;
+
+        [[nodiscard]] const VulkanDevice& getDevice() const noexcept override;
+
         /**
          * \brief Get the IForwardMaterialManager.
          * \return IForwardMaterialManager.
@@ -66,7 +70,9 @@ namespace sol
 
         [[nodiscard]] const VulkanShaderModule& getFragmentShader() const noexcept;
 
-        [[nodiscard]] const ForwardMaterialLayout& getLayout() const noexcept;
+        [[nodiscard]] const MaterialLayout& getLayout() const noexcept override;
+
+        [[nodiscard]] const ForwardMaterialLayout& getForwardLayout() const noexcept;
 
         [[nodiscard]] const MeshLayout* getMeshLayout() const noexcept;
 

@@ -4,7 +4,6 @@
 // Standard includes.
 ////////////////////////////////////////////////////////////////
 
-#include <numeric>
 #include <ranges>
 #include <span>
 
@@ -15,18 +14,12 @@
 #include "sol-core/utils.h"
 #include "sol-core/vulkan_buffer.h"
 #include "sol-core/vulkan_descriptor_pool.h"
-#include "sol-core/vulkan_descriptor_set_layout.h"
 #include "sol-core/vulkan_device.h"
-#include "sol-core/vulkan_image_view.h"
 #include "sol-core/vulkan_graphics_pipeline.h"
-#include "sol-core/vulkan_sampler.h"
 #include "sol-error/sol_error.h"
-#include "sol-error/vulkan_error_handler.h"
 #include "sol-material/forward/forward_material.h"
 #include "sol-material/forward/forward_material_instance.h"
 #include "sol-memory/memory_manager.h"
-#include "sol-texture/image2d.h"
-#include "sol-texture/texture2d.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
@@ -37,30 +30,6 @@
 
 namespace
 {
-    void allocateDescriptorSets(const sol::VulkanDevice&                   device,
-                                sol::ForwardMaterialManager::InstanceData& instanceData,
-                                const size_t                               count)
-    {
-        const auto& materialInstance = *instanceData.materialInstance;
-        const auto& material         = materialInstance.getForwardMaterial();
-        const auto& mtlLayout        = material.getLayout();
-        const auto  setLayout        = mtlLayout.getDescriptorSetLayouts()[materialInstance.getSetIndex()]->get();
-
-        // Repeat layout for each set that needs to be allocated.
-        const std::vector vkLayouts(count, setLayout);
-
-        // Prepare allocation info.
-        VkDescriptorSetAllocateInfo allocInfo{};
-        allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool     = instanceData.pool->get();
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(count);
-        allocInfo.pSetLayouts        = vkLayouts.data();
-
-        // Allocate.
-        instanceData.descriptorSets.resize(count);
-        sol::handleVulkanError(vkAllocateDescriptorSets(device.get(), &allocInfo, instanceData.descriptorSets.data()));
-    }
-
     void createNoneUniformBuffers(
       sol::ForwardMaterialManager::InstanceData& instanceData,
       sol::UniformBufferManager&                 manager,
@@ -169,99 +138,6 @@ namespace
             instanceData.uniformBuffers[index] = {.uniformBuffer = uniformBuffer, .slot = slot, .offset = offset};
             offset += ubb->size * ubb->count;
         }
-    }
-
-    void updateDescriptorSets(
-      const sol::ForwardMaterialManager::InstanceData&                                   instanceData,
-      sol::MemoryManager&                                                                manager,
-      const std::span<const sol::MaterialLayoutDescription::UniformBufferBinding>        uniformBufferBindings,
-      const std::span<const sol::MaterialLayoutDescription::CombinedImageSamplerBinding> combinedImageSamplerBindings)
-    {
-        const auto perSetBufferInfoCount = std::accumulate(
-          uniformBufferBindings.begin(), uniformBufferBindings.end(), 0, [](uint32_t sum, const auto& elem) {
-              return sum + elem.count;
-          });
-        const auto perSetImageInfoCount =
-          std::accumulate(combinedImageSamplerBindings.begin(),
-                          combinedImageSamplerBindings.end(),
-                          0,
-                          [](uint32_t sum, const auto& elem) { return sum + elem.count; });
-        std::vector bufferInfos(perSetBufferInfoCount * instanceData.descriptorSets.size(), VkDescriptorBufferInfo{});
-        std::vector imageInfos(perSetImageInfoCount * instanceData.descriptorSets.size(), VkDescriptorImageInfo{});
-
-        // Create descriptor writes. Objects are laid out per set, and then per binding:
-        // set<0>{ binding<0>, binding<1>, ..., binding<N> }, set<1>{...}, set<M>{ binding<0>, binding<1>, ..., binding<N>}
-        const size_t bindingCount = uniformBufferBindings.size() + combinedImageSamplerBindings.size();
-        std::vector  descriptorWrites(bindingCount * instanceData.descriptorSets.size(), VkWriteDescriptorSet{});
-
-        for (size_t set = 0; set < instanceData.descriptorSets.size(); set++)
-        {
-            size_t bufferInfoOffset = 0;
-
-            for (size_t i = 0; i < uniformBufferBindings.size(); i++)
-            {
-                const auto& ubb                           = uniformBufferBindings[i];
-                const auto& [uniformBuffer, slot, offset] = instanceData.uniformBuffers[i];
-
-                for (size_t elem = 0; elem < ubb.count; elem++)
-                {
-                    auto& bufferInfo  = bufferInfos[set * perSetBufferInfoCount + bufferInfoOffset + elem];
-                    bufferInfo.buffer = uniformBuffer->getBuffer(set).get();
-                    bufferInfo.offset = offset + elem * ubb.size;
-                    bufferInfo.range  = ubb.size;
-                }
-
-                auto& write            = descriptorWrites[set * bindingCount + ubb.binding];
-                write.sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                write.pNext            = nullptr;
-                write.dstSet           = instanceData.descriptorSets[set];
-                write.dstBinding       = ubb.binding;
-                write.dstArrayElement  = 0;
-                write.descriptorCount  = ubb.count;
-                write.descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                write.pImageInfo       = nullptr;
-                write.pBufferInfo      = bufferInfos.data() + set * perSetBufferInfoCount + bufferInfoOffset;
-                write.pTexelBufferView = nullptr;
-
-                bufferInfoOffset += ubb.count;
-            }
-
-
-            size_t imageInfoOffset = 0;
-
-            for (size_t i = 0; i < combinedImageSamplerBindings.size(); i++)
-            {
-                const auto& sampler = combinedImageSamplerBindings[i];
-                for (size_t elem = 0; elem < sampler.count; elem++)
-                {
-                    auto& imageInfo       = imageInfos[set * perSetImageInfoCount + imageInfoOffset + elem];
-                    auto& texture         = *instanceData.materialInstance->getTextureData(sampler.binding);
-                    imageInfo.sampler     = texture.getSampler().get();
-                    imageInfo.imageView   = texture.getImageView()->get();
-                    imageInfo.imageLayout = texture.getImage()->getImageLayout();
-                }
-
-                auto& write            = descriptorWrites[set * bindingCount + sampler.binding];
-                write.sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                write.pNext            = nullptr;
-                write.dstSet           = instanceData.descriptorSets[set];
-                write.dstBinding       = sampler.binding;
-                write.dstArrayElement  = 0;
-                write.descriptorCount  = sampler.count;
-                write.descriptorType   = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                write.pImageInfo       = imageInfos.data() + set * perSetImageInfoCount + imageInfoOffset;
-                write.pBufferInfo      = nullptr;
-                write.pTexelBufferView = nullptr;
-
-                imageInfoOffset += sampler.count;
-            }
-        }
-
-        vkUpdateDescriptorSets(manager.getDevice().get(),
-                               static_cast<uint32_t>(descriptorWrites.size()),
-                               descriptorWrites.data(),
-                               0,
-                               nullptr);
     }
 }  // namespace
 
@@ -397,8 +273,7 @@ namespace sol
         const auto& mtlLayout = mtl.getLayout();
         const auto  setIndex  = instance->getSetIndex();
 
-        const auto combinedImageSamplers = mtlLayout.getCombinedImageSamplers(setIndex);
-        const auto uniformBuffers        = mtlLayout.getUniformBuffers(setIndex);
+        const auto uniformBuffers = mtlLayout.getUniformBuffers(setIndex);
 
         // Create new instance data.
         auto& instanceData =
@@ -410,7 +285,8 @@ namespace sol
 
         // Create descriptor pool and allocate descriptor sets.
         instanceData.pool = createDescriptorPool(memoryManager->getDevice(), mtlLayout, dataSetCount, setIndex);
-        allocateDescriptorSets(memoryManager->getDevice(), instanceData, dataSetCount);
+        instanceData.descriptorSets =
+          allocateDescriptorSets(mtlLayout.getDescriptorSetLayout(setIndex), *instanceData.pool, dataSetCount);
 
         // Allocate a reference to a uniform buffer for each binding.
         instanceData.uniformBuffers.resize(uniformBuffers.size());
@@ -442,7 +318,7 @@ namespace sol
         if (!ubbsBinding.empty()) createBindingUniformBuffers(instanceData, *uniformBufferManager, ubbsBinding);
         if (!ubbsBoth.empty()) createInstanceAndBindingUniformBuffers(instanceData, *uniformBufferManager, ubbsBoth);
 
-        updateDescriptorSets(instanceData, *memoryManager, uniformBuffers, combinedImageSamplers);
+        updateDescriptorSets(instanceData.descriptorSets, *instanceData.materialInstance, instanceData.uniformBuffers);
     }
 
     VulkanGraphicsPipelinePtr ForwardMaterialManager::createPipelineImpl(const ForwardMaterial& material,
@@ -461,7 +337,7 @@ namespace sol
         pipelineSettings.vertexBindings       = meshLayout->getBindingDescriptions();
         pipelineSettings.descriptorSetLayouts = material.getLayout().getDescriptorSetLayouts();
         pipelineSettings.pushConstants        = material.getLayout().getPushConstants();
-        pipelineSettings.colorBlending        = material.getLayout().getColorBlending();
+        pipelineSettings.colorBlending        = material.getForwardLayout().getColorBlending();
 
         VkPipelineRasterizationStateCreateInfo rasterization{};
         rasterization.sType     = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;

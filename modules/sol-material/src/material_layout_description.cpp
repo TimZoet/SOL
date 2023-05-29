@@ -84,6 +84,12 @@ namespace sol
         return max;
     }
 
+    size_t MaterialLayoutDescription::getBindingCount() const noexcept
+    {
+        return getAccelerationStructureCount() + getCombinedImageSamplerCount() + getStorageBufferCount() +
+               getStorageImageCount() + getUniformBufferCount();
+    }
+
     size_t MaterialLayoutDescription::getAccelerationStructureCount() const noexcept
     {
         return accelerationStructures.size();

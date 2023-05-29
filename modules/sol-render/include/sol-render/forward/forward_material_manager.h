@@ -51,25 +51,6 @@ namespace sol
 
         struct InstanceData
         {
-            struct UniformBufferReference
-            {
-                //TODO: Slot in uniformBuffer must be released.
-                /**
-                 * \brief Uniform buffer.
-                 */
-                UniformBuffer* uniformBuffer = nullptr;
-
-                /**
-                 * \brief Slot index.
-                 */
-                size_t slot = 0;
-
-                /**
-                 * \brief Offset in buffer in bytes.
-                 */
-                size_t offset = 0;
-            };
-
             /**
              * \brief Material instance.
              */
@@ -88,7 +69,7 @@ namespace sol
             /**
              * \brief References to uniform buffers, one for each uniform binding.
              */
-            std::vector<UniformBufferReference> uniformBuffers;
+            std::vector<UniformBufferManager::UniformBufferReference> uniformBuffers;
 
             /**
              * \brief Flags indicating data is stale. One for each uniform binding, repeated for each data set.

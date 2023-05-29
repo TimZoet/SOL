@@ -41,15 +41,6 @@ namespace sol
 
     const RayTracingMaterial& RayTracingMaterialInstance::getRayTracingMaterial() const noexcept { return *material; }
 
-    Texture2D* RayTracingMaterialInstance::getTextureData(size_t) const { return nullptr; }
-
-    VulkanBuffer* RayTracingMaterialInstance::getStorageBufferData(size_t) const { return nullptr; }
-
-    VulkanTopLevelAccelerationStructure* RayTracingMaterialInstance::getAccelerationStructureData(size_t) const
-    {
-        return nullptr;
-    }
-
     ////////////////////////////////////////////////////////////////
     // Setters.
     ////////////////////////////////////////////////////////////////
