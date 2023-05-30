@@ -12,6 +12,7 @@
 
 #include "sol-core/utils.h"
 #include "sol-core/vulkan_buffer.h"
+#include "sol-core/vulkan_compute_pipeline.h"
 #include "sol-core/vulkan_descriptor_pool.h"
 #include "sol-core/vulkan_device.h"
 #include "sol-error/sol_error.h"
@@ -93,6 +94,27 @@ namespace sol
         return pipelineCache->createPipeline(material);
     }
 
+    void ComputeMaterialManager::bindDescriptorSets(std::span<const ComputeMaterialInstance* const> instances,
+                                                    VkCommandBuffer                                 commandBuffer,
+                                                    const VulkanComputePipeline&                    pipeline,
+                                                    const size_t                                    index) const
+    {
+        std::vector<VkDescriptorSet> sets;
+        for (const auto* mtlInstance : instances)
+        {
+            sets.emplace_back(instanceDataMap.find(mtlInstance)->second->descriptorSets[index]);
+        }
+
+        vkCmdBindDescriptorSets(commandBuffer,
+                                VK_PIPELINE_BIND_POINT_COMPUTE,
+                                pipeline.getPipelineLayout(),
+                                0,
+                                static_cast<uint32_t>(sets.size()),
+                                sets.data(),
+                                0,
+                                nullptr);
+    }
+
     void ComputeMaterialManager::addMaterialImpl(ComputeMaterialPtr material)
     {
         material->setMaterialManager(*this);
@@ -107,9 +129,9 @@ namespace sol
         instance->setMaterialManager(*this);
         instance->setMaterial(material);
 
-        const auto& mtl                  = instance->getComputeMaterial();
-        const auto& mtlLayout            = mtl.getLayout();
-        const auto  setIndex             = instance->getSetIndex();
+        const auto& mtl       = instance->getComputeMaterial();
+        const auto& mtlLayout = mtl.getLayout();
+        const auto  setIndex  = instance->getSetIndex();
 
         // Create new instance data.
         auto& instanceData =

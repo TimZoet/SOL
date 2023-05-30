@@ -29,7 +29,6 @@ namespace sol
     ////////////////////////////////////////////////////////////////
 
     VulkanGraphicsPipeline& ForwardPipelineCache::getPipeline(const ForwardMaterial&  material,
-                                                              const RenderSettings&   renderSettings,
                                                               const VulkanRenderPass& renderPass) const
     {
         const auto it = pipelines.find(&material);
@@ -37,7 +36,7 @@ namespace sol
 
         for (const auto& obj : it->second)
         {
-            if (obj.renderSettings == &renderSettings && obj.renderPass == &renderPass) return *obj.pipeline;
+            if (obj.renderPass == &renderPass) return *obj.pipeline;
         }
 
         throw SolError(
@@ -48,9 +47,7 @@ namespace sol
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    bool ForwardPipelineCache::createPipeline(const ForwardMaterial& material,
-                                              RenderSettings&        renderSettings,
-                                              VulkanRenderPass&      renderPass)
+    bool ForwardPipelineCache::createPipeline(const ForwardMaterial& material, VulkanRenderPass& renderPass)
     {
         // Look for existing pipeline list for this material.
         const auto it = pipelines.find(&material);
@@ -59,9 +56,7 @@ namespace sol
         if (it == pipelines.end())
         {
             std::vector<Pipeline> p;
-            p.emplace_back(Pipeline{.pipeline       = createPipelineImpl(material, renderSettings, renderPass),
-                                    .renderSettings = &renderSettings,
-                                    .renderPass     = &renderPass});
+            p.emplace_back(Pipeline{.pipeline = createPipelineImpl(material, renderPass), .renderPass = &renderPass});
             pipelines.try_emplace(&material, std::move(p));
             return true;
         }
@@ -69,13 +64,12 @@ namespace sol
         // Look for pipeline with same settings.
         for (const auto& obj : it->second)
         {
-            if (obj.renderSettings == &renderSettings && obj.renderPass == &renderPass) return false;
+            if (obj.renderPass == &renderPass) return false;
         }
 
         // Create new pipeline and add to list.
-        it->second.emplace_back(Pipeline{.pipeline       = createPipelineImpl(material, renderSettings, renderPass),
-                                         .renderSettings = &renderSettings,
-                                         .renderPass     = &renderPass});
+        it->second.emplace_back(
+          Pipeline{.pipeline = createPipelineImpl(material, renderPass), .renderPass = &renderPass});
 
         return true;
     }
@@ -91,7 +85,6 @@ namespace sol
     }
 
     VulkanGraphicsPipelinePtr ForwardPipelineCache::createPipelineImpl(const ForwardMaterial& material,
-                                                                       RenderSettings&        renderSettings,
                                                                        VulkanRenderPass&      renderPass)
     {
         const auto* meshLayout = material.getMeshLayout();
@@ -111,23 +104,23 @@ namespace sol
         VkPipelineRasterizationStateCreateInfo rasterization{};
         rasterization.sType     = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
         rasterization.lineWidth = 1.0f;
-        switch (renderSettings.getPolyonMode())
+        switch (material.getPolyonMode())
         {
-        case RenderSettings::PolygonMode::Fill: rasterization.polygonMode = VK_POLYGON_MODE_FILL; break;
-        case RenderSettings::PolygonMode::Line: rasterization.polygonMode = VK_POLYGON_MODE_LINE; break;
-        case RenderSettings::PolygonMode::Point: rasterization.polygonMode = VK_POLYGON_MODE_POINT; break;
+        case ForwardMaterial::PolygonMode::Fill: rasterization.polygonMode = VK_POLYGON_MODE_FILL; break;
+        case ForwardMaterial::PolygonMode::Line: rasterization.polygonMode = VK_POLYGON_MODE_LINE; break;
+        case ForwardMaterial::PolygonMode::Point: rasterization.polygonMode = VK_POLYGON_MODE_POINT; break;
         }
-        switch (renderSettings.getCullMode())
+        switch (material.getCullMode())
         {
-        case RenderSettings::CullMode::None: rasterization.cullMode = VK_CULL_MODE_NONE; break;
-        case RenderSettings::CullMode::Front: rasterization.cullMode = VK_CULL_MODE_FRONT_BIT; break;
-        case RenderSettings::CullMode::Back: rasterization.cullMode = VK_CULL_MODE_BACK_BIT; break;
-        case RenderSettings::CullMode::Both: rasterization.cullMode = VK_CULL_MODE_FRONT_AND_BACK; break;
+        case ForwardMaterial::CullMode::None: rasterization.cullMode = VK_CULL_MODE_NONE; break;
+        case ForwardMaterial::CullMode::Front: rasterization.cullMode = VK_CULL_MODE_FRONT_BIT; break;
+        case ForwardMaterial::CullMode::Back: rasterization.cullMode = VK_CULL_MODE_BACK_BIT; break;
+        case ForwardMaterial::CullMode::Both: rasterization.cullMode = VK_CULL_MODE_FRONT_AND_BACK; break;
         }
-        switch (renderSettings.getFrontFace())
+        switch (material.getFrontFace())
         {
-        case RenderSettings::FrontFace::Clockwise: rasterization.frontFace = VK_FRONT_FACE_CLOCKWISE; break;
-        case RenderSettings::FrontFace::CounterClockwise:
+        case ForwardMaterial::FrontFace::Clockwise: rasterization.frontFace = VK_FRONT_FACE_CLOCKWISE; break;
+        case ForwardMaterial::FrontFace::CounterClockwise:
             rasterization.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
             break;
         }

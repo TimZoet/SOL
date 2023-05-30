@@ -167,10 +167,9 @@ namespace sol
     }
 
     VulkanGraphicsPipeline& ForwardMaterialManager::getPipeline(const ForwardMaterial&  material,
-                                                                const RenderSettings&   renderSettings,
                                                                 const VulkanRenderPass& renderPass) const
     {
-        return pipelineCache->getPipeline(material, renderSettings, renderPass);
+        return pipelineCache->getPipeline(material, renderPass);
     }
 
     ////////////////////////////////////////////////////////////////
@@ -190,11 +189,30 @@ namespace sol
     // Materials.
     ////////////////////////////////////////////////////////////////
 
-    bool ForwardMaterialManager::createPipeline(const ForwardMaterial& material,
-                                                RenderSettings&        renderSettings,
-                                                VulkanRenderPass&      renderPass) const
+    bool ForwardMaterialManager::createPipeline(const ForwardMaterial& material, VulkanRenderPass& renderPass) const
     {
-        return pipelineCache->createPipeline(material, renderSettings, renderPass);
+        return pipelineCache->createPipeline(material, renderPass);
+    }
+
+    void ForwardMaterialManager::bindDescriptorSets(std::span<const ForwardMaterialInstance* const> instances,
+                                                    VkCommandBuffer                                 commandBuffer,
+                                                    const VulkanGraphicsPipeline&                   pipeline,
+                                                    size_t                                          index) const
+    {
+        std::vector<VkDescriptorSet> sets;
+        for (const auto* mtlInstance : instances)
+        {
+            sets.emplace_back(instanceDataMap.find(mtlInstance)->second->descriptorSets[index]);
+        }
+
+        vkCmdBindDescriptorSets(commandBuffer,
+                                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                pipeline.getPipelineLayout(),
+                                0,
+                                static_cast<uint32_t>(sets.size()),
+                                sets.data(),
+                                0,
+                                nullptr);
     }
 
     void ForwardMaterialManager::destroyMaterial(ForwardMaterial& material)

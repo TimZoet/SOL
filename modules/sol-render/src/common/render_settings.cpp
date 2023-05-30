@@ -26,12 +26,6 @@ namespace sol
 
     uint32_t RenderSettings::getClearStencil() const noexcept { return clearStencil; }
 
-    RenderSettings::CullMode RenderSettings::getCullMode() const noexcept { return cullMode; }
-
-    RenderSettings::FrontFace RenderSettings::getFrontFace() const noexcept { return frontFace; }
-
-    RenderSettings::PolygonMode RenderSettings::getPolyonMode() const noexcept { return polygonMode; }
-
     ////////////////////////////////////////////////////////////////
     // Setters.
     ////////////////////////////////////////////////////////////////
@@ -47,10 +41,4 @@ namespace sol
     void RenderSettings::setClearDepth(const float value) noexcept { clearDepth = value; }
 
     void RenderSettings::setClearStencil(const uint32_t value) noexcept { clearStencil = value; }
-
-    void RenderSettings::setCullMode(const CullMode value) noexcept { cullMode = value; }
-
-    void RenderSettings::setFrontFace(const FrontFace value) noexcept { frontFace = value; }
-
-    void RenderSettings::setPolygonMode(PolygonMode value) noexcept { polygonMode = value; }
 }  // namespace sol

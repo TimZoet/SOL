@@ -5,7 +5,6 @@
 ////////////////////////////////////////////////////////////////
 
 #include "sol-error/sol_error.h"
-#include "sol-render/compute/compute_material_manager.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
@@ -27,7 +26,7 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    ComputeMaterialManager* UpdateComputeMaterialManagerCommand::getMaterialManager() const noexcept
+    IComputeMaterialManager* UpdateComputeMaterialManagerCommand::getMaterialManager() const noexcept
     {
         return materialManager;
     }
@@ -38,7 +37,7 @@ namespace sol
     // Setters.
     ////////////////////////////////////////////////////////////////
 
-    void UpdateComputeMaterialManagerCommand::setMaterialManager(ComputeMaterialManager& manager)
+    void UpdateComputeMaterialManagerCommand::setMaterialManager(IComputeMaterialManager& manager)
     {
         commandQueue->requireNonFinalized();
         materialManager = &manager;

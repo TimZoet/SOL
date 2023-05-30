@@ -5,7 +5,7 @@
 ////////////////////////////////////////////////////////////////
 
 #include "sol-error/sol_error.h"
-#include "sol-render/forward/forward_material_manager.h"
+#include "sol-material/forward/i_forward_material_manager.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
@@ -27,7 +27,10 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    ForwardMaterialManager* UpdateForwardMaterialManagerCommand::getMaterialManager() const noexcept { return materialManager; }
+    IForwardMaterialManager* UpdateForwardMaterialManagerCommand::getMaterialManager() const noexcept
+    {
+        return materialManager;
+    }
 
     const uint32_t* UpdateForwardMaterialManagerCommand::getFrameIndexPtr() const noexcept { return frameIndexPtr; }
 
@@ -35,7 +38,7 @@ namespace sol
     // Setters.
     ////////////////////////////////////////////////////////////////
 
-    void UpdateForwardMaterialManagerCommand::setMaterialManager(ForwardMaterialManager& manager)
+    void UpdateForwardMaterialManagerCommand::setMaterialManager(IForwardMaterialManager& manager)
     {
         commandQueue->requireNonFinalized();
         materialManager = &manager;
@@ -53,8 +56,10 @@ namespace sol
 
     void UpdateForwardMaterialManagerCommand::finalize()
     {
-        if (!materialManager) throw SolError("Cannot finalize UpdateForwardMaterialManagerCommand: materialManager not set.");
-        if (!frameIndexPtr) throw SolError("Cannot finalize UpdateForwardMaterialManagerCommand: frameIndexPtr not set.");
+        if (!materialManager)
+            throw SolError("Cannot finalize UpdateForwardMaterialManagerCommand: materialManager not set.");
+        if (!frameIndexPtr)
+            throw SolError("Cannot finalize UpdateForwardMaterialManagerCommand: frameIndexPtr not set.");
     }
 
     void UpdateForwardMaterialManagerCommand::operator()() { materialManager->updateUniformBuffers(*frameIndexPtr); }

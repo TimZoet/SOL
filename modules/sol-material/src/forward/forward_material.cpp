@@ -45,6 +45,12 @@ namespace sol
 
     const std::vector<ForwardMaterialInstance*>& ForwardMaterial::getInstances() const noexcept { return instances; }
 
+    ForwardMaterial::CullMode ForwardMaterial::getCullMode() const noexcept { return cullMode; }
+
+    ForwardMaterial::FrontFace ForwardMaterial::getFrontFace() const noexcept { return frontFace; }
+
+    ForwardMaterial::PolygonMode ForwardMaterial::getPolyonMode() const noexcept { return polygonMode; }
+
     int32_t ForwardMaterial::getLayer() const noexcept { return layer; }
 
     ////////////////////////////////////////////////////////////////
@@ -69,6 +75,11 @@ namespace sol
 
     void ForwardMaterial::addInstance(ForwardMaterialInstance& instance) { instances.emplace_back(&instance); }
 
-    void ForwardMaterial::setLayer(const int32_t l) noexcept { layer = l; }
+    void ForwardMaterial::setCullMode(const CullMode value) noexcept { cullMode = value; }
 
+    void ForwardMaterial::setFrontFace(const FrontFace value) noexcept { frontFace = value; }
+
+    void ForwardMaterial::setPolygonMode(PolygonMode value) noexcept { polygonMode = value; }
+
+    void ForwardMaterial::setLayer(const int32_t l) noexcept { layer = l; }
 }  // namespace sol

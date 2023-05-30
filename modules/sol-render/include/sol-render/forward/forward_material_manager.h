@@ -27,28 +27,16 @@
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-render/fwd.h"
 #include "sol-render/forward/fwd.h"
 
 namespace sol
 {
-    // TODO: This class does not implement any virtual methods of the base yet, because there are none.
-    // Also, the ForwardRenderer is doing dynamic_casts because of that.
-    class ForwardMaterialManager : public IForwardMaterialManager
+    class ForwardMaterialManager final : public IForwardMaterialManager
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Types.
         ////////////////////////////////////////////////////////////////
-
-        struct Pipeline
-        {
-            VulkanGraphicsPipelinePtr pipeline;
-
-            RenderSettings* renderSettings = nullptr;
-
-            VulkanRenderPass* renderPass = nullptr;
-        };
 
         struct InstanceData
         {
@@ -119,8 +107,7 @@ namespace sol
         [[nodiscard]] const InstanceDataMap& getInstanceData() const noexcept;
 
         VulkanGraphicsPipeline& getPipeline(const ForwardMaterial&  material,
-                                            const RenderSettings&   renderSettings,
-                                            const VulkanRenderPass& renderPass) const;
+                                            const VulkanRenderPass& renderPass) const override;
 
         ////////////////////////////////////////////////////////////////
         // Setters.
@@ -164,13 +151,15 @@ namespace sol
         /**
          * \brief Create a new pipeline for the given material with the settings and renderpass, if one does not exist yet.
          * \param material ForwardMaterial.
-         * \param renderSettings RenderSettings.
          * \param renderPass RenderPass.
          * \return True if a new pipeline was created, false if one already existed.
          */
-        bool createPipeline(const ForwardMaterial& material,
-                            RenderSettings&        renderSettings,
-                            VulkanRenderPass&      renderPass) const;
+        bool createPipeline(const ForwardMaterial& material, VulkanRenderPass& renderPass) const override;
+
+        void bindDescriptorSets(std::span<const ForwardMaterialInstance* const> instances,
+                                VkCommandBuffer                                 commandBuffer,
+                                const VulkanGraphicsPipeline&                   pipeline,
+                                size_t                                          index) const override;
 
         void destroyMaterial(ForwardMaterial& material);
 
@@ -184,7 +173,7 @@ namespace sol
          * \brief Update the uniform buffers of all modified material instances.
          * \param index Data set index.
          */
-        void updateUniformBuffers(uint32_t index);
+        void updateUniformBuffers(uint32_t index) override;
 
     private:
         void addMaterialImpl(ForwardMaterialPtr material);

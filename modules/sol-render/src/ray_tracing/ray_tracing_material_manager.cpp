@@ -14,6 +14,7 @@
 #include "sol-core/vulkan_buffer.h"
 #include "sol-core/vulkan_descriptor_pool.h"
 #include "sol-core/vulkan_device.h"
+#include "sol-core/vulkan_ray_tracing_pipeline.h"
 #include "sol-error/sol_error.h"
 #include "sol-material/ray_tracing/ray_tracing_material.h"
 #include "sol-material/ray_tracing/ray_tracing_material_instance.h"
@@ -91,6 +92,27 @@ namespace sol
     bool RayTracingMaterialManager::createPipeline(const RayTracingMaterial& material) const
     {
         return pipelineCache->createPipeline(material);
+    }
+
+    void RayTracingMaterialManager::bindDescriptorSets(std::span<const RayTracingMaterialInstance* const> instances,
+                                                       VkCommandBuffer                                    commandBuffer,
+                                                       const VulkanRayTracingPipeline&                    pipeline,
+                                                       size_t                                             index) const
+    {
+        std::vector<VkDescriptorSet> sets;
+        for (const auto* mtlInstance : instances)
+        {
+            sets.emplace_back(instanceDataMap.find(mtlInstance)->second->descriptorSets[index]);
+        }
+
+        vkCmdBindDescriptorSets(commandBuffer,
+                                VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+                                pipeline.getPipelineLayout(),
+                                0,
+                                static_cast<uint32_t>(sets.size()),
+                                sets.data(),
+                                0,
+                                nullptr);
     }
 
     void RayTracingMaterialManager::addMaterialImpl(RayTracingMaterialPtr material)

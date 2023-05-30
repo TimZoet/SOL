@@ -32,8 +32,6 @@ namespace sol
         {
             VulkanGraphicsPipelinePtr pipeline;
 
-            RenderSettings* renderSettings = nullptr;
-
             VulkanRenderPass* renderPass = nullptr;
         };
 
@@ -61,7 +59,6 @@ namespace sol
         ////////////////////////////////////////////////////////////////
 
         [[nodiscard]] VulkanGraphicsPipeline& getPipeline(const ForwardMaterial&  material,
-                                                          const RenderSettings&   renderSettings,
                                                           const VulkanRenderPass& renderPass) const;
 
         ////////////////////////////////////////////////////////////////
@@ -73,8 +70,7 @@ namespace sol
          * \param material ForwardMaterial.
          * \return True if a new pipeline was created, false if one already existed.
          */
-        bool
-          createPipeline(const ForwardMaterial& material, RenderSettings& renderSettings, VulkanRenderPass& renderPass);
+        bool createPipeline(const ForwardMaterial& material, VulkanRenderPass& renderPass);
 
         ////////////////////////////////////////////////////////////////
         // Destroy.
@@ -84,7 +80,6 @@ namespace sol
 
     private:
         static VulkanGraphicsPipelinePtr createPipelineImpl(const ForwardMaterial& material,
-                                                            RenderSettings&        renderSettings,
                                                             VulkanRenderPass&      renderPass);
 
         ////////////////////////////////////////////////////////////////
