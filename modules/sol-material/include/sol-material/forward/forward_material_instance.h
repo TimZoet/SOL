@@ -64,14 +64,6 @@ namespace sol
 
         [[nodiscard]] const ForwardMaterial& getForwardMaterial() const noexcept;
 
-        [[nodiscard]] virtual uint32_t getSetIndex() const = 0;
-
-        [[nodiscard]] virtual const void* getUniformBufferData(size_t binding) const = 0;
-
-        [[nodiscard]] virtual bool isUniformBufferStale(size_t binding) const = 0;
-
-        [[nodiscard]] virtual Texture2D* getTextureData(size_t binding) const = 0;
-
         ////////////////////////////////////////////////////////////////
         // Setters.
         ////////////////////////////////////////////////////////////////

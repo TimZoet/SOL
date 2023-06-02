@@ -4,7 +4,7 @@
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-render/ray_tracing/fwd.h"
+#include "sol-material/fwd.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
@@ -37,7 +37,7 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] RayTracingMaterialManager* getMaterialManager() const noexcept;
+        [[nodiscard]] IRayTracingMaterialManager* getMaterialManager() const noexcept;
 
         [[nodiscard]] const uint32_t* getFrameIndexPtr() const noexcept;
 
@@ -45,7 +45,7 @@ namespace sol
         // Setters.
         ////////////////////////////////////////////////////////////////
 
-        void setMaterialManager(RayTracingMaterialManager& manager);
+        void setMaterialManager(IRayTracingMaterialManager& manager);
 
         void setFrameIndexPtr(uint32_t* ptr);
 
@@ -68,8 +68,7 @@ namespace sol
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        // TODO: This should become the IRayTracingMaterialManager class.
-        RayTracingMaterialManager* materialManager = nullptr;
+        IRayTracingMaterialManager* materialManager = nullptr;
 
         uint32_t* frameIndexPtr = nullptr;
     };

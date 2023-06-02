@@ -29,6 +29,31 @@ namespace sol
         friend class ForwardMaterialInstance;
 
         ////////////////////////////////////////////////////////////////
+        // Types.
+        ////////////////////////////////////////////////////////////////
+
+        enum class CullMode
+        {
+            None  = 0,
+            Front = 1,
+            Back  = 2,
+            Both  = Front | Back
+        };
+
+        enum class FrontFace
+        {
+            Clockwise        = 1,
+            CounterClockwise = 2
+        };
+
+        enum class PolygonMode
+        {
+            Fill  = 0,
+            Line  = 1,
+            Point = 2
+        };
+
+        ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
@@ -50,6 +75,10 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+        [[nodiscard]] VulkanDevice& getDevice() noexcept override;
+
+        [[nodiscard]] const VulkanDevice& getDevice() const noexcept override;
+
         /**
          * \brief Get the IForwardMaterialManager.
          * \return IForwardMaterialManager.
@@ -66,11 +95,19 @@ namespace sol
 
         [[nodiscard]] const VulkanShaderModule& getFragmentShader() const noexcept;
 
-        [[nodiscard]] const ForwardMaterialLayout& getLayout() const noexcept;
+        [[nodiscard]] const MaterialLayout& getLayout() const noexcept override;
+
+        [[nodiscard]] const ForwardMaterialLayout& getForwardLayout() const noexcept;
 
         [[nodiscard]] const MeshLayout* getMeshLayout() const noexcept;
 
         [[nodiscard]] const std::vector<ForwardMaterialInstance*>& getInstances() const noexcept;
+
+        [[nodiscard]] CullMode getCullMode() const noexcept;
+
+        [[nodiscard]] FrontFace getFrontFace() const noexcept;
+
+        [[nodiscard]] PolygonMode getPolyonMode() const noexcept;
 
         [[nodiscard]] int32_t getLayer() const noexcept;
 
@@ -89,6 +126,12 @@ namespace sol
          * \param mLayout MeshLayout. Must be compatible with input attributes and bindings as defined in vertex shader.
          */
         void setMeshLayout(MeshLayout& mLayout);
+
+        void setCullMode(CullMode value) noexcept;
+
+        void setFrontFace(FrontFace value) noexcept;
+
+        void setPolygonMode(PolygonMode value) noexcept;
 
         void setLayer(int32_t l) noexcept;
 
@@ -111,6 +154,15 @@ namespace sol
 
     protected:
         ForwardMaterialLayout layout;
+
+        // TODO: Do these properties belong in the material or the forward layout?
+        // And if they belong here, when should it be possible to change them?
+        // Also after layout finalization?
+        CullMode cullMode = CullMode::None;
+
+        FrontFace frontFace = FrontFace::CounterClockwise;
+
+        PolygonMode polygonMode = PolygonMode::Fill;
 
         int32_t layer = 0;
     };

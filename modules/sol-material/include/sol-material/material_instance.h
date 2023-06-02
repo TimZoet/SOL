@@ -13,6 +13,13 @@
 #include "uuid.h"
 
 ////////////////////////////////////////////////////////////////
+// Module includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-core/fwd.h"
+#include "sol-texture/fwd.h"
+
+////////////////////////////////////////////////////////////////
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
@@ -43,9 +50,9 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] virtual Material& getMaterial() noexcept = 0;
+        [[nodiscard]] VulkanDevice& getDevice() noexcept;
 
-        [[nodiscard]] virtual const Material& getMaterial() const noexcept = 0;
+        [[nodiscard]] const VulkanDevice& getDevice() const noexcept;
 
         /**
          * \brief Get the UUID.
@@ -58,6 +65,25 @@ namespace sol
          * \return Name.
          */
         [[nodiscard]] const std::string& getName() const noexcept;
+
+        [[nodiscard]] virtual Material& getMaterial() noexcept = 0;
+
+        [[nodiscard]] virtual const Material& getMaterial() const noexcept = 0;
+
+        [[nodiscard]] virtual uint32_t getSetIndex() const = 0;
+
+        [[nodiscard]] virtual const VulkanTopLevelAccelerationStructure*
+          getAccelerationStructureData(size_t binding) const;
+
+        [[nodiscard]] virtual const Texture2D* getCombinedImageSamplerData(size_t binding) const;
+
+        [[nodiscard]] virtual const VulkanBuffer* getStorageBufferData(size_t binding) const;
+
+        [[nodiscard]] virtual const Texture2D* getStorageImageData(size_t binding) const;
+
+        [[nodiscard]] virtual bool isUniformBufferStale(size_t binding) const;
+
+        [[nodiscard]] virtual const void* getUniformBufferData(size_t binding) const;
 
         ////////////////////////////////////////////////////////////////
         // Setters.

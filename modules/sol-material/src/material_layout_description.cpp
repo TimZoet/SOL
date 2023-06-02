@@ -84,6 +84,53 @@ namespace sol
         return max;
     }
 
+    size_t MaterialLayoutDescription::getBindingCount() const noexcept
+    {
+        return getAccelerationStructureCount() + getCombinedImageSamplerCount() + getStorageBufferCount() +
+               getStorageImageCount() + getUniformBufferCount();
+    }
+
+    size_t MaterialLayoutDescription::getAccelerationStructureCount() const noexcept
+    {
+        return accelerationStructures.size();
+    }
+
+    size_t MaterialLayoutDescription::getAccelerationStructureCount(const size_t set) const noexcept
+    {
+        return std::ranges::count_if(accelerationStructures, [set](const auto& b) { return b.set == set; });
+    }
+
+    size_t MaterialLayoutDescription::getCombinedImageSamplerCount() const noexcept
+    {
+        return combinedImageSamplers.size();
+    }
+
+    size_t MaterialLayoutDescription::getCombinedImageSamplerCount(const size_t set) const noexcept
+    {
+        return std::ranges::count_if(combinedImageSamplers, [set](const auto& b) { return b.set == set; });
+    }
+
+    size_t MaterialLayoutDescription::getStorageBufferCount() const noexcept { return storageBuffers.size(); }
+
+    size_t MaterialLayoutDescription::getStorageBufferCount(const size_t set) const noexcept
+    {
+        return std::ranges::count_if(storageBuffers, [set](const auto& b) { return b.set == set; });
+    }
+
+    size_t MaterialLayoutDescription::getStorageImageCount() const noexcept { return storageImages.size(); }
+
+    size_t MaterialLayoutDescription::getStorageImageCount(const size_t set) const noexcept
+    {
+        return std::ranges::count_if(storageImages, [set](const auto& b) { return b.set == set; });
+    }
+
+    size_t MaterialLayoutDescription::getUniformBufferCount() const noexcept { return uniformBuffers.size(); }
+
+    size_t MaterialLayoutDescription::getUniformBufferCount(const size_t set) const noexcept
+    {
+        return std::ranges::count_if(uniformBuffers, [set](const auto& b) { return b.set == set; });
+    }
+
     ////////////////////////////////////////////////////////////////
     // Compatibility.
     ////////////////////////////////////////////////////////////////

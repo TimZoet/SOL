@@ -4,7 +4,7 @@
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-render/compute/fwd.h"
+#include "sol-material/fwd.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
@@ -37,7 +37,7 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] ComputeMaterialManager* getMaterialManager() const noexcept;
+        [[nodiscard]] IComputeMaterialManager* getMaterialManager() const noexcept;
 
         [[nodiscard]] const uint32_t* getFrameIndexPtr() const noexcept;
 
@@ -45,7 +45,7 @@ namespace sol
         // Setters.
         ////////////////////////////////////////////////////////////////
 
-        void setMaterialManager(ComputeMaterialManager& manager);
+        void setMaterialManager(IComputeMaterialManager& manager);
 
         void setFrameIndexPtr(uint32_t* ptr);
 
@@ -68,8 +68,7 @@ namespace sol
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        // TODO: This should become the IComputeMaterialManager class.
-        ComputeMaterialManager* materialManager = nullptr;
+        IComputeMaterialManager* materialManager = nullptr;
 
         uint32_t* frameIndexPtr = nullptr;
     };

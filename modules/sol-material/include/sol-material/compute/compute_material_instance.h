@@ -64,10 +64,6 @@ namespace sol
 
         [[nodiscard]] const ComputeMaterial& getComputeMaterial() const noexcept;
 
-        [[nodiscard]] virtual uint32_t getSetIndex() const = 0;
-
-        [[nodiscard]] virtual Texture2D* getTextureData(size_t binding) const = 0;
-
         ////////////////////////////////////////////////////////////////
         // Setters.
         ////////////////////////////////////////////////////////////////

@@ -49,6 +49,10 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+        [[nodiscard]] VulkanDevice& getDevice() noexcept override;
+
+        [[nodiscard]] const VulkanDevice& getDevice() const noexcept override;
+
         /**
          * \brief Get the IComputeMaterialManager.
          * \return IComputeMaterialManager.
@@ -65,7 +69,9 @@ namespace sol
 
         [[nodiscard]] const VulkanShaderModule& getComputeShader() const noexcept;
 
-        [[nodiscard]] const ComputeMaterialLayout& getLayout() const noexcept;
+        [[nodiscard]] const MaterialLayout& getLayout() const noexcept override;
+
+        [[nodiscard]] const ComputeMaterialLayout& getComputeLayout() const noexcept;
 
         [[nodiscard]] const std::vector<ComputeMaterialInstance*>& getInstances() const noexcept;
 

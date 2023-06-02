@@ -5,7 +5,6 @@
 ////////////////////////////////////////////////////////////////
 
 #include "sol-error/sol_error.h"
-#include "sol-render/ray_tracing/ray_tracing_material_manager.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
@@ -27,7 +26,7 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    RayTracingMaterialManager* UpdateRayTracingMaterialManagerCommand::getMaterialManager() const noexcept
+    IRayTracingMaterialManager* UpdateRayTracingMaterialManagerCommand::getMaterialManager() const noexcept
     {
         return materialManager;
     }
@@ -38,7 +37,7 @@ namespace sol
     // Setters.
     ////////////////////////////////////////////////////////////////
 
-    void UpdateRayTracingMaterialManagerCommand::setMaterialManager(RayTracingMaterialManager& manager)
+    void UpdateRayTracingMaterialManagerCommand::setMaterialManager(IRayTracingMaterialManager& manager)
     {
         commandQueue->requireNonFinalized();
         materialManager = &manager;
@@ -68,5 +67,8 @@ namespace sol
     // Debugging and visualization.
     ////////////////////////////////////////////////////////////////
 
-    std::string UpdateRayTracingMaterialManagerCommand::getVizLabel() const { return "UpdateRayTracingMaterialManager"; }
+    std::string UpdateRayTracingMaterialManagerCommand::getVizLabel() const
+    {
+        return "UpdateRayTracingMaterialManager";
+    }
 }  // namespace sol

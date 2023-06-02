@@ -25,6 +25,10 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
+    VulkanDevice& ForwardMaterial::getDevice() noexcept { return fragmentShader->getDevice(); }
+
+    const VulkanDevice& ForwardMaterial::getDevice() const noexcept { return fragmentShader->getDevice(); }
+
     IForwardMaterialManager& ForwardMaterial::getMaterialManager() noexcept { return *materialManager; }
 
     const IForwardMaterialManager& ForwardMaterial::getMaterialManager() const noexcept { return *materialManager; }
@@ -33,11 +37,19 @@ namespace sol
 
     const VulkanShaderModule& ForwardMaterial::getFragmentShader() const noexcept { return *fragmentShader; }
 
-    const ForwardMaterialLayout& ForwardMaterial::getLayout() const noexcept { return layout; }
+    const MaterialLayout& ForwardMaterial::getLayout() const noexcept { return layout; }
+
+    const ForwardMaterialLayout& ForwardMaterial::getForwardLayout() const noexcept { return layout; }
 
     const MeshLayout* ForwardMaterial::getMeshLayout() const noexcept { return meshLayout; }
 
     const std::vector<ForwardMaterialInstance*>& ForwardMaterial::getInstances() const noexcept { return instances; }
+
+    ForwardMaterial::CullMode ForwardMaterial::getCullMode() const noexcept { return cullMode; }
+
+    ForwardMaterial::FrontFace ForwardMaterial::getFrontFace() const noexcept { return frontFace; }
+
+    ForwardMaterial::PolygonMode ForwardMaterial::getPolyonMode() const noexcept { return polygonMode; }
 
     int32_t ForwardMaterial::getLayer() const noexcept { return layer; }
 
@@ -63,6 +75,11 @@ namespace sol
 
     void ForwardMaterial::addInstance(ForwardMaterialInstance& instance) { instances.emplace_back(&instance); }
 
-    void ForwardMaterial::setLayer(const int32_t l) noexcept { layer = l; }
+    void ForwardMaterial::setCullMode(const CullMode value) noexcept { cullMode = value; }
 
+    void ForwardMaterial::setFrontFace(const FrontFace value) noexcept { frontFace = value; }
+
+    void ForwardMaterial::setPolygonMode(PolygonMode value) noexcept { polygonMode = value; }
+
+    void ForwardMaterial::setLayer(const int32_t l) noexcept { layer = l; }
 }  // namespace sol

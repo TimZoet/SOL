@@ -26,13 +26,10 @@
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-render/fwd.h"
 #include "sol-render/ray_tracing/fwd.h"
 
 namespace sol
 {
-    // TODO: This class does not implement any virtual methods of the base yet, because there are none.
-    // Also, the RayTracingRenderer is doing dynamic_casts because of that.
     class RayTracingMaterialManager final : public IRayTracingMaterialManager
     {
     public:
@@ -93,7 +90,7 @@ namespace sol
 
         [[nodiscard]] const InstanceDataMap& getInstanceData() const noexcept;
 
-        [[nodiscard]] VulkanRayTracingPipeline& getPipeline(const RayTracingMaterial& material) const;
+        [[nodiscard]] VulkanRayTracingPipeline& getPipeline(const RayTracingMaterial& material) const override;
 
         ////////////////////////////////////////////////////////////////
         // Setters.
@@ -138,7 +135,12 @@ namespace sol
 
         void destroyMaterialInstance(RayTracingMaterialInstance& materialInstance);
 
-        bool createPipeline(const RayTracingMaterial& material) const;
+        bool createPipeline(const RayTracingMaterial& material) const override;
+
+        void bindDescriptorSets(std::span<const RayTracingMaterialInstance* const> instances,
+                                VkCommandBuffer                                    commandBuffer,
+                                const VulkanRayTracingPipeline&                    pipeline,
+                                size_t                                             index) const override;
 
     private:
         void addMaterialImpl(RayTracingMaterialPtr material);

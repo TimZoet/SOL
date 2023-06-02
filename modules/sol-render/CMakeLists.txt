@@ -6,6 +6,7 @@ set(SRC_DIR "src")
 set(HEADERS
     ${INCLUDE_DIR}/fwd.h
     
+    ${INCLUDE_DIR}/common/descriptors.h
     ${INCLUDE_DIR}/common/i_traverser.h
     ${INCLUDE_DIR}/common/render_settings.h
     
@@ -19,6 +20,7 @@ set(HEADERS
     ${INCLUDE_DIR}/deferred/deferred_renderer.h
     
     ${INCLUDE_DIR}/forward/forward_material_manager.h
+    ${INCLUDE_DIR}/forward/forward_pipeline_cache.h
     ${INCLUDE_DIR}/forward/forward_render_data.h
     ${INCLUDE_DIR}/forward/forward_renderer.h
     ${INCLUDE_DIR}/forward/forward_traverser.h
@@ -33,6 +35,7 @@ set(HEADERS
 )
 
 set(SOURCES
+    ${SRC_DIR}/common/descriptors.cpp
     ${SRC_DIR}/common/i_traverser.cpp
     ${SRC_DIR}/common/render_settings.cpp
     
@@ -43,6 +46,7 @@ set(SOURCES
     ${SRC_DIR}/compute/compute_traverser.cpp
 
     ${SRC_DIR}/forward/forward_material_manager.cpp
+    ${SRC_DIR}/forward/forward_pipeline_cache.cpp
     ${SRC_DIR}/forward/forward_render_data.cpp
     ${SRC_DIR}/forward/forward_renderer.cpp
     ${SRC_DIR}/forward/forward_traverser.cpp

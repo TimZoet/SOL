@@ -4,7 +4,7 @@
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-render/forward/fwd.h"
+#include "sol-material/fwd.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
@@ -37,7 +37,7 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] ForwardMaterialManager* getMaterialManager() const noexcept;
+        [[nodiscard]] IForwardMaterialManager* getMaterialManager() const noexcept;
 
         [[nodiscard]] const uint32_t* getFrameIndexPtr() const noexcept;
 
@@ -45,7 +45,7 @@ namespace sol
         // Setters.
         ////////////////////////////////////////////////////////////////
 
-        void setMaterialManager(ForwardMaterialManager& manager);
+        void setMaterialManager(IForwardMaterialManager& manager);
 
         void setFrameIndexPtr(uint32_t* ptr);
 
@@ -68,8 +68,7 @@ namespace sol
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        // TODO: This should become the IForwardMaterialManager class.
-        ForwardMaterialManager* materialManager = nullptr;
+        IForwardMaterialManager* materialManager = nullptr;
 
         uint32_t* frameIndexPtr = nullptr;
     };

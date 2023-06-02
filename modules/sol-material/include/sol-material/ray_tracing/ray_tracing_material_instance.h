@@ -65,14 +65,6 @@ namespace sol
 
         [[nodiscard]] const RayTracingMaterial& getRayTracingMaterial() const noexcept;
 
-        [[nodiscard]] virtual uint32_t getSetIndex() const = 0;
-
-        [[nodiscard]] virtual Texture2D* getTextureData(size_t binding) const;
-
-        [[nodiscard]] virtual VulkanBuffer* getStorageBufferData(size_t binding) const;
-
-        [[nodiscard]] virtual VulkanTopLevelAccelerationStructure* getAccelerationStructureData(size_t binding) const;
-
         ////////////////////////////////////////////////////////////////
         // Setters.
         ////////////////////////////////////////////////////////////////

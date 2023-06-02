@@ -51,8 +51,7 @@ namespace sol
         // Ensure all pipelines have been created.
         for (const auto& [_a, _b, _c, _d, _e, material, _g] : params.renderData.traces)
         {
-            const auto& manager = dynamic_cast<const RayTracingMaterialManager&>(material->getMaterialManager());
-            manager.createPipeline(*material);
+            material->getMaterialManager().createPipeline(*material);
         }
     }
 
@@ -60,33 +59,16 @@ namespace sol
     {
         for (const auto& [raygen, miss, hit, callable, dimensions, material, materialOffset] : params.renderData.traces)
         {
-            const auto& materialLayout = material->getLayout();
-            const auto& materialManager =
-              dynamic_cast<const RayTracingMaterialManager&>(material->getMaterialManager());
-            auto& pipeline = materialManager.getPipeline(*material);
+            const auto& materialLayout  = material->getLayout();
+            const auto& materialManager = material->getMaterialManager();
+            auto&       pipeline        = materialManager.getPipeline(*material);
             vkCmdBindPipeline(params.commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.getPipeline());
 
-            {
-                std::vector<VkDescriptorSet> sets;
-                for (const auto* mtlInstance : params.renderData.materialInstances |
-                                                 std::ranges::views::drop(materialOffset) |
-                                                 std::ranges::views::take(materialLayout.getSetCount()))
-                {
-                    const auto& materialManager2 =
-                      dynamic_cast<const RayTracingMaterialManager&>(mtlInstance->getMaterialManager());
-                    const auto& instanceData = materialManager2.getInstanceData();
-                    sets.emplace_back(instanceData.find(mtlInstance)->second->descriptorSets[params.index]);
-                }
-
-                vkCmdBindDescriptorSets(params.commandBuffer,
-                                        VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
-                                        pipeline.getPipelineLayout(),
-                                        0,
-                                        static_cast<uint32_t>(sets.size()),
-                                        sets.data(),
-                                        0,
-                                        nullptr);
-            }
+            materialManager.bindDescriptorSets(
+              {params.renderData.materialInstances.data() + materialOffset, materialLayout.getSetCount()},
+              params.commandBuffer,
+              pipeline,
+              params.index);
 
             // TODO: Reverse this push? Might be that this list contains deeper nodes first,
             // causing them to be overwritten by higher nodes when they have an overlapping range.

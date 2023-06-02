@@ -26,13 +26,10 @@
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-render/fwd.h"
 #include "sol-render/compute/fwd.h"
 
 namespace sol
 {
-    // TODO: This class does not implement any virtual methods of the base yet, because there are none.
-    // Also, the ComputeRenderer is doing dynamic_casts because of that.
     class ComputeMaterialManager final : public IComputeMaterialManager
     {
     public:
@@ -93,7 +90,7 @@ namespace sol
 
         [[nodiscard]] const InstanceDataMap& getInstanceData() const noexcept;
 
-        [[nodiscard]] VulkanComputePipeline& getPipeline(const ComputeMaterial& material) const;
+        [[nodiscard]] VulkanComputePipeline& getPipeline(const ComputeMaterial& material) const override;
 
         ////////////////////////////////////////////////////////////////
         // Setters.
@@ -138,7 +135,12 @@ namespace sol
 
         void destroyMaterialInstance(ComputeMaterialInstance& materialInstance);
 
-        bool createPipeline(const ComputeMaterial& material) const;
+        bool createPipeline(const ComputeMaterial& material) const override;
+
+        void bindDescriptorSets(std::span<const ComputeMaterialInstance* const> instances,
+                                VkCommandBuffer                                 commandBuffer,
+                                const VulkanComputePipeline&                    pipeline,
+                                size_t                                          index) const override;
 
     private:
         void addMaterialImpl(ComputeMaterialPtr material);

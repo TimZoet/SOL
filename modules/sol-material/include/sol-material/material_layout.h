@@ -53,43 +53,13 @@ namespace sol
 
         [[nodiscard]] bool isFinalized() const noexcept;
 
-        [[nodiscard]] const MaterialLayoutDescription& getDescription() const noexcept;
+        [[nodiscard]] const MaterialLayoutDescription& getDescription() const;
 
         /**
          * \brief Get the number of descriptor sets.
          * \return Number of sets.
          */
         [[nodiscard]] size_t getSetCount() const noexcept;
-
-        /**
-         * \brief Get the total number of acceleration structures across all descriptor sets.
-         * \return Number of acceleration structures.
-         */
-        [[nodiscard]] size_t getAccelerationStructureCount() const noexcept;
-
-        /**
-         * \brief Get the total number of combined image samplers across all descriptor sets.
-         * \return Number of combined image samplers.
-         */
-        [[nodiscard]] size_t getCombinedImageSamplerCount() const noexcept;
-
-        /**
-         * \brief Get the total number of storage buffers across all descriptor sets.
-         * \return Number of buffers.
-         */
-        [[nodiscard]] size_t getStorageBufferCount() const noexcept;
-
-        /**
-         * \brief Get the total number of storage images across all descriptor sets.
-         * \return Number of images.
-         */
-        [[nodiscard]] size_t getStorageImageCount() const noexcept;
-
-        /**
-         * \brief Get the total number of uniform buffers across all descriptor sets.
-         * \return Number of buffers.
-         */
-        [[nodiscard]] size_t getUniformBufferCount() const noexcept;
 
         /**
          * \brief Get the list of all acceleration structure bindings for the given set.
@@ -149,6 +119,13 @@ namespace sol
          * \return VulkanDescriptorSetLayouts.
          */
         [[nodiscard]] const std::vector<VulkanDescriptorSetLayoutPtr>& getDescriptorSetLayouts() const;
+
+        /**
+         * \brief Get a finalized VulkanDescriptorSetLayout by set index.
+         * \param set Descriptor set index.
+         * \return VulkanDescriptorSetLayout.
+         */
+        [[nodiscard]] const VulkanDescriptorSetLayout& getDescriptorSetLayout(size_t set) const;
 
         /**
          * \brief Get the list of finalized VkPushConstantRanges.

@@ -68,10 +68,7 @@ namespace sol
         // Ensure all pipelines have been created.
         for (const auto& [mesh, material, materialOffset, _a, _b] : params.renderData.drawables)
         {
-            // TODO: Ugh, const_cast.
-            auto& manager = const_cast<ForwardMaterialManager&>(
-              dynamic_cast<const ForwardMaterialManager&>(material->getMaterialManager()));
-            manager.createPipeline(*material, *renderSettings, params.renderPass);
+            material->getMaterialManager().createPipeline(*material, params.renderPass);
         }
     }
 
@@ -115,8 +112,8 @@ namespace sol
              params.renderData.drawables)
         {
             const auto& materialLayout  = material->getLayout();
-            const auto& materialManager = dynamic_cast<const ForwardMaterialManager&>(material->getMaterialManager());
-            auto&       pipeline        = materialManager.getPipeline(*material, *renderSettings, params.renderPass);
+            const auto& materialManager = material->getMaterialManager();
+            auto&       pipeline        = materialManager.getPipeline(*material, params.renderPass);
             vkCmdBindPipeline(params.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getPipeline());
 
             // Set the dynamic state after binding the first pipeline.
@@ -139,27 +136,11 @@ namespace sol
                 setDynamicState = true;
             }
 
-            {
-                std::vector<VkDescriptorSet> sets;
-                for (const auto* mtlInstance : params.renderData.materialInstances |
-                                                 std::ranges::views::drop(materialOffset) |
-                                                 std::ranges::views::take(materialLayout.getSetCount()))
-                {
-                    const auto& materialManager2 =
-                      dynamic_cast<const ForwardMaterialManager&>(mtlInstance->getMaterialManager());
-                    const auto& instanceData = materialManager2.getInstanceData();
-                    sets.emplace_back(instanceData.find(mtlInstance)->second->descriptorSets[params.index]);
-                }
-
-                vkCmdBindDescriptorSets(params.commandBuffer,
-                                        VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                        pipeline.getPipelineLayout(),
-                                        0,
-                                        static_cast<uint32_t>(sets.size()),
-                                        sets.data(),
-                                        0,
-                                        nullptr);
-            }
+            materialManager.bindDescriptorSets(
+              {params.renderData.materialInstances.data() + materialOffset, materialLayout.getSetCount()},
+              params.commandBuffer,
+              pipeline,
+              params.index);
 
             // TODO: Reverse this push? Might be that this list contains deeper nodes first,
             // causing them to be overwritten by higher nodes when they have an overlapping range.
