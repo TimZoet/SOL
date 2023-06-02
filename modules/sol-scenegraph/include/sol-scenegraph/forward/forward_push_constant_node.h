@@ -57,7 +57,7 @@ namespace sol
          * \brief Get push constant data range.
          * \return Range.
          */
-        [[nodiscard]] virtual std::pair<size_t, size_t> getRange() const noexcept = 0;
+        [[nodiscard]] virtual std::pair<uint32_t, uint32_t> getRange() const noexcept = 0;
 
         [[nodiscard]] virtual VkShaderStageFlags getStageFlags() const noexcept = 0;
 

@@ -65,9 +65,9 @@ namespace
          */
         const sol::ForwardMaterial& material;
 
-        const size_t rangeOffset;
+        const uint32_t rangeOffset;
 
-        const size_t rangeSize;
+        const uint32_t rangeSize;
 
         const VkShaderStageFlags stages;
 

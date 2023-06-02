@@ -358,7 +358,7 @@ namespace sol
             // Get the active material, i.e. the first material above the dispatch node.
             const auto& activeMtlInstance = mtlItem->material;
             const auto& activeMtl         = activeMtlInstance.getComputeMaterial();
-            const auto& activeMtlLayout   = activeMtl.getLayout();
+            //const auto& activeMtlLayout   = activeMtl.getLayout();
 
             // Skip if push constants are needed but none were found above the dispatch.
             //if (activeMtlLayout.getPushConstantCount() > 0 && pushConstantIndex == no_parent) continue;

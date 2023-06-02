@@ -105,19 +105,18 @@ namespace sol
         const auto  uniformBufferBindings         = layout.getUniformBuffers(setIndex);
 
         const auto perSetAccelerationStructureInfoCount = std::accumulate(
-          accelerationStructureBindings.begin(),
-          accelerationStructureBindings.end(),
-          0,
-          [](uint32_t sum, const auto& elem) { return sum + 1; });  // TODO: +elem->count once array support is added.
+          accelerationStructureBindings.begin(), accelerationStructureBindings.end(), 0, [](uint32_t sum, const auto&) {
+              return sum + 1;
+          });  // TODO: +elem->count once array support is added.
 
-        const auto perSetStorageImageInfoCount = std::accumulate(
-          storageImageBindings.begin(), storageImageBindings.end(), 0, [](uint32_t sum, const auto& elem) {
+        const auto perSetStorageImageInfoCount =
+          std::accumulate(storageImageBindings.begin(), storageImageBindings.end(), 0, [](uint32_t sum, const auto&) {
               return sum + 1;
           });  // TODO: +elem->count once array support is added.
 
 
-        const auto perSetStorageBufferInfoCount = std::accumulate(
-          storageBufferBindings.begin(), storageBufferBindings.end(), 0, [](uint32_t sum, const auto& elem) {
+        const auto perSetStorageBufferInfoCount =
+          std::accumulate(storageBufferBindings.begin(), storageBufferBindings.end(), 0, [](uint32_t sum, const auto&) {
               return sum + 1;
           });  // TODO: +elem->count once array support is added.
 
@@ -257,7 +256,7 @@ namespace sol
 
             for (size_t i = 0; i < uniformBufferBindings.size(); i++)
             {
-                const auto& binding = uniformBufferBindings[i];
+                const auto& binding                       = uniformBufferBindings[i];
                 const auto& [uniformBuffer, slot, offset] = uniformBuffers[i];
 
                 for (size_t elem = 0; elem < binding.count; elem++)

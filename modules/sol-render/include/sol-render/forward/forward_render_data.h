@@ -61,12 +61,12 @@ namespace sol
             /**
              * \brief Start offset of the push constant range to update in bytes.
              */
-            size_t rangeOffset = 0;
+            uint32_t rangeOffset = 0;
 
             /**
              * \brief Size of the push constant range to update in bytes.
              */
-            size_t rangeSize = 0;
+            uint32_t rangeSize = 0;
 
             /**
              * \brief Offset into the push constant data array.

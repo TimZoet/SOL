@@ -86,12 +86,12 @@ namespace sol
 
         // Create attribute descriptions.
         attributeDescriptions.reserve(attributes.size());
-        for (const auto& [name, location, binding, format, offset] : attributes)
+        for (const auto& [_, location, binding, format, offset] : attributes)
             attributeDescriptions.emplace_back(location, binding, format, offset);
 
         // Create binding descriptions.
         bindingDescriptions.reserve(bindings.size());
-        for (const auto& [name, binding, stride, inputRate] : bindings)
+        for (const auto& [_, binding, stride, inputRate] : bindings)
             bindingDescriptions.emplace_back(binding, stride, inputRate);
 
         finalized = true;

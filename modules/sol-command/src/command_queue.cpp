@@ -153,7 +153,7 @@ namespace sol
         // TODO: Add another barrier that is notified by all commands and waited on here? That way this end method will guarantee everything has been completed, not just retrieved.
         // Perhaps make this option configurable.
 
-        nextCommand = -1;
+        nextCommand = static_cast<size_t>(-1);
     }
 
     ////////////////////////////////////////////////////////////////

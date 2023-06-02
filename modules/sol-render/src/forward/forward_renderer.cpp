@@ -97,7 +97,7 @@ namespace sol
         renderPassInfo.framebuffer       = params.framebuffer.get();
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = params.framebuffer.getExtent();
-        renderPassInfo.clearValueCount   = clearValues.size();
+        renderPassInfo.clearValueCount   = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues      = clearValues.data();
         vkCmdBeginRenderPass(params.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     }
