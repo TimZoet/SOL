@@ -107,6 +107,6 @@ namespace sol
 
         std::vector<Command> commands;
 
-        std::atomic_size_t nextCommand = -1;
+        std::atomic_size_t nextCommand = static_cast<size_t>(-1);
     };
 }  // namespace sol

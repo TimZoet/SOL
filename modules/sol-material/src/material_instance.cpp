@@ -35,29 +35,20 @@ namespace sol
 
     const std::string& MaterialInstance::getName() const noexcept { return name; }
 
-    const VulkanTopLevelAccelerationStructure* MaterialInstance::getAccelerationStructureData(size_t binding) const
+    const VulkanTopLevelAccelerationStructure* MaterialInstance::getAccelerationStructureData(size_t) const
     {
         throw SolError("Not implemented.");
     }
 
-    const Texture2D* MaterialInstance::getCombinedImageSamplerData(size_t binding) const
-    {
-        throw SolError("Not implemented.");
-    }
+    const Texture2D* MaterialInstance::getCombinedImageSamplerData(size_t) const { throw SolError("Not implemented."); }
 
-    const VulkanBuffer* MaterialInstance::getStorageBufferData(size_t binding) const
-    {
-        throw SolError("Not implemented.");
-    }
+    const VulkanBuffer* MaterialInstance::getStorageBufferData(size_t) const { throw SolError("Not implemented."); }
 
-    const Texture2D* MaterialInstance::getStorageImageData(size_t binding) const
-    {
-        throw SolError("Not implemented.");
-    }
+    const Texture2D* MaterialInstance::getStorageImageData(size_t) const { throw SolError("Not implemented."); }
 
-    bool MaterialInstance::isUniformBufferStale(size_t binding) const { throw SolError("Not implemented."); }
+    bool MaterialInstance::isUniformBufferStale(size_t) const { throw SolError("Not implemented."); }
 
-    const void* MaterialInstance::getUniformBufferData(size_t binding) const { throw SolError("Not implemented."); }
+    const void* MaterialInstance::getUniformBufferData(size_t) const { throw SolError("Not implemented."); }
 
     ////////////////////////////////////////////////////////////////
     // Setters.
