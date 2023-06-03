@@ -36,7 +36,6 @@ namespace sol
             Mesh,
             GraphicsMaterial,
             GraphicsPushConstant,
-            DeferredMaterial,
             ComputeMaterial,
             Dispatch,
             RayTracingMaterial,
