@@ -29,31 +29,6 @@ namespace sol
         friend class GraphicsMaterialInstance;
 
         ////////////////////////////////////////////////////////////////
-        // Types.
-        ////////////////////////////////////////////////////////////////
-
-        enum class CullMode
-        {
-            None  = 0,
-            Front = 1,
-            Back  = 2,
-            Both  = Front | Back
-        };
-
-        enum class FrontFace
-        {
-            Clockwise        = 1,
-            CounterClockwise = 2
-        };
-
-        enum class PolygonMode
-        {
-            Fill  = 0,
-            Line  = 1,
-            Point = 2
-        };
-
-        ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
@@ -91,9 +66,9 @@ namespace sol
          */
         [[nodiscard]] const IGraphicsMaterialManager& getMaterialManager() const noexcept;
 
-        [[nodiscard]] const VulkanShaderModule& getVertexShader() const noexcept;
+        [[nodiscard]] VulkanShaderModule& getVertexShader() const noexcept;
 
-        [[nodiscard]] const VulkanShaderModule& getFragmentShader() const noexcept;
+        [[nodiscard]] VulkanShaderModule& getFragmentShader() const noexcept;
 
         [[nodiscard]] const MaterialLayout& getLayout() const noexcept override;
 
@@ -103,11 +78,23 @@ namespace sol
 
         [[nodiscard]] const std::vector<GraphicsMaterialInstance*>& getInstances() const noexcept;
 
+        /**
+         * \brief Get the dynamic cull mode state.
+         * \return State.
+         */
         [[nodiscard]] CullMode getCullMode() const noexcept;
 
+        /**
+         * \brief Get the dynamic front face state.
+         * \return State.
+         */
         [[nodiscard]] FrontFace getFrontFace() const noexcept;
 
-        [[nodiscard]] PolygonMode getPolyonMode() const noexcept;
+        /**
+         * \brief Get the dynamic polygon mode state.
+         * \return State.
+         */
+        [[nodiscard]] PolygonMode getPolygonMode() const noexcept;
 
         [[nodiscard]] int32_t getLayer() const noexcept;
 
@@ -127,10 +114,22 @@ namespace sol
          */
         void setMeshLayout(MeshLayout& mLayout);
 
+        /**
+         * \brief Set the dynamic cull mode state. Does not have any effect if the dynamic state was not enabled in the material layout.
+         * \param value New state.
+         */
         void setCullMode(CullMode value) noexcept;
 
+        /**
+         * \brief Set the dynamic front face state. Does not have any effect if the dynamic state was not enabled in the material layout.
+         * \param value New state.
+         */
         void setFrontFace(FrontFace value) noexcept;
 
+        /**
+         * \brief Set the dynamic polygon mode state. Does not have any effect if the dynamic state was not enabled in the material layout.
+         * \param value New state.
+         */
         void setPolygonMode(PolygonMode value) noexcept;
 
         void setLayer(int32_t l) noexcept;
@@ -155,9 +154,6 @@ namespace sol
     protected:
         GraphicsMaterialLayout layout;
 
-        // TODO: Do these properties belong in the material or the graphics layout?
-        // And if they belong here, when should it be possible to change them?
-        // Also after layout finalization?
         CullMode cullMode = CullMode::None;
 
         FrontFace frontFace = FrontFace::CounterClockwise;

@@ -126,12 +126,12 @@ namespace sol
                 viewport.height   = static_cast<float>(params.framebuffer.getExtent().height);
                 viewport.minDepth = 0.0f;
                 viewport.maxDepth = 1.0f;
-                vkCmdSetViewport(params.commandBuffer, 0, 1, &viewport);
+                vkCmdSetViewportWithCount(params.commandBuffer, 1, &viewport);
 
                 VkRect2D scissor{};
                 scissor.offset = {0, 0};
                 scissor.extent = params.framebuffer.getExtent();
-                vkCmdSetScissor(params.commandBuffer, 0, 1, &scissor);
+                vkCmdSetScissorWithCount(params.commandBuffer, 1, &scissor);
 
                 setDynamicState = true;
             }

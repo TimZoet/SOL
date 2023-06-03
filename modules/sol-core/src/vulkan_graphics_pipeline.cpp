@@ -51,20 +51,49 @@ namespace sol
     {
         auto& device = settings.renderPass().getDevice();
 
-        VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
-        vertShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        vertShaderStageInfo.stage  = VK_SHADER_STAGE_VERTEX_BIT;
-        vertShaderStageInfo.module = settings.vertexShader;
-        vertShaderStageInfo.pName =
-          "VSMain";  //TODO: This name (same for fragment and compute) should be configurable. Store in VulkanShaderModule?
+        // Create layout.
+        VkPipelineLayout layout;
+        {
+            const auto setLayouts = settings.descriptorSetLayouts.get();
 
-        VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-        fragShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        fragShaderStageInfo.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
-        fragShaderStageInfo.module = settings.fragmentShader;
-        fragShaderStageInfo.pName  = "PSMain";
+            VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+            pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+            pipelineLayoutInfo.setLayoutCount         = static_cast<uint32_t>(setLayouts.size());
+            pipelineLayoutInfo.pSetLayouts            = setLayouts.data();
+            pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(settings.pushConstants.size());
+            pipelineLayoutInfo.pPushConstantRanges    = settings.pushConstants.data();
 
-        VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
+            handleVulkanError(vkCreatePipelineLayout(device.get(), &pipelineLayoutInfo, nullptr, &layout));
+        }
+
+        std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+
+        // TODO: Entry point (same for fragment, compute, RT) should be configurable. Store in VulkanShaderModule? Or does a SPIR-V module allow multiple entry points?
+        // TODO: Specialization constants.
+        // TODO: More stages.
+
+        if (settings.vertexShader)
+        {
+
+            shaderStages.emplace_back(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                                      nullptr,
+                                      0,
+                                      VK_SHADER_STAGE_VERTEX_BIT,
+                                      settings.vertexShader,
+                                      settings.vertexEntryPoint.c_str(),
+                                      nullptr);
+        }
+
+        if (settings.fragmentShader)
+        {
+            shaderStages.emplace_back(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                                      nullptr,
+                                      0,
+                                      VK_SHADER_STAGE_FRAGMENT_BIT,
+                                      settings.fragmentShader,
+                                      settings.fragmentEntryPoint.c_str(),
+                                      nullptr);
+        }
 
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -73,93 +102,47 @@ namespace sol
         vertexInputInfo.vertexBindingDescriptionCount   = static_cast<uint32_t>(settings.vertexBindings.size());
         vertexInputInfo.pVertexBindingDescriptions      = settings.vertexBindings.data();
 
-        VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
-        inputAssembly.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-        inputAssembly.topology               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        inputAssembly.primitiveRestartEnable = VK_FALSE;
-
-        VkPipelineViewportStateCreateInfo viewportState{};
-        viewportState.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-        viewportState.viewportCount = 1;
-        viewportState.pViewports    = VK_NULL_HANDLE;
-        viewportState.scissorCount  = 1;
-        viewportState.pScissors     = VK_NULL_HANDLE;
-
-        // Use rasterization info from settings or default.
-        VkPipelineRasterizationStateCreateInfo rasterization{};
-        if (settings.rasterization)
-            rasterization = *settings.rasterization;
-        else
+        // Override viewports and scissors.
+        VkPipelineViewportStateCreateInfo viewport = settings.viewport;
+        if (!settings.viewports.empty())
         {
-            rasterization.sType       = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-            rasterization.polygonMode = VK_POLYGON_MODE_FILL;
-            rasterization.cullMode    = VK_CULL_MODE_BACK_BIT;
-            rasterization.frontFace   = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-            rasterization.lineWidth   = 1.0f;
+            viewport.viewportCount = static_cast<uint32_t>(settings.viewports.size());
+            viewport.pViewports    = settings.viewports.data();
+        }
+        if (!settings.scissors.empty())
+        {
+            viewport.scissorCount = static_cast<uint32_t>(settings.scissors.size());
+            viewport.pScissors    = settings.scissors.data();
         }
 
-        VkPipelineMultisampleStateCreateInfo multisampling{};
-        multisampling.sType                = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-        multisampling.sampleShadingEnable  = VK_FALSE;
-        multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-
-        // Use depthStencil info from settings or default.
-        VkPipelineDepthStencilStateCreateInfo depthStencil{};
-        if (settings.depthStencil)
-            depthStencil = *settings.depthStencil;
-        else
+        // Override attachments.
+        VkPipelineColorBlendStateCreateInfo colorBlend = settings.colorBlend;
+        if (!settings.colorBlendAttachments.empty())
         {
-            depthStencil.sType            = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-            depthStencil.depthTestEnable  = VK_TRUE;
-            depthStencil.depthWriteEnable = VK_TRUE;
-            depthStencil.depthCompareOp   = VK_COMPARE_OP_LESS;
+            colorBlend.attachmentCount = static_cast<uint32_t>(settings.colorBlendAttachments.size());
+            colorBlend.pAttachments    = settings.colorBlendAttachments.data();
         }
 
-        VkPipelineColorBlendStateCreateInfo colorBlending{};
-        colorBlending.sType             = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-        colorBlending.logicOpEnable     = VK_FALSE;
-        colorBlending.logicOp           = VK_LOGIC_OP_COPY;
-        colorBlending.attachmentCount   = static_cast<uint32_t>(settings.colorBlending.size());
-        colorBlending.pAttachments      = settings.colorBlending.data();
-        colorBlending.blendConstants[0] = 0.0f;
-        colorBlending.blendConstants[1] = 0.0f;
-        colorBlending.blendConstants[2] = 0.0f;
-        colorBlending.blendConstants[3] = 0.0f;
-
-        const std::vector                pDynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
         VkPipelineDynamicStateCreateInfo dynamicState{};
         dynamicState.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
         dynamicState.pNext             = VK_NULL_HANDLE;
         dynamicState.flags             = 0;
-        dynamicState.dynamicStateCount = static_cast<uint32_t>(pDynamicStates.size());
-        dynamicState.pDynamicStates    = pDynamicStates.data();
-
-        auto setLayouts = settings.descriptorSetLayouts.get();
-
-        VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-        pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount         = static_cast<uint32_t>(setLayouts.size());
-        pipelineLayoutInfo.pSetLayouts            = setLayouts.data();
-        pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(settings.pushConstants.size());
-        pipelineLayoutInfo.pPushConstantRanges    = settings.pushConstants.data();
-
-        // Create layout.
-        VkPipelineLayout layout;
-        handleVulkanError(vkCreatePipelineLayout(device.get(), &pipelineLayoutInfo, nullptr, &layout));
+        dynamicState.dynamicStateCount = static_cast<uint32_t>(settings.enabledDynamicStates.size());
+        dynamicState.pDynamicStates    = settings.enabledDynamicStates.data();
 
         VkGraphicsPipelineCreateInfo pipelineInfo{};
         pipelineInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipelineInfo.pNext               = nullptr;
         pipelineInfo.flags               = 0;
-        pipelineInfo.stageCount          = 2;
-        pipelineInfo.pStages             = shaderStages;
+        pipelineInfo.stageCount          = static_cast<uint32_t>(shaderStages.size());
+        pipelineInfo.pStages             = shaderStages.data();
         pipelineInfo.pVertexInputState   = &vertexInputInfo;
-        pipelineInfo.pInputAssemblyState = &inputAssembly;
-        pipelineInfo.pViewportState      = &viewportState;
-        pipelineInfo.pRasterizationState = &rasterization;
-        pipelineInfo.pMultisampleState   = &multisampling;
-        pipelineInfo.pDepthStencilState  = &depthStencil;
-        pipelineInfo.pColorBlendState    = &colorBlending;
+        pipelineInfo.pInputAssemblyState = &settings.inputAssembly;
+        pipelineInfo.pViewportState      = &viewport;
+        pipelineInfo.pRasterizationState = &settings.rasterization;
+        pipelineInfo.pMultisampleState   = &settings.multisample;
+        pipelineInfo.pDepthStencilState  = &settings.depthStencil;
+        pipelineInfo.pColorBlendState    = &colorBlend;
         pipelineInfo.pDynamicState       = &dynamicState;
         pipelineInfo.layout              = layout;
         pipelineInfo.renderPass          = settings.renderPass;

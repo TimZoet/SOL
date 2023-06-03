@@ -92,4 +92,25 @@ namespace sol
          */
         std::string name;
     };
+
+    enum class CullMode
+    {
+        None  = 0,
+        Front = 1,
+        Back  = 2,
+        Both  = Front | Back
+    };
+
+    enum class FrontFace
+    {
+        Clockwise        = 1,
+        CounterClockwise = 2
+    };
+
+    enum class PolygonMode
+    {
+        Fill  = 0,
+        Line  = 1,
+        Point = 2
+    };
 }  // namespace sol

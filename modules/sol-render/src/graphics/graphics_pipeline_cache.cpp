@@ -12,7 +12,7 @@
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-render/common/render_settings.h"
+#include "sol-core/vulkan_render_pass.h"
 
 namespace sol
 {
@@ -91,43 +91,92 @@ namespace sol
         const auto* meshLayout = material.getMeshLayout();
         if (!meshLayout) throw SolError("Cannot create pipeline: material has no mesh layout.");
 
-        // TODO: To what extent are the RenderSettings needed here? Things like culling should perhaps be put in the GraphicsMaterial class instead.
-        VulkanGraphicsPipeline::Settings pipelineSettings;
-        pipelineSettings.renderPass   = renderPass;
-        pipelineSettings.vertexShader = const_cast<VulkanShaderModule&>(material.getVertexShader());  //TODO: const_cast
-        pipelineSettings.fragmentShader       = const_cast<VulkanShaderModule&>(material.getFragmentShader());
-        pipelineSettings.vertexAttributes     = meshLayout->getAttributeDescriptions();
-        pipelineSettings.vertexBindings       = meshLayout->getBindingDescriptions();
-        pipelineSettings.descriptorSetLayouts = material.getLayout().getDescriptorSetLayouts();
-        pipelineSettings.pushConstants        = material.getLayout().getPushConstants();
-        pipelineSettings.colorBlending        = material.getGraphicsLayout().getColorBlending();
+        const auto& layout = material.getGraphicsLayout();
 
-        VkPipelineRasterizationStateCreateInfo rasterization{};
-        rasterization.sType     = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-        rasterization.lineWidth = 1.0f;
-        switch (material.getPolyonMode())
+        VulkanGraphicsPipeline::Settings settings;
+        settings.renderPass            = renderPass;
+        settings.vertexShader          = material.getVertexShader();
+        settings.fragmentShader        = material.getFragmentShader();
+        settings.vertexAttributes      = meshLayout->getAttributeDescriptions();
+        settings.vertexBindings        = meshLayout->getBindingDescriptions();
+        settings.descriptorSetLayouts  = layout.getDescriptorSetLayouts();
+        settings.pushConstants         = layout.getPushConstants();
+        settings.colorBlendAttachments = layout.getColorBlendAttachments();
+
+        // Either enable various dynamic states, or initialize pipeline with values from layout.
+
+        if (layout.isDynamicStateEnabled<VK_DYNAMIC_STATE_VIEWPORT>())
         {
-        case GraphicsMaterial::PolygonMode::Fill: rasterization.polygonMode = VK_POLYGON_MODE_FILL; break;
-        case GraphicsMaterial::PolygonMode::Line: rasterization.polygonMode = VK_POLYGON_MODE_LINE; break;
-        case GraphicsMaterial::PolygonMode::Point: rasterization.polygonMode = VK_POLYGON_MODE_POINT; break;
+            settings.enabledDynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
         }
-        switch (material.getCullMode())
+        else if (layout.isDynamicStateEnabled<VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT>())
         {
-        case GraphicsMaterial::CullMode::None: rasterization.cullMode = VK_CULL_MODE_NONE; break;
-        case GraphicsMaterial::CullMode::Front: rasterization.cullMode = VK_CULL_MODE_FRONT_BIT; break;
-        case GraphicsMaterial::CullMode::Back: rasterization.cullMode = VK_CULL_MODE_BACK_BIT; break;
-        case GraphicsMaterial::CullMode::Both: rasterization.cullMode = VK_CULL_MODE_FRONT_AND_BACK; break;
+            settings.enabledDynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
         }
-        switch (material.getFrontFace())
+        else
         {
-        case GraphicsMaterial::FrontFace::Clockwise: rasterization.frontFace = VK_FRONT_FACE_CLOCKWISE; break;
-        case GraphicsMaterial::FrontFace::CounterClockwise:
-            rasterization.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-            break;
+            throw SolError("");
+            // TODO:
+            //pipelineSettings.viewports.emplace_back(...);
         }
 
-        pipelineSettings.rasterization = rasterization;
+        if (layout.isDynamicStateEnabled<VK_DYNAMIC_STATE_SCISSOR>())
+        {
+            settings.enabledDynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
+        }
+        else if (layout.isDynamicStateEnabled<VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT>())
+        {
+            settings.enabledDynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+        }
+        else
+        {
+            throw SolError("");
+            // TODO:
+            //pipelineSettings.scissors.emplace_back(...);
+        }
 
-        return VulkanGraphicsPipeline::create(pipelineSettings);
+        if (layout.isDynamicStateEnabled<VK_DYNAMIC_STATE_CULL_MODE>())
+        {
+            settings.enabledDynamicStates.push_back(VK_DYNAMIC_STATE_CULL_MODE);
+        }
+        else
+        {
+            switch (layout.getCullMode())
+            {
+            case CullMode::None: settings.rasterization.cullMode = VK_CULL_MODE_NONE; break;
+            case CullMode::Front: settings.rasterization.cullMode = VK_CULL_MODE_FRONT_BIT; break;
+            case CullMode::Back: settings.rasterization.cullMode = VK_CULL_MODE_BACK_BIT; break;
+            case CullMode::Both: settings.rasterization.cullMode = VK_CULL_MODE_FRONT_AND_BACK; break;
+            }
+        }
+
+        if (layout.isDynamicStateEnabled<VK_DYNAMIC_STATE_FRONT_FACE>())
+        {
+            settings.enabledDynamicStates.push_back(VK_DYNAMIC_STATE_FRONT_FACE);
+        }
+        else
+        {
+            switch (layout.getFrontFace())
+            {
+            case FrontFace::Clockwise: settings.rasterization.frontFace = VK_FRONT_FACE_CLOCKWISE; break;
+            case FrontFace::CounterClockwise: settings.rasterization.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE; break;
+            }
+        }
+
+        if (layout.isDynamicStateEnabled<VK_DYNAMIC_STATE_POLYGON_MODE_EXT>())
+        {
+            settings.enabledDynamicStates.push_back(VK_DYNAMIC_STATE_POLYGON_MODE_EXT);
+        }
+        else
+        {
+            switch (layout.getPolygonMode())
+            {
+            case PolygonMode::Fill: settings.rasterization.polygonMode = VK_POLYGON_MODE_FILL; break;
+            case PolygonMode::Line: settings.rasterization.polygonMode = VK_POLYGON_MODE_LINE; break;
+            case PolygonMode::Point: settings.rasterization.polygonMode = VK_POLYGON_MODE_POINT; break;
+            }
+        }
+
+        return VulkanGraphicsPipeline::create(settings);
     }
 }  // namespace sol

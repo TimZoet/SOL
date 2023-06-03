@@ -10,6 +10,10 @@
 
 namespace sol
 {
+    /**
+     * \brief Convenient wrapper around all Vulkan* objects.
+     * \tparam T Vulkan object type. Respects constness.
+     */
     template<typename T>
     class ObjectRefSetting
     {

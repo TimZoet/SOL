@@ -61,15 +61,11 @@ namespace sol
     VulkanRayTracingPipelinePtr RayTracingPipelineCache::createPipelineImpl(const RayTracingMaterial& material)
     {
         VulkanRayTracingPipeline::Settings settings;
-        if (material.hasRaygenShader())
-            settings.raygenShader = const_cast<VulkanShaderModule&>(material.getRaygenShader());  //TODO: const_cast
-        if (material.hasMissShader()) settings.missShader = const_cast<VulkanShaderModule&>(material.getMissShader());
-        if (material.hasClosestHitShader())
-            settings.closestHitShader = const_cast<VulkanShaderModule&>(material.getClosestHitShader());
-        if (material.hasAnyHitShader())
-            settings.anyHitShader = const_cast<VulkanShaderModule&>(material.getAnyHitShader());
-        if (material.hasIntersectionShader())
-            settings.intersectionShader = const_cast<VulkanShaderModule&>(material.getIntersectionShader());
+        if (material.hasRaygenShader()) settings.raygenShader = material.getRaygenShader();
+        if (material.hasMissShader()) settings.missShader = material.getMissShader();
+        if (material.hasClosestHitShader()) settings.closestHitShader = material.getClosestHitShader();
+        if (material.hasAnyHitShader()) settings.anyHitShader = material.getAnyHitShader();
+        if (material.hasIntersectionShader()) settings.intersectionShader = material.getIntersectionShader();
         settings.descriptorSetLayouts = material.getLayout().getDescriptorSetLayouts();
         // TODO: Push constants.
 

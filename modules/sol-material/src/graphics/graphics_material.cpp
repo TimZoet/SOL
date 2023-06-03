@@ -33,9 +33,9 @@ namespace sol
 
     const IGraphicsMaterialManager& GraphicsMaterial::getMaterialManager() const noexcept { return *materialManager; }
 
-    const VulkanShaderModule& GraphicsMaterial::getVertexShader() const noexcept { return *vertexShader; }
+    VulkanShaderModule& GraphicsMaterial::getVertexShader() const noexcept { return *vertexShader; }
 
-    const VulkanShaderModule& GraphicsMaterial::getFragmentShader() const noexcept { return *fragmentShader; }
+    VulkanShaderModule& GraphicsMaterial::getFragmentShader() const noexcept { return *fragmentShader; }
 
     const MaterialLayout& GraphicsMaterial::getLayout() const noexcept { return layout; }
 
@@ -45,11 +45,11 @@ namespace sol
 
     const std::vector<GraphicsMaterialInstance*>& GraphicsMaterial::getInstances() const noexcept { return instances; }
 
-    GraphicsMaterial::CullMode GraphicsMaterial::getCullMode() const noexcept { return cullMode; }
+    CullMode GraphicsMaterial::getCullMode() const noexcept { return cullMode; }
 
-    GraphicsMaterial::FrontFace GraphicsMaterial::getFrontFace() const noexcept { return frontFace; }
+    FrontFace GraphicsMaterial::getFrontFace() const noexcept { return frontFace; }
 
-    GraphicsMaterial::PolygonMode GraphicsMaterial::getPolyonMode() const noexcept { return polygonMode; }
+    PolygonMode GraphicsMaterial::getPolygonMode() const noexcept { return polygonMode; }
 
     int32_t GraphicsMaterial::getLayer() const noexcept { return layer; }
 
@@ -79,7 +79,7 @@ namespace sol
 
     void GraphicsMaterial::setFrontFace(const FrontFace value) noexcept { frontFace = value; }
 
-    void GraphicsMaterial::setPolygonMode(PolygonMode value) noexcept { polygonMode = value; }
+    void GraphicsMaterial::setPolygonMode(const PolygonMode value) noexcept { polygonMode = value; }
 
     void GraphicsMaterial::setLayer(const int32_t l) noexcept { layer = l; }
 }  // namespace sol

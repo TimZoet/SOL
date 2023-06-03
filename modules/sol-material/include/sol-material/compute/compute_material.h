@@ -65,9 +65,7 @@ namespace sol
          */
         [[nodiscard]] const IComputeMaterialManager& getMaterialManager() const noexcept;
 
-        [[nodiscard]] VulkanShaderModule& getComputeShader() noexcept;
-
-        [[nodiscard]] const VulkanShaderModule& getComputeShader() const noexcept;
+        [[nodiscard]] VulkanShaderModule& getComputeShader() const noexcept;
 
         [[nodiscard]] const MaterialLayout& getLayout() const noexcept override;
 
