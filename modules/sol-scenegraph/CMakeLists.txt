@@ -15,8 +15,8 @@ set(HEADERS
     
     ${INCLUDE_DIR}/drawable/mesh_node.h
     
-    ${INCLUDE_DIR}/forward/forward_material_node.h
-    ${INCLUDE_DIR}/forward/forward_push_constant_node.h
+    ${INCLUDE_DIR}/graphics/graphics_material_node.h
+    ${INCLUDE_DIR}/graphics/graphics_push_constant_node.h
 
     ${INCLUDE_DIR}/ray_tracing/ray_tracing_material_node.h
     ${INCLUDE_DIR}/ray_tracing/trace_rays_node.h
@@ -33,8 +33,8 @@ set(SOURCES
     
     ${SRC_DIR}/drawable/mesh_node.cpp
     
-    ${SRC_DIR}/forward/forward_material_node.cpp
-    ${SRC_DIR}/forward/forward_push_constant_node.cpp
+    ${SRC_DIR}/graphics/graphics_material_node.cpp
+    ${SRC_DIR}/graphics/graphics_push_constant_node.cpp
 
     ${SRC_DIR}/ray_tracing/ray_tracing_material_node.cpp
     ${SRC_DIR}/ray_tracing/trace_rays_node.cpp

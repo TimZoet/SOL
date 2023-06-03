@@ -11,8 +11,8 @@ namespace sol
     class CommandQueue;
     class ICommand;
 
-    using CommandQueuePtr        = std::unique_ptr<CommandQueue>;
-    using CommandQueueSharedPtr  = std::shared_ptr<CommandQueue>;
-    using ICommandPtr            = std::unique_ptr<ICommand>;
-    using ICommandSharedPtr      = std::shared_ptr<ICommand>;
+    using CommandQueuePtr       = std::unique_ptr<CommandQueue>;
+    using CommandQueueSharedPtr = std::shared_ptr<CommandQueue>;
+    using ICommandPtr           = std::unique_ptr<ICommand>;
+    using ICommandSharedPtr     = std::shared_ptr<ICommand>;
 }  // namespace sol

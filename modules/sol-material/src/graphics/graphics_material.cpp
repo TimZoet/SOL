@@ -1,0 +1,85 @@
+#include "sol-material/graphics/graphics_material.h"
+
+////////////////////////////////////////////////////////////////
+// Module includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-core/vulkan_shader_module.h"
+#include "sol-error/sol_error.h"
+
+namespace sol
+{
+    ////////////////////////////////////////////////////////////////
+    // Constructors.
+    ////////////////////////////////////////////////////////////////
+
+    GraphicsMaterial::GraphicsMaterial(VulkanShaderModule& vertexModule, VulkanShaderModule& fragmentModule) :
+        vertexShader(&vertexModule), fragmentShader(&fragmentModule), layout(vertexShader->getDevice())
+    {
+        assert(&vertexShader->getDevice() == &fragmentShader->getDevice());
+    }
+
+    GraphicsMaterial::~GraphicsMaterial() = default;
+
+    ////////////////////////////////////////////////////////////////
+    // Getters.
+    ////////////////////////////////////////////////////////////////
+
+    VulkanDevice& GraphicsMaterial::getDevice() noexcept { return fragmentShader->getDevice(); }
+
+    const VulkanDevice& GraphicsMaterial::getDevice() const noexcept { return fragmentShader->getDevice(); }
+
+    IGraphicsMaterialManager& GraphicsMaterial::getMaterialManager() noexcept { return *materialManager; }
+
+    const IGraphicsMaterialManager& GraphicsMaterial::getMaterialManager() const noexcept { return *materialManager; }
+
+    const VulkanShaderModule& GraphicsMaterial::getVertexShader() const noexcept { return *vertexShader; }
+
+    const VulkanShaderModule& GraphicsMaterial::getFragmentShader() const noexcept { return *fragmentShader; }
+
+    const MaterialLayout& GraphicsMaterial::getLayout() const noexcept { return layout; }
+
+    const GraphicsMaterialLayout& GraphicsMaterial::getGraphicsLayout() const noexcept { return layout; }
+
+    const MeshLayout* GraphicsMaterial::getMeshLayout() const noexcept { return meshLayout; }
+
+    const std::vector<GraphicsMaterialInstance*>& GraphicsMaterial::getInstances() const noexcept { return instances; }
+
+    GraphicsMaterial::CullMode GraphicsMaterial::getCullMode() const noexcept { return cullMode; }
+
+    GraphicsMaterial::FrontFace GraphicsMaterial::getFrontFace() const noexcept { return frontFace; }
+
+    GraphicsMaterial::PolygonMode GraphicsMaterial::getPolyonMode() const noexcept { return polygonMode; }
+
+    int32_t GraphicsMaterial::getLayer() const noexcept { return layer; }
+
+    ////////////////////////////////////////////////////////////////
+    // Setters.
+    ////////////////////////////////////////////////////////////////
+
+    void GraphicsMaterial::setMaterialManager(IGraphicsMaterialManager& manager)
+    {
+        if (materialManager) throw SolError("Cannot set material manager more than once.");
+        materialManager = &manager;
+    }
+
+    void GraphicsMaterial::setVertexShader(VulkanShaderModule& module) noexcept { vertexShader = &module; }
+
+    void GraphicsMaterial::setFragmentShader(VulkanShaderModule& module) noexcept { fragmentShader = &module; }
+
+    void GraphicsMaterial::setMeshLayout(MeshLayout& mLayout)
+    {
+        if (meshLayout) throw SolError("Cannot set mesh layout more than once.");
+        meshLayout = &mLayout;
+    }
+
+    void GraphicsMaterial::addInstance(GraphicsMaterialInstance& instance) { instances.emplace_back(&instance); }
+
+    void GraphicsMaterial::setCullMode(const CullMode value) noexcept { cullMode = value; }
+
+    void GraphicsMaterial::setFrontFace(const FrontFace value) noexcept { frontFace = value; }
+
+    void GraphicsMaterial::setPolygonMode(PolygonMode value) noexcept { polygonMode = value; }
+
+    void GraphicsMaterial::setLayer(const int32_t l) noexcept { layer = l; }
+}  // namespace sol

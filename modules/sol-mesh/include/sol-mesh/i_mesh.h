@@ -97,7 +97,7 @@ namespace sol
          * \return VulkanQueueFamily.
          */
         [[nodiscard]] const VulkanQueueFamily* getTargetFamily() const noexcept;
-        
+
         [[nodiscard]] VkPipelineStageFlags getStageFlags() const noexcept;
 
         /**

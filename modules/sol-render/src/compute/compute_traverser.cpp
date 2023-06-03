@@ -175,12 +175,12 @@ namespace
                     const auto* material     = materialNode.getMaterial();
                     if (material) materialStack.emplace_back(*material, current.materialIndex);
                 }
-                //else if (nodeType == sol::Node::Type::ForwardPushConstant)
+                //else if (nodeType == sol::Node::Type::GraphicsPushConstant)
                 //{
                 //    parentPushConstantIndex = current.pushConstantIndex;
 
                 //    // Add push constant range to list.
-                //    const auto& pushConstantNode = static_cast<const sol::ForwardPushConstantNode&>(current.node);
+                //    const auto& pushConstantNode = static_cast<const sol::GraphicsPushConstantNode&>(current.node);
                 //    const auto& material         = pushConstantNode.getMaterial();
                 //    const auto [rangeOffset, rangeSize] = pushConstantNode.getRange();
                 //    const auto offset                   = pushConstantData.size();
@@ -342,7 +342,7 @@ namespace sol
         auto stack = createStackLists(*this, scenegraph);
 
         // TODO: Cache compatibility. Do that here, or in material(-manager)? Materials can be in different managers, so that complicates things.
-        // std::unordered_map<std::pair<const ForwardMaterial*, const ForwardMaterial*>, std::pair<bool, uint32_t>>
+        // std::unordered_map<std::pair<const GraphicsMaterial*, const GraphicsMaterial*>, std::pair<bool, uint32_t>>
         //   layoutCompatibility;
 
         // TODO: Use std::array with fixed size instead? Would need to limit max depth to something sensible.
@@ -382,7 +382,7 @@ namespace sol
             //    for (const auto index : pushConstantIndices)
             //    {
             //        renderData.pushConstantRanges.emplace_back(
-            //          ForwardRenderData::PushConstantRange{.rangeOffset = stack.pushConstants[index].rangeOffset,
+            //          GraphicsRenderData::PushConstantRange{.rangeOffset = stack.pushConstants[index].rangeOffset,
             //                                               .rangeSize   = stack.pushConstants[index].rangeSize,
             //                                               .offset      = stack.pushConstants[index].offset,
             //                                               .stages      = stack.pushConstants[index].stages});

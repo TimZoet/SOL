@@ -4,7 +4,8 @@
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-mesh/fwd.h"
+#include "sol-render/graphics/fwd.h"
+#include "sol-scenegraph/fwd.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
@@ -14,48 +15,42 @@
 
 namespace sol
 {
-    class UpdateMeshManagerCommand final : public ICommand
+    class GraphicsTraverseCommand final : public ICommand
     {
     public:
-        ////////////////////////////////////////////////////////////////
-        // Types.
-        ////////////////////////////////////////////////////////////////
-
-        enum class Action
-        {
-            Transfer   = 1,
-            Deallocate = 2,
-            All        = 3
-        };
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        UpdateMeshManagerCommand();
+        GraphicsTraverseCommand();
 
-        UpdateMeshManagerCommand(const UpdateMeshManagerCommand&) = delete;
+        GraphicsTraverseCommand(const GraphicsTraverseCommand&) = delete;
 
-        UpdateMeshManagerCommand(UpdateMeshManagerCommand&&) = delete;
+        GraphicsTraverseCommand(GraphicsTraverseCommand&&) = delete;
 
-        ~UpdateMeshManagerCommand() noexcept override;
+        ~GraphicsTraverseCommand() noexcept override;
 
-        UpdateMeshManagerCommand& operator=(const UpdateMeshManagerCommand&) = delete;
+        GraphicsTraverseCommand& operator=(const GraphicsTraverseCommand&) = delete;
 
-        UpdateMeshManagerCommand& operator=(UpdateMeshManagerCommand&&) = delete;
+        GraphicsTraverseCommand& operator=(GraphicsTraverseCommand&&) = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+        [[nodiscard]] GraphicsTraverser* getTraverser() const noexcept;
+
+        [[nodiscard]] Scenegraph* getScenegraph() const noexcept;
 
         ////////////////////////////////////////////////////////////////
         // Setters.
         ////////////////////////////////////////////////////////////////
 
-        void setMeshManager(MeshManager& manager);
+        void setRenderData(GraphicsRenderData& data);
 
-        void setAction(Action a) noexcept;
+        void setTraverser(GraphicsTraverser& traverse);
+
+        void setScenegraph(Scenegraph& graph);
 
         ////////////////////////////////////////////////////////////////
         // Run.
@@ -76,8 +71,10 @@ namespace sol
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        MeshManager* meshManager = nullptr;
+        GraphicsRenderData* renderData = nullptr;
 
-        Action action = Action::All;
+        GraphicsTraverser* traverser = nullptr;
+
+        Scenegraph* scenegraph = nullptr;
     };
 }  // namespace sol

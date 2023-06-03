@@ -117,7 +117,7 @@ namespace sol
         // Transfer.
         ////////////////////////////////////////////////////////////////
 
-       void stageCopy(MeshDescriptionPtr meshDescription, IMesh& mesh) override;
+        void stageCopy(MeshDescriptionPtr meshDescription, IMesh& mesh) override;
 
         void transfer() override;
 

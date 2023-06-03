@@ -4,7 +4,7 @@
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-mesh/fwd.h"
+#include "sol-material/fwd.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
@@ -14,48 +14,40 @@
 
 namespace sol
 {
-    class UpdateMeshManagerCommand final : public ICommand
+    class UpdateGraphicsMaterialManagerCommand final : public ICommand
     {
     public:
-        ////////////////////////////////////////////////////////////////
-        // Types.
-        ////////////////////////////////////////////////////////////////
-
-        enum class Action
-        {
-            Transfer   = 1,
-            Deallocate = 2,
-            All        = 3
-        };
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        UpdateMeshManagerCommand();
+        UpdateGraphicsMaterialManagerCommand();
 
-        UpdateMeshManagerCommand(const UpdateMeshManagerCommand&) = delete;
+        UpdateGraphicsMaterialManagerCommand(const UpdateGraphicsMaterialManagerCommand&) = delete;
 
-        UpdateMeshManagerCommand(UpdateMeshManagerCommand&&) = delete;
+        UpdateGraphicsMaterialManagerCommand(UpdateGraphicsMaterialManagerCommand&&) = delete;
 
-        ~UpdateMeshManagerCommand() noexcept override;
+        ~UpdateGraphicsMaterialManagerCommand() noexcept override;
 
-        UpdateMeshManagerCommand& operator=(const UpdateMeshManagerCommand&) = delete;
+        UpdateGraphicsMaterialManagerCommand& operator=(const UpdateGraphicsMaterialManagerCommand&) = delete;
 
-        UpdateMeshManagerCommand& operator=(UpdateMeshManagerCommand&&) = delete;
+        UpdateGraphicsMaterialManagerCommand& operator=(UpdateGraphicsMaterialManagerCommand&&) = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+        [[nodiscard]] IGraphicsMaterialManager* getMaterialManager() const noexcept;
+
+        [[nodiscard]] const uint32_t* getFrameIndexPtr() const noexcept;
 
         ////////////////////////////////////////////////////////////////
         // Setters.
         ////////////////////////////////////////////////////////////////
 
-        void setMeshManager(MeshManager& manager);
+        void setMaterialManager(IGraphicsMaterialManager& manager);
 
-        void setAction(Action a) noexcept;
+        void setFrameIndexPtr(uint32_t* ptr);
 
         ////////////////////////////////////////////////////////////////
         // Run.
@@ -76,8 +68,8 @@ namespace sol
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        MeshManager* meshManager = nullptr;
+        IGraphicsMaterialManager* materialManager = nullptr;
 
-        Action action = Action::All;
+        uint32_t* frameIndexPtr = nullptr;
     };
 }  // namespace sol

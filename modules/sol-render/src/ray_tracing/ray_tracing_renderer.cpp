@@ -72,7 +72,7 @@ namespace sol
 
             // TODO: Reverse this push? Might be that this list contains deeper nodes first,
             // causing them to be overwritten by higher nodes when they have an overlapping range.
-            // Although perhaps that should be solved in the ForwardRenderData class? Perhaps add a
+            // Although perhaps that should be solved in the GraphicsRenderData class? Perhaps add a
             // flag there indicating the order of the pcRanges. Or fix order that. While doing that,
             // redundant ranges could even be removed.
             /*for (size_t i = 0; i < pushConstantCount; i++)
