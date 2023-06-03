@@ -17,8 +17,6 @@ set(HEADERS
     ${INCLUDE_DIR}/compute/compute_traverser.h
     ${INCLUDE_DIR}/compute/fwd.h
 
-    ${INCLUDE_DIR}/deferred/deferred_renderer.h
-    
     ${INCLUDE_DIR}/graphics/graphics_material_manager.h
     ${INCLUDE_DIR}/graphics/graphics_pipeline_cache.h
     ${INCLUDE_DIR}/graphics/graphics_render_data.h

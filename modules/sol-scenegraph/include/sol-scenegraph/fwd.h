@@ -8,14 +8,11 @@
 
 namespace sol
 {
-    class DeferredMaterialNode;
     class GraphicsMaterialNode;
     class MeshNode;
     class Node;
     class Scenegraph;
 
-    using DeferredMaterialNodePtr       = std::unique_ptr<DeferredMaterialNode>;
-    using DeferredMaterialNodeSharedPtr = std::shared_ptr<DeferredMaterialNode>;
     using GraphicsMaterialNodePtr       = std::unique_ptr<GraphicsMaterialNode>;
     using GraphicsMaterialNodeSharedPtr = std::shared_ptr<GraphicsMaterialNode>;
     using MeshNodePtr                   = std::unique_ptr<MeshNode>;

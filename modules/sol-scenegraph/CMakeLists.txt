@@ -10,9 +10,7 @@ set(HEADERS
 
     ${INCLUDE_DIR}/compute/compute_material_node.h
     ${INCLUDE_DIR}/compute/dispatch_node.h
-    
-    ${INCLUDE_DIR}/deferred/deferred_material_node.h
-    
+
     ${INCLUDE_DIR}/drawable/mesh_node.h
     
     ${INCLUDE_DIR}/graphics/graphics_material_node.h
@@ -29,8 +27,6 @@ set(SOURCES
     ${SRC_DIR}/compute/compute_material_node.cpp
     ${SRC_DIR}/compute/dispatch_node.cpp
 
-    ${SRC_DIR}/deferred/deferred_material_node.cpp
-    
     ${SRC_DIR}/drawable/mesh_node.cpp
     
     ${SRC_DIR}/graphics/graphics_material_node.cpp
