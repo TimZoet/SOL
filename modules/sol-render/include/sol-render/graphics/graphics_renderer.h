@@ -1,0 +1,90 @@
+#pragma once
+
+////////////////////////////////////////////////////////////////
+// External includes.
+////////////////////////////////////////////////////////////////
+
+#include <vulkan/vulkan.hpp>
+
+////////////////////////////////////////////////////////////////
+// Module includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-core/fwd.h"
+#include "sol-material/fwd.h"
+
+////////////////////////////////////////////////////////////////
+// Current target includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-render/fwd.h"
+#include "sol-render/graphics/fwd.h"
+
+namespace sol
+{
+    class ForwardRenderer
+    {
+    public:
+        ////////////////////////////////////////////////////////////////
+        // Types.
+        ////////////////////////////////////////////////////////////////
+
+        struct Parameters
+        {
+            const ForwardRenderData& renderData;
+            VulkanRenderPass&        renderPass;
+            const VulkanFramebuffer& framebuffer;
+            VkCommandBuffer          commandBuffer;
+            const uint32_t           index;
+        };
+
+        ////////////////////////////////////////////////////////////////
+        // Constructors.
+        ////////////////////////////////////////////////////////////////
+
+        ForwardRenderer();
+
+        explicit ForwardRenderer(RenderSettingsSharedPtr settings);
+
+        ForwardRenderer(const ForwardRenderer&) = delete;
+
+        ForwardRenderer(ForwardRenderer&&) = delete;
+
+        ~ForwardRenderer() noexcept;
+
+        ForwardRenderer& operator=(const ForwardRenderer&) = delete;
+
+        ForwardRenderer& operator=(ForwardRenderer&&) = delete;
+
+        ////////////////////////////////////////////////////////////////
+        // Getters.
+        ////////////////////////////////////////////////////////////////
+
+        [[nodiscard]] RenderSettingsSharedPtr& getRenderSettings() noexcept;
+
+        ////////////////////////////////////////////////////////////////
+        // Setters.
+        ////////////////////////////////////////////////////////////////
+
+        void setRenderSettings(RenderSettingsSharedPtr settings);
+
+        ////////////////////////////////////////////////////////////////
+        // Render.
+        ////////////////////////////////////////////////////////////////
+
+        void createPipelines(const Parameters& params) const;
+
+        void beginRenderPass(const Parameters& params) const;
+
+        void render(const Parameters& params);
+
+        void endRenderPass(const Parameters& params);
+
+    private:
+        ////////////////////////////////////////////////////////////////
+        // Member variables.
+        ////////////////////////////////////////////////////////////////
+
+        RenderSettingsSharedPtr renderSettings;
+    };
+}  // namespace sol

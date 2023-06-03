@@ -20,10 +20,10 @@ set(HEADERS
     ${INCLUDE_DIR}/compute/compute_material_layout.h
     ${INCLUDE_DIR}/compute/i_compute_material_manager.h
 
-    ${INCLUDE_DIR}/forward/forward_material.h
-    ${INCLUDE_DIR}/forward/forward_material_instance.h
-    ${INCLUDE_DIR}/forward/forward_material_layout.h
-    ${INCLUDE_DIR}/forward/i_forward_material_manager.h
+    ${INCLUDE_DIR}/graphics/graphics_material.h
+    ${INCLUDE_DIR}/graphics/graphics_material_instance.h
+    ${INCLUDE_DIR}/graphics/graphics_material_layout.h
+    ${INCLUDE_DIR}/graphics/i_graphics_material_manager.h
 
     ${INCLUDE_DIR}/ray_tracing/ray_tracing_material.h
     ${INCLUDE_DIR}/ray_tracing/ray_tracing_material_instance.h
@@ -45,10 +45,10 @@ set(SOURCES
     ${SRC_DIR}/compute/compute_material_layout.cpp
     ${SRC_DIR}/compute/i_compute_material_manager.cpp
 
-    ${SRC_DIR}/forward/forward_material.cpp
-    ${SRC_DIR}/forward/forward_material_instance.cpp
-    ${SRC_DIR}/forward/forward_material_layout.cpp
-    ${SRC_DIR}/forward/i_forward_material_manager.cpp
+    ${SRC_DIR}/graphics/graphics_material.cpp
+    ${SRC_DIR}/graphics/graphics_material_instance.cpp
+    ${SRC_DIR}/graphics/graphics_material_layout.cpp
+    ${SRC_DIR}/graphics/i_graphics_material_manager.cpp
 
     ${SRC_DIR}/ray_tracing/ray_tracing_material.cpp
     ${SRC_DIR}/ray_tracing/ray_tracing_material_instance.cpp
