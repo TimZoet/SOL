@@ -21,7 +21,7 @@
 
 namespace sol
 {
-    class ForwardRenderData
+    class GraphicsRenderData
     {
     public:
         ////////////////////////////////////////////////////////////////
@@ -38,7 +38,7 @@ namespace sol
             /**
              * \brief Active material.
              */
-            const ForwardMaterial* material = nullptr;
+            const GraphicsMaterial* material = nullptr;
 
             /**
              * \brief Offset into the material instance list.
@@ -83,17 +83,17 @@ namespace sol
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        ForwardRenderData();
+        GraphicsRenderData();
 
-        ForwardRenderData(const ForwardRenderData&) = delete;
+        GraphicsRenderData(const GraphicsRenderData&) = delete;
 
-        ForwardRenderData(ForwardRenderData&&) = delete;
+        GraphicsRenderData(GraphicsRenderData&&) = delete;
 
-        ~ForwardRenderData() noexcept;
+        ~GraphicsRenderData() noexcept;
 
-        ForwardRenderData& operator=(const ForwardRenderData&) = delete;
+        GraphicsRenderData& operator=(const GraphicsRenderData&) = delete;
 
-        ForwardRenderData& operator=(ForwardRenderData&&) = delete;
+        GraphicsRenderData& operator=(GraphicsRenderData&&) = delete;
 
         ////////////////////////////////////////////////////////////////
         // ...
@@ -113,7 +113,7 @@ namespace sol
 
         std::vector<Drawable> drawables;
 
-        std::vector<const ForwardMaterialInstance*> materialInstances;
+        std::vector<const GraphicsMaterialInstance*> materialInstances;
 
         /**
          * \brief Range into the push constant data array.

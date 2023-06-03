@@ -20,35 +20,35 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    ForwardTraverseCommand::ForwardTraverseCommand() = default;
+    GraphicsTraverseCommand::GraphicsTraverseCommand() = default;
 
-    ForwardTraverseCommand::~ForwardTraverseCommand() noexcept = default;
+    GraphicsTraverseCommand::~GraphicsTraverseCommand() noexcept = default;
 
     ////////////////////////////////////////////////////////////////
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    ForwardTraverser* ForwardTraverseCommand::getTraverser() const noexcept { return traverser; }
+    GraphicsTraverser* GraphicsTraverseCommand::getTraverser() const noexcept { return traverser; }
 
-    Scenegraph* ForwardTraverseCommand::getScenegraph() const noexcept { return scenegraph; }
+    Scenegraph* GraphicsTraverseCommand::getScenegraph() const noexcept { return scenegraph; }
 
     ////////////////////////////////////////////////////////////////
     // Setters.
     ////////////////////////////////////////////////////////////////
 
-    void ForwardTraverseCommand::setRenderData(ForwardRenderData& data)
+    void GraphicsTraverseCommand::setRenderData(GraphicsRenderData& data)
     {
         commandQueue->requireNonFinalized();
         renderData = &data;
     }
 
-    void ForwardTraverseCommand::setTraverser(ForwardTraverser& traverse)
+    void GraphicsTraverseCommand::setTraverser(GraphicsTraverser& traverse)
     {
         commandQueue->requireNonFinalized();
         traverser = &traverse;
     }
 
-    void ForwardTraverseCommand::setScenegraph(Scenegraph& graph)
+    void GraphicsTraverseCommand::setScenegraph(Scenegraph& graph)
     {
         commandQueue->requireNonFinalized();
         scenegraph = &graph;
@@ -58,14 +58,14 @@ namespace sol
     // Run.
     ////////////////////////////////////////////////////////////////
 
-    void ForwardTraverseCommand::finalize()
+    void GraphicsTraverseCommand::finalize()
     {
-        if (!renderData) throw SolError("Cannot finalize ForwardTraverseCommand: renderData not set.");
-        if (!traverser) throw SolError("Cannot finalize ForwardTraverseCommand: traverser not set.");
-        if (!scenegraph) throw SolError("Cannot finalize ForwardTraverseCommand: scenegraph not set.");
+        if (!renderData) throw SolError("Cannot finalize GraphicsTraverseCommand: renderData not set.");
+        if (!traverser) throw SolError("Cannot finalize GraphicsTraverseCommand: traverser not set.");
+        if (!scenegraph) throw SolError("Cannot finalize GraphicsTraverseCommand: scenegraph not set.");
     }
 
-    void ForwardTraverseCommand::operator()()
+    void GraphicsTraverseCommand::operator()()
     {
         renderData->clear();
         traverser->traverse(*scenegraph, *renderData);
@@ -75,5 +75,5 @@ namespace sol
     // Debugging and visualization.
     ////////////////////////////////////////////////////////////////
 
-    std::string ForwardTraverseCommand::getVizLabel() const { return "ForwardTraverse"; }
+    std::string GraphicsTraverseCommand::getVizLabel() const { return "GraphicsTraverse"; }
 }  // namespace sol

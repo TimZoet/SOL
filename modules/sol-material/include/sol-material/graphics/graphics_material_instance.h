@@ -21,64 +21,64 @@
 
 namespace sol
 {
-    class ForwardMaterialInstance : public MaterialInstance
+    class GraphicsMaterialInstance : public MaterialInstance
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        ForwardMaterialInstance();
+        GraphicsMaterialInstance();
 
-        ForwardMaterialInstance(const ForwardMaterialInstance&) = delete;
+        GraphicsMaterialInstance(const GraphicsMaterialInstance&) = delete;
 
-        ForwardMaterialInstance(ForwardMaterialInstance&&) = delete;
+        GraphicsMaterialInstance(GraphicsMaterialInstance&&) = delete;
 
-        ~ForwardMaterialInstance() override;
+        ~GraphicsMaterialInstance() override;
 
-        ForwardMaterialInstance& operator=(const ForwardMaterialInstance&) = delete;
+        GraphicsMaterialInstance& operator=(const GraphicsMaterialInstance&) = delete;
 
-        ForwardMaterialInstance& operator=(ForwardMaterialInstance&&) = delete;
+        GraphicsMaterialInstance& operator=(GraphicsMaterialInstance&&) = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
         /**
-         * \brief Get the IForwardMaterialManager.
-         * \return IForwardMaterialManager.
+         * \brief Get the IGraphicsMaterialManager.
+         * \return IGraphicsMaterialManager.
          */
-        [[nodiscard]] IForwardMaterialManager& getMaterialManager() noexcept;
+        [[nodiscard]] IGraphicsMaterialManager& getMaterialManager() noexcept;
 
         /**
-         * \brief Get the IForwardMaterialManager.
-         * \return IForwardMaterialManager.
+         * \brief Get the IGraphicsMaterialManager.
+         * \return IGraphicsMaterialManager.
          */
-        [[nodiscard]] const IForwardMaterialManager& getMaterialManager() const noexcept;
+        [[nodiscard]] const IGraphicsMaterialManager& getMaterialManager() const noexcept;
 
         [[nodiscard]] Material& getMaterial() noexcept override;
 
         [[nodiscard]] const Material& getMaterial() const noexcept override;
 
-        [[nodiscard]] ForwardMaterial& getForwardMaterial() noexcept;
+        [[nodiscard]] GraphicsMaterial& getGraphicsMaterial() noexcept;
 
-        [[nodiscard]] const ForwardMaterial& getForwardMaterial() const noexcept;
+        [[nodiscard]] const GraphicsMaterial& getGraphicsMaterial() const noexcept;
 
         ////////////////////////////////////////////////////////////////
         // Setters.
         ////////////////////////////////////////////////////////////////
 
-        void setMaterialManager(IForwardMaterialManager& manager);
+        void setMaterialManager(IGraphicsMaterialManager& manager);
 
-        void setMaterial(ForwardMaterial& fwdMaterial);
+        void setMaterial(GraphicsMaterial& fwdMaterial);
 
     private:
         ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        IForwardMaterialManager* materialManager = nullptr;
+        IGraphicsMaterialManager* materialManager = nullptr;
 
-        ForwardMaterial* material = nullptr;
+        GraphicsMaterial* material = nullptr;
     };
 }  // namespace sol

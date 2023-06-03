@@ -18,23 +18,23 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    ForwardPushConstantNode::ForwardPushConstantNode(ForwardMaterial& mtl) : Node(), material(&mtl) {}
+    GraphicsPushConstantNode::GraphicsPushConstantNode(GraphicsMaterial& mtl) : Node(), material(&mtl) {}
 
     ////////////////////////////////////////////////////////////////
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    Node::Type ForwardPushConstantNode::getType() const noexcept { return Type::ForwardPushConstant; }
+    Node::Type GraphicsPushConstantNode::getType() const noexcept { return Type::GraphicsPushConstant; }
 
-    const ForwardMaterial& ForwardPushConstantNode::getMaterial() const noexcept { return *material; }
-    
+    const GraphicsMaterial& GraphicsPushConstantNode::getMaterial() const noexcept { return *material; }
+
     ////////////////////////////////////////////////////////////////
     // Debugging and visualization.
     ////////////////////////////////////////////////////////////////
 
-    std::string ForwardPushConstantNode::getVizLabel() const { return "PushConstant"; }
+    std::string GraphicsPushConstantNode::getVizLabel() const { return "PushConstant"; }
 
-    std::string ForwardPushConstantNode::getVizShape() const { return "invtriangle"; }
+    std::string GraphicsPushConstantNode::getVizShape() const { return "invtriangle"; }
 
-    std::string ForwardPushConstantNode::getVizFillColor() const { return "white"; }
+    std::string GraphicsPushConstantNode::getVizFillColor() const { return "white"; }
 }  // namespace sol

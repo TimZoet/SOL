@@ -6,7 +6,7 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    IForwardMaterialManager::IForwardMaterialManager() = default;
+    IGraphicsMaterialManager::IGraphicsMaterialManager() = default;
 
-    IForwardMaterialManager::~IForwardMaterialManager() noexcept = default;
+    IGraphicsMaterialManager::~IGraphicsMaterialManager() noexcept = default;
 }  // namespace sol

@@ -26,38 +26,38 @@
 
 namespace sol
 {
-    class IForwardMaterialManager
+    class IGraphicsMaterialManager
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        IForwardMaterialManager();
+        IGraphicsMaterialManager();
 
-        IForwardMaterialManager(const IForwardMaterialManager&) = delete;
+        IGraphicsMaterialManager(const IGraphicsMaterialManager&) = delete;
 
-        IForwardMaterialManager(IForwardMaterialManager&&) = delete;
+        IGraphicsMaterialManager(IGraphicsMaterialManager&&) = delete;
 
-        virtual ~IForwardMaterialManager() noexcept;
+        virtual ~IGraphicsMaterialManager() noexcept;
 
-        IForwardMaterialManager& operator=(const IForwardMaterialManager&) = delete;
+        IGraphicsMaterialManager& operator=(const IGraphicsMaterialManager&) = delete;
 
-        IForwardMaterialManager& operator=(IForwardMaterialManager&&) = delete;
+        IGraphicsMaterialManager& operator=(IGraphicsMaterialManager&&) = delete;
 
         ////////////////////////////////////////////////////////////////
         // Interface.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] virtual VulkanGraphicsPipeline& getPipeline(const ForwardMaterial&  material,
+        [[nodiscard]] virtual VulkanGraphicsPipeline& getPipeline(const GraphicsMaterial& material,
                                                                   const VulkanRenderPass& renderPass) const = 0;
 
-        virtual bool createPipeline(const ForwardMaterial& material, VulkanRenderPass& renderPass) const = 0;
+        virtual bool createPipeline(const GraphicsMaterial& material, VulkanRenderPass& renderPass) const = 0;
 
-        virtual void bindDescriptorSets(std::span<const ForwardMaterialInstance* const> instances,
-                                        VkCommandBuffer                                 commandBuffer,
-                                        const VulkanGraphicsPipeline&                   pipeline,
-                                        size_t                                          index) const = 0;
+        virtual void bindDescriptorSets(std::span<const GraphicsMaterialInstance* const> instances,
+                                        VkCommandBuffer                                  commandBuffer,
+                                        const VulkanGraphicsPipeline&                    pipeline,
+                                        size_t                                           index) const = 0;
 
         virtual void updateUniformBuffers(uint32_t index) = 0;
     };

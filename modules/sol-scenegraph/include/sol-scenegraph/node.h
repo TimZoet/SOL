@@ -34,8 +34,8 @@ namespace sol
         {
             Empty,
             Mesh,
-            ForwardMaterial,
-            ForwardPushConstant,
+            GraphicsMaterial,
+            GraphicsPushConstant,
             DeferredMaterial,
             ComputeMaterial,
             Dispatch,

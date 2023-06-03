@@ -6,7 +6,7 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    ForwardMaterialNode::ForwardMaterialNode(ForwardMaterialInstance& materialInstance) :
+    GraphicsMaterialNode::GraphicsMaterialNode(GraphicsMaterialInstance& materialInstance) :
         Node(), material(&materialInstance)
     {
     }
@@ -15,23 +15,23 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    Node::Type ForwardMaterialNode::getType() const noexcept { return Type::ForwardMaterial; }
+    Node::Type GraphicsMaterialNode::getType() const noexcept { return Type::GraphicsMaterial; }
 
-    ForwardMaterialInstance* ForwardMaterialNode::getMaterial() const noexcept { return material; }
+    GraphicsMaterialInstance* GraphicsMaterialNode::getMaterial() const noexcept { return material; }
 
     ////////////////////////////////////////////////////////////////
     // Setters.
     ////////////////////////////////////////////////////////////////
 
-    void ForwardMaterialNode::setMaterial(ForwardMaterialInstance* mtl) noexcept { material = mtl; }
+    void GraphicsMaterialNode::setMaterial(GraphicsMaterialInstance* mtl) noexcept { material = mtl; }
 
     ////////////////////////////////////////////////////////////////
     // Debugging and visualization.
     ////////////////////////////////////////////////////////////////
 
-    std::string ForwardMaterialNode::getVizLabel() const { return "ForwardMaterial"; }
+    std::string GraphicsMaterialNode::getVizLabel() const { return "GraphicsMaterial"; }
 
-    std::string ForwardMaterialNode::getVizShape() const { return "circle"; }
+    std::string GraphicsMaterialNode::getVizShape() const { return "circle"; }
 
-    std::string ForwardMaterialNode::getVizFillColor() const { return material ? "white" : "red"; }
+    std::string GraphicsMaterialNode::getVizFillColor() const { return material ? "white" : "red"; }
 }  // namespace sol

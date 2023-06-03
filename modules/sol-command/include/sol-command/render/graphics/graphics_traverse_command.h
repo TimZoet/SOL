@@ -15,30 +15,30 @@
 
 namespace sol
 {
-    class ForwardTraverseCommand final : public ICommand
+    class GraphicsTraverseCommand final : public ICommand
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        ForwardTraverseCommand();
+        GraphicsTraverseCommand();
 
-        ForwardTraverseCommand(const ForwardTraverseCommand&) = delete;
+        GraphicsTraverseCommand(const GraphicsTraverseCommand&) = delete;
 
-        ForwardTraverseCommand(ForwardTraverseCommand&&) = delete;
+        GraphicsTraverseCommand(GraphicsTraverseCommand&&) = delete;
 
-        ~ForwardTraverseCommand() noexcept override;
+        ~GraphicsTraverseCommand() noexcept override;
 
-        ForwardTraverseCommand& operator=(const ForwardTraverseCommand&) = delete;
+        GraphicsTraverseCommand& operator=(const GraphicsTraverseCommand&) = delete;
 
-        ForwardTraverseCommand& operator=(ForwardTraverseCommand&&) = delete;
+        GraphicsTraverseCommand& operator=(GraphicsTraverseCommand&&) = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] ForwardTraverser* getTraverser() const noexcept;
+        [[nodiscard]] GraphicsTraverser* getTraverser() const noexcept;
 
         [[nodiscard]] Scenegraph* getScenegraph() const noexcept;
 
@@ -46,9 +46,9 @@ namespace sol
         // Setters.
         ////////////////////////////////////////////////////////////////
 
-        void setRenderData(ForwardRenderData& data);
+        void setRenderData(GraphicsRenderData& data);
 
-        void setTraverser(ForwardTraverser& traverse);
+        void setTraverser(GraphicsTraverser& traverse);
 
         void setScenegraph(Scenegraph& graph);
 
@@ -71,9 +71,9 @@ namespace sol
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        ForwardRenderData* renderData = nullptr;
+        GraphicsRenderData* renderData = nullptr;
 
-        ForwardTraverser* traverser = nullptr;
+        GraphicsTraverser* traverser = nullptr;
 
         Scenegraph* scenegraph = nullptr;
     };

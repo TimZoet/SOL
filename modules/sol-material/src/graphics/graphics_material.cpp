@@ -13,73 +13,73 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    ForwardMaterial::ForwardMaterial(VulkanShaderModule& vertexModule, VulkanShaderModule& fragmentModule) :
+    GraphicsMaterial::GraphicsMaterial(VulkanShaderModule& vertexModule, VulkanShaderModule& fragmentModule) :
         vertexShader(&vertexModule), fragmentShader(&fragmentModule), layout(vertexShader->getDevice())
     {
         assert(&vertexShader->getDevice() == &fragmentShader->getDevice());
     }
 
-    ForwardMaterial::~ForwardMaterial() = default;
+    GraphicsMaterial::~GraphicsMaterial() = default;
 
     ////////////////////////////////////////////////////////////////
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    VulkanDevice& ForwardMaterial::getDevice() noexcept { return fragmentShader->getDevice(); }
+    VulkanDevice& GraphicsMaterial::getDevice() noexcept { return fragmentShader->getDevice(); }
 
-    const VulkanDevice& ForwardMaterial::getDevice() const noexcept { return fragmentShader->getDevice(); }
+    const VulkanDevice& GraphicsMaterial::getDevice() const noexcept { return fragmentShader->getDevice(); }
 
-    IForwardMaterialManager& ForwardMaterial::getMaterialManager() noexcept { return *materialManager; }
+    IGraphicsMaterialManager& GraphicsMaterial::getMaterialManager() noexcept { return *materialManager; }
 
-    const IForwardMaterialManager& ForwardMaterial::getMaterialManager() const noexcept { return *materialManager; }
+    const IGraphicsMaterialManager& GraphicsMaterial::getMaterialManager() const noexcept { return *materialManager; }
 
-    const VulkanShaderModule& ForwardMaterial::getVertexShader() const noexcept { return *vertexShader; }
+    const VulkanShaderModule& GraphicsMaterial::getVertexShader() const noexcept { return *vertexShader; }
 
-    const VulkanShaderModule& ForwardMaterial::getFragmentShader() const noexcept { return *fragmentShader; }
+    const VulkanShaderModule& GraphicsMaterial::getFragmentShader() const noexcept { return *fragmentShader; }
 
-    const MaterialLayout& ForwardMaterial::getLayout() const noexcept { return layout; }
+    const MaterialLayout& GraphicsMaterial::getLayout() const noexcept { return layout; }
 
-    const ForwardMaterialLayout& ForwardMaterial::getForwardLayout() const noexcept { return layout; }
+    const GraphicsMaterialLayout& GraphicsMaterial::getGraphicsLayout() const noexcept { return layout; }
 
-    const MeshLayout* ForwardMaterial::getMeshLayout() const noexcept { return meshLayout; }
+    const MeshLayout* GraphicsMaterial::getMeshLayout() const noexcept { return meshLayout; }
 
-    const std::vector<ForwardMaterialInstance*>& ForwardMaterial::getInstances() const noexcept { return instances; }
+    const std::vector<GraphicsMaterialInstance*>& GraphicsMaterial::getInstances() const noexcept { return instances; }
 
-    ForwardMaterial::CullMode ForwardMaterial::getCullMode() const noexcept { return cullMode; }
+    GraphicsMaterial::CullMode GraphicsMaterial::getCullMode() const noexcept { return cullMode; }
 
-    ForwardMaterial::FrontFace ForwardMaterial::getFrontFace() const noexcept { return frontFace; }
+    GraphicsMaterial::FrontFace GraphicsMaterial::getFrontFace() const noexcept { return frontFace; }
 
-    ForwardMaterial::PolygonMode ForwardMaterial::getPolyonMode() const noexcept { return polygonMode; }
+    GraphicsMaterial::PolygonMode GraphicsMaterial::getPolyonMode() const noexcept { return polygonMode; }
 
-    int32_t ForwardMaterial::getLayer() const noexcept { return layer; }
+    int32_t GraphicsMaterial::getLayer() const noexcept { return layer; }
 
     ////////////////////////////////////////////////////////////////
     // Setters.
     ////////////////////////////////////////////////////////////////
 
-    void ForwardMaterial::setMaterialManager(IForwardMaterialManager& manager)
+    void GraphicsMaterial::setMaterialManager(IGraphicsMaterialManager& manager)
     {
         if (materialManager) throw SolError("Cannot set material manager more than once.");
         materialManager = &manager;
     }
 
-    void ForwardMaterial::setVertexShader(VulkanShaderModule& module) noexcept { vertexShader = &module; }
+    void GraphicsMaterial::setVertexShader(VulkanShaderModule& module) noexcept { vertexShader = &module; }
 
-    void ForwardMaterial::setFragmentShader(VulkanShaderModule& module) noexcept { fragmentShader = &module; }
+    void GraphicsMaterial::setFragmentShader(VulkanShaderModule& module) noexcept { fragmentShader = &module; }
 
-    void ForwardMaterial::setMeshLayout(MeshLayout& mLayout)
+    void GraphicsMaterial::setMeshLayout(MeshLayout& mLayout)
     {
         if (meshLayout) throw SolError("Cannot set mesh layout more than once.");
         meshLayout = &mLayout;
     }
 
-    void ForwardMaterial::addInstance(ForwardMaterialInstance& instance) { instances.emplace_back(&instance); }
+    void GraphicsMaterial::addInstance(GraphicsMaterialInstance& instance) { instances.emplace_back(&instance); }
 
-    void ForwardMaterial::setCullMode(const CullMode value) noexcept { cullMode = value; }
+    void GraphicsMaterial::setCullMode(const CullMode value) noexcept { cullMode = value; }
 
-    void ForwardMaterial::setFrontFace(const FrontFace value) noexcept { frontFace = value; }
+    void GraphicsMaterial::setFrontFace(const FrontFace value) noexcept { frontFace = value; }
 
-    void ForwardMaterial::setPolygonMode(PolygonMode value) noexcept { polygonMode = value; }
+    void GraphicsMaterial::setPolygonMode(PolygonMode value) noexcept { polygonMode = value; }
 
-    void ForwardMaterial::setLayer(const int32_t l) noexcept { layer = l; }
+    void GraphicsMaterial::setLayer(const int32_t l) noexcept { layer = l; }
 }  // namespace sol

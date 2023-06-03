@@ -6,15 +6,15 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    ForwardMaterialLayout::ForwardMaterialLayout(VulkanDevice& vkDevice) : MaterialLayout(vkDevice) {}
+    GraphicsMaterialLayout::GraphicsMaterialLayout(VulkanDevice& vkDevice) : MaterialLayout(vkDevice) {}
 
-    ForwardMaterialLayout::~ForwardMaterialLayout() noexcept = default;
+    GraphicsMaterialLayout::~GraphicsMaterialLayout() noexcept = default;
 
     ////////////////////////////////////////////////////////////////
     // Getters.
     ////////////////////////////////////////////////////////////////
-    
-    const std::vector<VkPipelineColorBlendAttachmentState>& ForwardMaterialLayout::getColorBlending() const noexcept
+
+    const std::vector<VkPipelineColorBlendAttachmentState>& GraphicsMaterialLayout::getColorBlending() const noexcept
     {
         return colorBlending;
     }
@@ -23,7 +23,7 @@ namespace sol
     // Modifiers.
     ////////////////////////////////////////////////////////////////
 
-    void ForwardMaterialLayout::addColorBlending(VkPipelineColorBlendAttachmentState state)
+    void GraphicsMaterialLayout::addColorBlending(VkPipelineColorBlendAttachmentState state)
     {
         colorBlending.emplace_back(state);
     }

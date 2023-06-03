@@ -133,10 +133,7 @@ namespace sol
             swapchain->recreate();
             if (recreateFunction) recreateFunction(*swapchain);
         }
-        else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-        {
-            handleVulkanError(result);
-        }
+        else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) { handleVulkanError(result); }
     }
 
     ////////////////////////////////////////////////////////////////

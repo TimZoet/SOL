@@ -18,15 +18,15 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    ForwardRenderData::ForwardRenderData() = default;
+    GraphicsRenderData::GraphicsRenderData() = default;
 
-    ForwardRenderData::~ForwardRenderData() noexcept = default;
+    GraphicsRenderData::~GraphicsRenderData() noexcept = default;
 
     ////////////////////////////////////////////////////////////////
     // ...
     ////////////////////////////////////////////////////////////////
 
-    void ForwardRenderData::clear()
+    void GraphicsRenderData::clear()
     {
         drawables.clear();
         materialInstances.clear();
@@ -38,7 +38,7 @@ namespace sol
     // Sorting.
     ////////////////////////////////////////////////////////////////
 
-    void ForwardRenderData::sortDrawablesByLayer()
+    void GraphicsRenderData::sortDrawablesByLayer()
     {
         std::ranges::sort(drawables, [](const Drawable& lhs, const Drawable& rhs) {
             return lhs.material->getLayer() < rhs.material->getLayer();

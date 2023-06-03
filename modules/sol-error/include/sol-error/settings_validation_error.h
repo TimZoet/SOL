@@ -11,6 +11,7 @@ namespace sol
     class SettingsValidationError : public SolError
     {
     public:
-        explicit SettingsValidationError(const std::string& msg, std::source_location loc = std::source_location::current());
+        explicit SettingsValidationError(const std::string&   msg,
+                                         std::source_location loc = std::source_location::current());
     };
 }  // namespace sol

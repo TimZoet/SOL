@@ -20,26 +20,26 @@
 
 namespace sol
 {
-    class ForwardPushConstantNode : public Node
+    class GraphicsPushConstantNode : public Node
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        ForwardPushConstantNode() = default;
+        GraphicsPushConstantNode() = default;
 
-        ForwardPushConstantNode(ForwardMaterial& mtl);
+        GraphicsPushConstantNode(GraphicsMaterial& mtl);
 
-        ForwardPushConstantNode(const ForwardPushConstantNode&) = delete;
+        GraphicsPushConstantNode(const GraphicsPushConstantNode&) = delete;
 
-        ForwardPushConstantNode(ForwardPushConstantNode&&) = delete;
+        GraphicsPushConstantNode(GraphicsPushConstantNode&&) = delete;
 
-        ~ForwardPushConstantNode() noexcept override = default;
+        ~GraphicsPushConstantNode() noexcept override = default;
 
-        ForwardPushConstantNode& operator=(const ForwardPushConstantNode&) = delete;
+        GraphicsPushConstantNode& operator=(const GraphicsPushConstantNode&) = delete;
 
-        ForwardPushConstantNode& operator=(ForwardPushConstantNode&&) = delete;
+        GraphicsPushConstantNode& operator=(GraphicsPushConstantNode&&) = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
@@ -48,10 +48,10 @@ namespace sol
         [[nodiscard]] Type getType() const noexcept override;
 
         /**
-         * \brief Get forward material.
-         * \return ForwardMaterial.
+         * \brief Get material.
+         * \return GraphicsMaterial.
          */
-        [[nodiscard]] const ForwardMaterial& getMaterial() const noexcept;
+        [[nodiscard]] const GraphicsMaterial& getMaterial() const noexcept;
 
         /**
          * \brief Get push constant data range.
@@ -82,6 +82,6 @@ namespace sol
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        ForwardMaterial* material = nullptr;
+        GraphicsMaterial* material = nullptr;
     };
 }  // namespace sol

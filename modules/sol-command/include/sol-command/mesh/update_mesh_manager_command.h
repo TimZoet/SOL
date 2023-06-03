@@ -23,9 +23,9 @@ namespace sol
 
         enum class Action
         {
-            Transfer = 1,
+            Transfer   = 1,
             Deallocate = 2,
-            All = 3
+            All        = 3
         };
 
         ////////////////////////////////////////////////////////////////

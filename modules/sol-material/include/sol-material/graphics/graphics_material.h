@@ -23,10 +23,10 @@
 
 namespace sol
 {
-    class ForwardMaterial : public Material
+    class GraphicsMaterial : public Material
     {
     public:
-        friend class ForwardMaterialInstance;
+        friend class GraphicsMaterialInstance;
 
         ////////////////////////////////////////////////////////////////
         // Types.
@@ -57,19 +57,19 @@ namespace sol
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        ForwardMaterial() = delete;
+        GraphicsMaterial() = delete;
 
-        ForwardMaterial(VulkanShaderModule& vertexModule, VulkanShaderModule& fragmentModule);
+        GraphicsMaterial(VulkanShaderModule& vertexModule, VulkanShaderModule& fragmentModule);
 
-        ForwardMaterial(const ForwardMaterial&) = delete;
+        GraphicsMaterial(const GraphicsMaterial&) = delete;
 
-        ForwardMaterial(ForwardMaterial&&) = delete;
+        GraphicsMaterial(GraphicsMaterial&&) = delete;
 
-        ~ForwardMaterial() override;
+        ~GraphicsMaterial() override;
 
-        ForwardMaterial& operator=(const ForwardMaterial&) = delete;
+        GraphicsMaterial& operator=(const GraphicsMaterial&) = delete;
 
-        ForwardMaterial& operator=(ForwardMaterial&&) = delete;
+        GraphicsMaterial& operator=(GraphicsMaterial&&) = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
@@ -80,16 +80,16 @@ namespace sol
         [[nodiscard]] const VulkanDevice& getDevice() const noexcept override;
 
         /**
-         * \brief Get the IForwardMaterialManager.
-         * \return IForwardMaterialManager.
+         * \brief Get the IGraphicsMaterialManager.
+         * \return IGraphicsMaterialManager.
          */
-        [[nodiscard]] IForwardMaterialManager& getMaterialManager() noexcept;
+        [[nodiscard]] IGraphicsMaterialManager& getMaterialManager() noexcept;
 
         /**
-         * \brief Get the IForwardMaterialManager.
-         * \return IForwardMaterialManager.
+         * \brief Get the IGraphicsMaterialManager.
+         * \return IGraphicsMaterialManager.
          */
-        [[nodiscard]] const IForwardMaterialManager& getMaterialManager() const noexcept;
+        [[nodiscard]] const IGraphicsMaterialManager& getMaterialManager() const noexcept;
 
         [[nodiscard]] const VulkanShaderModule& getVertexShader() const noexcept;
 
@@ -97,11 +97,11 @@ namespace sol
 
         [[nodiscard]] const MaterialLayout& getLayout() const noexcept override;
 
-        [[nodiscard]] const ForwardMaterialLayout& getForwardLayout() const noexcept;
+        [[nodiscard]] const GraphicsMaterialLayout& getGraphicsLayout() const noexcept;
 
         [[nodiscard]] const MeshLayout* getMeshLayout() const noexcept;
 
-        [[nodiscard]] const std::vector<ForwardMaterialInstance*>& getInstances() const noexcept;
+        [[nodiscard]] const std::vector<GraphicsMaterialInstance*>& getInstances() const noexcept;
 
         [[nodiscard]] CullMode getCullMode() const noexcept;
 
@@ -115,7 +115,7 @@ namespace sol
         // Setters.
         ////////////////////////////////////////////////////////////////
 
-        void setMaterialManager(IForwardMaterialManager& manager);
+        void setMaterialManager(IGraphicsMaterialManager& manager);
 
         void setVertexShader(VulkanShaderModule& module) noexcept;
 
@@ -136,13 +136,13 @@ namespace sol
         void setLayer(int32_t l) noexcept;
 
     private:
-        void addInstance(ForwardMaterialInstance& instance);
+        void addInstance(GraphicsMaterialInstance& instance);
 
         ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        IForwardMaterialManager* materialManager = nullptr;
+        IGraphicsMaterialManager* materialManager = nullptr;
 
         VulkanShaderModule* vertexShader = nullptr;
 
@@ -150,12 +150,12 @@ namespace sol
 
         MeshLayout* meshLayout = nullptr;
 
-        std::vector<ForwardMaterialInstance*> instances;
+        std::vector<GraphicsMaterialInstance*> instances;
 
     protected:
-        ForwardMaterialLayout layout;
+        GraphicsMaterialLayout layout;
 
-        // TODO: Do these properties belong in the material or the forward layout?
+        // TODO: Do these properties belong in the material or the graphics layout?
         // And if they belong here, when should it be possible to change them?
         // Also after layout finalization?
         CullMode cullMode = CullMode::None;

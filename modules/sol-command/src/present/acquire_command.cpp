@@ -98,8 +98,7 @@ namespace sol
             throw SolError(
               "Cannot finalize AcquireCommand: semaphoreIndexPtr is null while there are more than 1 semaphores.");
         if (fences.size() > 1 && !fenceIndexPtr)
-            throw SolError(
-              "Cannot finalize AcquireCommand: fenceIndexPtr is null while there are more than 1 fences.");
+            throw SolError("Cannot finalize AcquireCommand: fenceIndexPtr is null while there are more than 1 fences.");
     }
 
     void AcquireCommand::operator()()
@@ -143,7 +142,7 @@ namespace sol
                                                   imageIndexPtr);
 
         // TODO: Add member variable with function to recreate swapchain.
-        if (result == VK_ERROR_OUT_OF_DATE_KHR)// || result == VK_SUBOPTIMAL_KHR
+        if (result == VK_ERROR_OUT_OF_DATE_KHR)  // || result == VK_SUBOPTIMAL_KHR
         {
             vkDeviceWaitIdle(swapchain->getDevice().get());
             swapchain->recreate();

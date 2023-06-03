@@ -31,7 +31,7 @@
 
 namespace sol
 {
-    class ForwardMaterialManager final : public IForwardMaterialManager
+    class GraphicsMaterialManager final : public IGraphicsMaterialManager
     {
     public:
         ////////////////////////////////////////////////////////////////
@@ -43,7 +43,7 @@ namespace sol
             /**
              * \brief Material instance.
              */
-            ForwardMaterialInstance* materialInstance = nullptr;
+            GraphicsMaterialInstance* materialInstance = nullptr;
 
             /**
              * \brief Descriptor pool.
@@ -72,27 +72,27 @@ namespace sol
         };
 
         using InstanceDataPtr     = std::unique_ptr<InstanceData>;
-        using MaterialMap         = std::unordered_map<uuids::uuid, ForwardMaterialPtr>;
-        using MaterialInstanceMap = std::unordered_map<uuids::uuid, ForwardMaterialInstancePtr>;
-        using InstanceDataMap     = std::unordered_map<const ForwardMaterialInstance*, InstanceDataPtr>;
+        using MaterialMap         = std::unordered_map<uuids::uuid, GraphicsMaterialPtr>;
+        using MaterialInstanceMap = std::unordered_map<uuids::uuid, GraphicsMaterialInstancePtr>;
+        using InstanceDataMap     = std::unordered_map<const GraphicsMaterialInstance*, InstanceDataPtr>;
 
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        ForwardMaterialManager();
+        GraphicsMaterialManager();
 
-        explicit ForwardMaterialManager(MemoryManager& memManager);
+        explicit GraphicsMaterialManager(MemoryManager& memManager);
 
-        ForwardMaterialManager(const ForwardMaterialManager&) = delete;
+        GraphicsMaterialManager(const GraphicsMaterialManager&) = delete;
 
-        ForwardMaterialManager(ForwardMaterialManager&&) = delete;
+        GraphicsMaterialManager(GraphicsMaterialManager&&) = delete;
 
-        ~ForwardMaterialManager() noexcept override;
+        ~GraphicsMaterialManager() noexcept override;
 
-        ForwardMaterialManager& operator=(const ForwardMaterialManager&) = delete;
+        GraphicsMaterialManager& operator=(const GraphicsMaterialManager&) = delete;
 
-        ForwardMaterialManager& operator=(ForwardMaterialManager&&) = delete;
+        GraphicsMaterialManager& operator=(GraphicsMaterialManager&&) = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
@@ -106,7 +106,7 @@ namespace sol
 
         [[nodiscard]] const InstanceDataMap& getInstanceData() const noexcept;
 
-        VulkanGraphicsPipeline& getPipeline(const ForwardMaterial&  material,
+        VulkanGraphicsPipeline& getPipeline(const GraphicsMaterial& material,
                                             const VulkanRenderPass& renderPass) const override;
 
         ////////////////////////////////////////////////////////////////
@@ -121,11 +121,11 @@ namespace sol
 
         /**
          * \brief Add a new material.
-         * \tparam T Type derived from ForwardMaterial.
+         * \tparam T Type derived from GraphicsMaterial.
          * \param material Material to add.
-         * \return ForwardMaterial.
+         * \return GraphicsMaterial.
          */
-        template<std::derived_from<ForwardMaterial> T>
+        template<std::derived_from<GraphicsMaterial> T>
         T& addMaterial(std::unique_ptr<T> material)
         {
             auto& mtl = *material;
@@ -135,13 +135,13 @@ namespace sol
 
         /**
          * \brief Add a new material instance.
-         * \tparam T Type derived from ForwardMaterialInstance.
+         * \tparam T Type derived from GraphicsMaterialInstance.
          * \param material Material. Should be owned by this manager.
          * \param materialInstance Material instance to add.
-         * \return ForwardMaterialInstance.
+         * \return GraphicsMaterialInstance.
          */
-        template<std::derived_from<ForwardMaterialInstance> T>
-        T& addMaterialInstance(ForwardMaterial& material, std::unique_ptr<T> materialInstance)
+        template<std::derived_from<GraphicsMaterialInstance> T>
+        T& addMaterialInstance(GraphicsMaterial& material, std::unique_ptr<T> materialInstance)
         {
             auto& mtl = *materialInstance;
             addMaterialInstanceImpl(material, std::move(materialInstance));
@@ -150,20 +150,20 @@ namespace sol
 
         /**
          * \brief Create a new pipeline for the given material with the settings and renderpass, if one does not exist yet.
-         * \param material ForwardMaterial.
+         * \param material GraphicsMaterial.
          * \param renderPass RenderPass.
          * \return True if a new pipeline was created, false if one already existed.
          */
-        bool createPipeline(const ForwardMaterial& material, VulkanRenderPass& renderPass) const override;
+        bool createPipeline(const GraphicsMaterial& material, VulkanRenderPass& renderPass) const override;
 
-        void bindDescriptorSets(std::span<const ForwardMaterialInstance* const> instances,
-                                VkCommandBuffer                                 commandBuffer,
-                                const VulkanGraphicsPipeline&                   pipeline,
-                                size_t                                          index) const override;
+        void bindDescriptorSets(std::span<const GraphicsMaterialInstance* const> instances,
+                                VkCommandBuffer                                  commandBuffer,
+                                const VulkanGraphicsPipeline&                    pipeline,
+                                size_t                                           index) const override;
 
-        void destroyMaterial(ForwardMaterial& material);
+        void destroyMaterial(GraphicsMaterial& material);
 
-        void destroyMaterialInstance(ForwardMaterialInstance& materialInstance);
+        void destroyMaterialInstance(GraphicsMaterialInstance& materialInstance);
 
         ////////////////////////////////////////////////////////////////
         // ...
@@ -176,9 +176,9 @@ namespace sol
         void updateUniformBuffers(uint32_t index) override;
 
     private:
-        void addMaterialImpl(ForwardMaterialPtr material);
+        void addMaterialImpl(GraphicsMaterialPtr material);
 
-        void addMaterialInstanceImpl(ForwardMaterial& material, ForwardMaterialInstancePtr instance);
+        void addMaterialInstanceImpl(GraphicsMaterial& material, GraphicsMaterialInstancePtr instance);
 
         ////////////////////////////////////////////////////////////////
         // Member variables.
@@ -190,7 +190,7 @@ namespace sol
 
         MaterialInstanceMap materialInstances;
 
-        ForwardPipelineCachePtr pipelineCache;
+        GraphicsPipelineCachePtr pipelineCache;
 
         std::unique_ptr<UniformBufferManager> uniformBufferManager;
 

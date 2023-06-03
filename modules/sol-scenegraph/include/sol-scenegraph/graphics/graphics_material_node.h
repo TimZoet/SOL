@@ -14,26 +14,26 @@
 
 namespace sol
 {
-    class ForwardMaterialNode final : public Node
+    class GraphicsMaterialNode final : public Node
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        ForwardMaterialNode() = default;
+        GraphicsMaterialNode() = default;
 
-        explicit ForwardMaterialNode(ForwardMaterialInstance& materialInstance);
+        explicit GraphicsMaterialNode(GraphicsMaterialInstance& materialInstance);
 
-        ForwardMaterialNode(const ForwardMaterialNode&) = delete;
+        GraphicsMaterialNode(const GraphicsMaterialNode&) = delete;
 
-        ForwardMaterialNode(ForwardMaterialNode&&) = delete;
+        GraphicsMaterialNode(GraphicsMaterialNode&&) = delete;
 
-        ~ForwardMaterialNode() noexcept override = default;
+        ~GraphicsMaterialNode() noexcept override = default;
 
-        ForwardMaterialNode& operator=(const ForwardMaterialNode&) = delete;
+        GraphicsMaterialNode& operator=(const GraphicsMaterialNode&) = delete;
 
-        ForwardMaterialNode& operator=(ForwardMaterialNode&&) = delete;
+        GraphicsMaterialNode& operator=(GraphicsMaterialNode&&) = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
@@ -41,13 +41,13 @@ namespace sol
 
         [[nodiscard]] Type getType() const noexcept override;
 
-        [[nodiscard]] ForwardMaterialInstance* getMaterial() const noexcept;
+        [[nodiscard]] GraphicsMaterialInstance* getMaterial() const noexcept;
 
         ////////////////////////////////////////////////////////////////
         // Setters.
         ////////////////////////////////////////////////////////////////
 
-        void setMaterial(ForwardMaterialInstance* mtl) noexcept;
+        void setMaterial(GraphicsMaterialInstance* mtl) noexcept;
 
         ////////////////////////////////////////////////////////////////
         // Debugging and visualization.
@@ -64,6 +64,6 @@ namespace sol
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        ForwardMaterialInstance* material = nullptr;
+        GraphicsMaterialInstance* material = nullptr;
     };
 }  // namespace sol

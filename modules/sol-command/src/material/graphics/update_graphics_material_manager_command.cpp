@@ -19,32 +19,32 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    UpdateForwardMaterialManagerCommand::UpdateForwardMaterialManagerCommand() = default;
+    UpdateGraphicsMaterialManagerCommand::UpdateGraphicsMaterialManagerCommand() = default;
 
-    UpdateForwardMaterialManagerCommand::~UpdateForwardMaterialManagerCommand() noexcept = default;
+    UpdateGraphicsMaterialManagerCommand::~UpdateGraphicsMaterialManagerCommand() noexcept = default;
 
     ////////////////////////////////////////////////////////////////
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    IForwardMaterialManager* UpdateForwardMaterialManagerCommand::getMaterialManager() const noexcept
+    IGraphicsMaterialManager* UpdateGraphicsMaterialManagerCommand::getMaterialManager() const noexcept
     {
         return materialManager;
     }
 
-    const uint32_t* UpdateForwardMaterialManagerCommand::getFrameIndexPtr() const noexcept { return frameIndexPtr; }
+    const uint32_t* UpdateGraphicsMaterialManagerCommand::getFrameIndexPtr() const noexcept { return frameIndexPtr; }
 
     ////////////////////////////////////////////////////////////////
     // Setters.
     ////////////////////////////////////////////////////////////////
 
-    void UpdateForwardMaterialManagerCommand::setMaterialManager(IForwardMaterialManager& manager)
+    void UpdateGraphicsMaterialManagerCommand::setMaterialManager(IGraphicsMaterialManager& manager)
     {
         commandQueue->requireNonFinalized();
         materialManager = &manager;
     }
 
-    void UpdateForwardMaterialManagerCommand::setFrameIndexPtr(uint32_t* ptr)
+    void UpdateGraphicsMaterialManagerCommand::setFrameIndexPtr(uint32_t* ptr)
     {
         commandQueue->requireNonFinalized();
         frameIndexPtr = ptr;
@@ -54,19 +54,19 @@ namespace sol
     // Run.
     ////////////////////////////////////////////////////////////////
 
-    void UpdateForwardMaterialManagerCommand::finalize()
+    void UpdateGraphicsMaterialManagerCommand::finalize()
     {
         if (!materialManager)
-            throw SolError("Cannot finalize UpdateForwardMaterialManagerCommand: materialManager not set.");
+            throw SolError("Cannot finalize UpdateGraphicsMaterialManagerCommand: materialManager not set.");
         if (!frameIndexPtr)
-            throw SolError("Cannot finalize UpdateForwardMaterialManagerCommand: frameIndexPtr not set.");
+            throw SolError("Cannot finalize UpdateGraphicsMaterialManagerCommand: frameIndexPtr not set.");
     }
 
-    void UpdateForwardMaterialManagerCommand::operator()() { materialManager->updateUniformBuffers(*frameIndexPtr); }
+    void UpdateGraphicsMaterialManagerCommand::operator()() { materialManager->updateUniformBuffers(*frameIndexPtr); }
 
     ////////////////////////////////////////////////////////////////
     // Debugging and visualization.
     ////////////////////////////////////////////////////////////////
 
-    std::string UpdateForwardMaterialManagerCommand::getVizLabel() const { return "UpdateForwardMaterialManager"; }
+    std::string UpdateGraphicsMaterialManagerCommand::getVizLabel() const { return "UpdateGraphicsMaterialManager"; }
 }  // namespace sol

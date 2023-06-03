@@ -22,7 +22,7 @@
 
 namespace sol
 {
-    class ForwardPipelineCache
+    class GraphicsPipelineCache
     {
         ////////////////////////////////////////////////////////////////
         // Types.
@@ -36,29 +36,29 @@ namespace sol
         };
 
     public:
-        using PipelineMap = std::unordered_map<const ForwardMaterial*, std::vector<Pipeline>>;
+        using PipelineMap = std::unordered_map<const GraphicsMaterial*, std::vector<Pipeline>>;
 
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        ForwardPipelineCache();
+        GraphicsPipelineCache();
 
-        ForwardPipelineCache(const ForwardPipelineCache&) = delete;
+        GraphicsPipelineCache(const GraphicsPipelineCache&) = delete;
 
-        ForwardPipelineCache(ForwardPipelineCache&&) = delete;
+        GraphicsPipelineCache(GraphicsPipelineCache&&) = delete;
 
-        ~ForwardPipelineCache() noexcept;
+        ~GraphicsPipelineCache() noexcept;
 
-        ForwardPipelineCache& operator=(const ForwardPipelineCache&) = delete;
+        GraphicsPipelineCache& operator=(const GraphicsPipelineCache&) = delete;
 
-        ForwardPipelineCache& operator=(ForwardPipelineCache&&) = delete;
+        GraphicsPipelineCache& operator=(GraphicsPipelineCache&&) = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] VulkanGraphicsPipeline& getPipeline(const ForwardMaterial&  material,
+        [[nodiscard]] VulkanGraphicsPipeline& getPipeline(const GraphicsMaterial& material,
                                                           const VulkanRenderPass& renderPass) const;
 
         ////////////////////////////////////////////////////////////////
@@ -67,20 +67,20 @@ namespace sol
 
         /**
          * \brief Create a new pipeline for the given material, if one does not exist yet.
-         * \param material ForwardMaterial.
+         * \param material GraphicsMaterial.
          * \return True if a new pipeline was created, false if one already existed.
          */
-        bool createPipeline(const ForwardMaterial& material, VulkanRenderPass& renderPass);
+        bool createPipeline(const GraphicsMaterial& material, VulkanRenderPass& renderPass);
 
         ////////////////////////////////////////////////////////////////
         // Destroy.
         ////////////////////////////////////////////////////////////////
 
-        bool destroyPipeline(const ForwardMaterial& material);
+        bool destroyPipeline(const GraphicsMaterial& material);
 
     private:
-        static VulkanGraphicsPipelinePtr createPipelineImpl(const ForwardMaterial& material,
-                                                            VulkanRenderPass&      renderPass);
+        static VulkanGraphicsPipelinePtr createPipelineImpl(const GraphicsMaterial& material,
+                                                            VulkanRenderPass&       renderPass);
 
         ////////////////////////////////////////////////////////////////
         // Member variables.

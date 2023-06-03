@@ -15,24 +15,24 @@
 
 namespace sol
 {
-    class ForwardTraverser : public ITraverser
+    class GraphicsTraverser : public ITraverser
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        ForwardTraverser();
+        GraphicsTraverser();
 
-        ForwardTraverser(const ForwardTraverser&) = delete;
+        GraphicsTraverser(const GraphicsTraverser&) = delete;
 
-        ForwardTraverser(ForwardTraverser&&) = delete;
+        GraphicsTraverser(GraphicsTraverser&&) = delete;
 
-        ~ForwardTraverser() noexcept override;
+        ~GraphicsTraverser() noexcept override;
 
-        ForwardTraverser& operator=(const ForwardTraverser&) = delete;
+        GraphicsTraverser& operator=(const GraphicsTraverser&) = delete;
 
-        ForwardTraverser& operator=(ForwardTraverser&&) noexcept = delete;
+        GraphicsTraverser& operator=(GraphicsTraverser&&) noexcept = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
@@ -48,7 +48,7 @@ namespace sol
         // Traversal.
         ////////////////////////////////////////////////////////////////
 
-        void traverse(const Scenegraph& scenegraph, ForwardRenderData& renderData);
+        void traverse(const Scenegraph& scenegraph, GraphicsRenderData& renderData);
 
     private:
         ////////////////////////////////////////////////////////////////

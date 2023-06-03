@@ -32,8 +32,8 @@
 namespace
 {
     void createNoneUniformBuffers(
-      sol::ForwardMaterialManager::InstanceData& instanceData,
-      sol::UniformBufferManager&                 manager,
+      sol::GraphicsMaterialManager::InstanceData& instanceData,
+      sol::UniformBufferManager&                  manager,
       const std::vector<std::pair<const sol::MaterialLayoutDescription::UniformBufferBinding*, size_t>>&
         uniformBufferBindings)
     {
@@ -55,8 +55,8 @@ namespace
     }
 
     void createInstanceUniformBuffers(
-      sol::ForwardMaterialManager::InstanceData& instanceData,
-      sol::UniformBufferManager&                 manager,
+      sol::GraphicsMaterialManager::InstanceData& instanceData,
+      sol::UniformBufferManager&                  manager,
       const std::vector<std::pair<const sol::MaterialLayoutDescription::UniformBufferBinding*, size_t>>&
         uniformBufferBindings)
     {
@@ -87,8 +87,8 @@ namespace
     }
 
     void createBindingUniformBuffers(
-      sol::ForwardMaterialManager::InstanceData& instanceData,
-      sol::UniformBufferManager&                 manager,
+      sol::GraphicsMaterialManager::InstanceData& instanceData,
+      sol::UniformBufferManager&                  manager,
       const std::vector<std::pair<const sol::MaterialLayoutDescription::UniformBufferBinding*, size_t>>&
         uniformBufferBindings)
     {
@@ -110,8 +110,8 @@ namespace
     }
 
     void createInstanceAndBindingUniformBuffers(
-      sol::ForwardMaterialManager::InstanceData& instanceData,
-      sol::UniformBufferManager&                 manager,
+      sol::GraphicsMaterialManager::InstanceData& instanceData,
+      sol::UniformBufferManager&                  manager,
       const std::vector<std::pair<const sol::MaterialLayoutDescription::UniformBufferBinding*, size_t>>&
         uniformBufferBindings)
     {
@@ -148,26 +148,26 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    ForwardMaterialManager::ForwardMaterialManager(MemoryManager& memManager) :
-        memoryManager(&memManager), pipelineCache(std::make_unique<ForwardPipelineCache>())
+    GraphicsMaterialManager::GraphicsMaterialManager(MemoryManager& memManager) :
+        memoryManager(&memManager), pipelineCache(std::make_unique<GraphicsPipelineCache>())
     {
     }
 
-    ForwardMaterialManager::~ForwardMaterialManager() noexcept = default;
+    GraphicsMaterialManager::~GraphicsMaterialManager() noexcept = default;
 
     ////////////////////////////////////////////////////////////////
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    size_t ForwardMaterialManager::getDataSetCount() const noexcept { return dataSetCount; }
+    size_t GraphicsMaterialManager::getDataSetCount() const noexcept { return dataSetCount; }
 
-    const ForwardMaterialManager::InstanceDataMap& ForwardMaterialManager::getInstanceData() const noexcept
+    const GraphicsMaterialManager::InstanceDataMap& GraphicsMaterialManager::getInstanceData() const noexcept
     {
         return instanceDataMap;
     }
 
-    VulkanGraphicsPipeline& ForwardMaterialManager::getPipeline(const ForwardMaterial&  material,
-                                                                const VulkanRenderPass& renderPass) const
+    VulkanGraphicsPipeline& GraphicsMaterialManager::getPipeline(const GraphicsMaterial& material,
+                                                                 const VulkanRenderPass& renderPass) const
     {
         return pipelineCache->getPipeline(material, renderPass);
     }
@@ -176,7 +176,7 @@ namespace sol
     // Setters.
     ////////////////////////////////////////////////////////////////
 
-    void ForwardMaterialManager::setDataSetCount(const size_t count)
+    void GraphicsMaterialManager::setDataSetCount(const size_t count)
     {
         if (count == 0) throw SolError("Cannot set dataSetCount to 0.");
         dataSetCount = count;
@@ -189,15 +189,15 @@ namespace sol
     // Materials.
     ////////////////////////////////////////////////////////////////
 
-    bool ForwardMaterialManager::createPipeline(const ForwardMaterial& material, VulkanRenderPass& renderPass) const
+    bool GraphicsMaterialManager::createPipeline(const GraphicsMaterial& material, VulkanRenderPass& renderPass) const
     {
         return pipelineCache->createPipeline(material, renderPass);
     }
 
-    void ForwardMaterialManager::bindDescriptorSets(std::span<const ForwardMaterialInstance* const> instances,
-                                                    VkCommandBuffer                                 commandBuffer,
-                                                    const VulkanGraphicsPipeline&                   pipeline,
-                                                    size_t                                          index) const
+    void GraphicsMaterialManager::bindDescriptorSets(std::span<const GraphicsMaterialInstance* const> instances,
+                                                     VkCommandBuffer                                  commandBuffer,
+                                                     const VulkanGraphicsPipeline&                    pipeline,
+                                                     size_t                                           index) const
     {
         std::vector<VkDescriptorSet> sets;
         for (const auto* mtlInstance : instances)
@@ -215,7 +215,7 @@ namespace sol
                                 nullptr);
     }
 
-    void ForwardMaterialManager::destroyMaterial(ForwardMaterial& material)
+    void GraphicsMaterialManager::destroyMaterial(GraphicsMaterial& material)
     {
         if (&material.getMaterialManager() != this)
             throw SolError("Cannot destroy material that is part of a different manager.");
@@ -225,7 +225,7 @@ namespace sol
         assert(materials.erase(material.getUuid()));
     }
 
-    void ForwardMaterialManager::destroyMaterialInstance(ForwardMaterialInstance& materialInstance)
+    void GraphicsMaterialManager::destroyMaterialInstance(GraphicsMaterialInstance& materialInstance)
     {
         if (&materialInstance.getMaterialManager() != this)
             throw SolError("Cannot destroy material instance that is part of a different manager.");
@@ -238,13 +238,14 @@ namespace sol
     // Modification.
     ////////////////////////////////////////////////////////////////
 
-    void ForwardMaterialManager::addMaterialImpl(ForwardMaterialPtr material)
+    void GraphicsMaterialManager::addMaterialImpl(GraphicsMaterialPtr material)
     {
         material->setMaterialManager(*this);
         assert(materials.try_emplace(material->getUuid(), std::move(material)).second);
     }
 
-    void ForwardMaterialManager::addMaterialInstanceImpl(ForwardMaterial& material, ForwardMaterialInstancePtr instance)
+    void GraphicsMaterialManager::addMaterialInstanceImpl(GraphicsMaterial&           material,
+                                                          GraphicsMaterialInstancePtr instance)
     {
         if (&material.getMaterialManager() != this)
             throw SolError("Cannot add material instance. Material has a different manager.");
@@ -252,7 +253,7 @@ namespace sol
         instance->setMaterialManager(*this);
         instance->setMaterial(material);
 
-        const auto& mtl       = instance->getForwardMaterial();
+        const auto& mtl       = instance->getGraphicsMaterial();
         const auto& mtlLayout = mtl.getLayout();
         const auto  setIndex  = instance->getSetIndex();
 
@@ -308,14 +309,14 @@ namespace sol
     // ...
     ////////////////////////////////////////////////////////////////
 
-    void ForwardMaterialManager::updateUniformBuffers(const uint32_t index)
+    void GraphicsMaterialManager::updateUniformBuffers(const uint32_t index)
     {
         uniformBufferManager->mapAll(index);
 
         for (const auto& instanceData : instanceDataMap | std::views::values)
         {
             const auto& materialInstance = *instanceData->materialInstance;
-            const auto& material         = materialInstance.getForwardMaterial();
+            const auto& material         = materialInstance.getGraphicsMaterial();
             const auto& layout           = material.getLayout();
             const auto  buffers          = layout.getUniformBuffers(materialInstance.getSetIndex());
 
@@ -364,7 +365,7 @@ namespace sol
         for (const auto& instanceData : instanceDataMap | std::views::values)
         {
             const auto& materialInstance = *instanceData->materialInstance;
-            const auto& material         = materialInstance.getForwardMaterial();
+            const auto& material         = materialInstance.getGraphicsMaterial();
             const auto& layout           = material.getLayout();
             const auto  buffers          = layout.getUniformBuffers(materialInstance.getSetIndex());
 

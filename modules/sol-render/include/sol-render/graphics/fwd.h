@@ -8,20 +8,20 @@
 
 namespace sol
 {
-    class ForwardMaterialManager;
-    class ForwardPipelineCache;
-    class ForwardRenderData;
-    class ForwardRenderer;
-    class ForwardTraverser;
+    class GraphicsMaterialManager;
+    class GraphicsPipelineCache;
+    class GraphicsRenderData;
+    class GraphicsRenderer;
+    class GraphicsTraverser;
 
-    using ForwardMaterialManagerPtr       = std::unique_ptr<ForwardMaterialManager>;
-    using ForwardMaterialManagerSharedPtr = std::shared_ptr<ForwardMaterialManager>;
-    using ForwardPipelineCachePtr         = std::unique_ptr<ForwardPipelineCache>;
-    using ForwardPipelineCacheSharedPtr   = std::shared_ptr<ForwardPipelineCache>;
-    using ForwardRenderDataPtr            = std::unique_ptr<ForwardRenderData>;
-    using ForwardRenderDataSharedPtr      = std::shared_ptr<ForwardRenderData>;
-    using ForwardRendererPtr              = std::unique_ptr<ForwardRenderer>;
-    using ForwardRendererSharedPtr        = std::shared_ptr<ForwardRenderer>;
-    using ForwardTraverserPtr             = std::unique_ptr<ForwardTraverser>;
-    using ForwardTraverserSharedPtr       = std::shared_ptr<ForwardTraverser>;
+    using GraphicsMaterialManagerPtr       = std::unique_ptr<GraphicsMaterialManager>;
+    using GraphicsMaterialManagerSharedPtr = std::shared_ptr<GraphicsMaterialManager>;
+    using GraphicsPipelineCachePtr         = std::unique_ptr<GraphicsPipelineCache>;
+    using GraphicsPipelineCacheSharedPtr   = std::shared_ptr<GraphicsPipelineCache>;
+    using GraphicsRenderDataPtr            = std::unique_ptr<GraphicsRenderData>;
+    using GraphicsRenderDataSharedPtr      = std::shared_ptr<GraphicsRenderData>;
+    using GraphicsRendererPtr              = std::unique_ptr<GraphicsRenderer>;
+    using GraphicsRendererSharedPtr        = std::shared_ptr<GraphicsRenderer>;
+    using GraphicsTraverserPtr             = std::unique_ptr<GraphicsTraverser>;
+    using GraphicsTraverserSharedPtr       = std::shared_ptr<GraphicsTraverser>;
 }  // namespace sol

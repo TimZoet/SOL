@@ -36,23 +36,23 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    ForwardRenderer::ForwardRenderer() : renderSettings(std::make_shared<RenderSettings>()) {}
+    GraphicsRenderer::GraphicsRenderer() : renderSettings(std::make_shared<RenderSettings>()) {}
 
-    ForwardRenderer::ForwardRenderer(RenderSettingsSharedPtr settings) : renderSettings(std::move(settings)) {}
+    GraphicsRenderer::GraphicsRenderer(RenderSettingsSharedPtr settings) : renderSettings(std::move(settings)) {}
 
-    ForwardRenderer::~ForwardRenderer() noexcept = default;
+    GraphicsRenderer::~GraphicsRenderer() noexcept = default;
 
     ////////////////////////////////////////////////////////////////
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    RenderSettingsSharedPtr& ForwardRenderer::getRenderSettings() noexcept { return renderSettings; }
+    RenderSettingsSharedPtr& GraphicsRenderer::getRenderSettings() noexcept { return renderSettings; }
 
     ////////////////////////////////////////////////////////////////
     // Setters.
     ////////////////////////////////////////////////////////////////
 
-    void ForwardRenderer::setRenderSettings(RenderSettingsSharedPtr settings)
+    void GraphicsRenderer::setRenderSettings(RenderSettingsSharedPtr settings)
     {
         if (!settings) throw SolError("Cannot set RenderSettings to nullptr.");
         renderSettings = std::move(settings);
@@ -62,7 +62,7 @@ namespace sol
     // Render.
     ////////////////////////////////////////////////////////////////
 
-    void ForwardRenderer::createPipelines(const Parameters& params) const
+    void GraphicsRenderer::createPipelines(const Parameters& params) const
     {
         // TODO: RenderData should have a list of all unique materials, instead of looping over the drawables here.
         // Ensure all pipelines have been created.
@@ -72,7 +72,7 @@ namespace sol
         }
     }
 
-    void ForwardRenderer::beginRenderPass(const Parameters& params) const
+    void GraphicsRenderer::beginRenderPass(const Parameters& params) const
     {
         VkRenderPassBeginInfo       renderPassInfo{};
         std::array<VkClearValue, 2> clearValues{};
@@ -102,7 +102,7 @@ namespace sol
         vkCmdBeginRenderPass(params.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     }
 
-    void ForwardRenderer::render(const Parameters& params)
+    void GraphicsRenderer::render(const Parameters& params)
     {
         bool                  setDynamicState = false;
         std::vector<VkBuffer> vertexBuffers;
@@ -144,7 +144,7 @@ namespace sol
 
             // TODO: Reverse this push? Might be that this list contains deeper nodes first,
             // causing them to be overwritten by higher nodes when they have an overlapping range.
-            // Although perhaps that should be solved in the ForwardRenderData class? Perhaps add a
+            // Although perhaps that should be solved in the GraphicsRenderData class? Perhaps add a
             // flag there indicating the order of the pcRanges. Or fix order that. While doing that,
             // redundant ranges could even be removed.
             for (size_t i = 0; i < pushConstantCount; i++)
@@ -195,5 +195,5 @@ namespace sol
         }
     }
 
-    void ForwardRenderer::endRenderPass(const Parameters& params) { vkCmdEndRenderPass(params.commandBuffer); }
+    void GraphicsRenderer::endRenderPass(const Parameters& params) { vkCmdEndRenderPass(params.commandBuffer); }
 }  // namespace sol

@@ -16,30 +16,30 @@
 
 namespace sol
 {
-    class ForwardRenderCommand final : public ICommand
+    class GraphicsRenderCommand final : public ICommand
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        ForwardRenderCommand();
+        GraphicsRenderCommand();
 
-        ForwardRenderCommand(const ForwardRenderCommand&) = delete;
+        GraphicsRenderCommand(const GraphicsRenderCommand&) = delete;
 
-        ForwardRenderCommand(ForwardRenderCommand&&) = delete;
+        GraphicsRenderCommand(GraphicsRenderCommand&&) = delete;
 
-        ~ForwardRenderCommand() noexcept override;
+        ~GraphicsRenderCommand() noexcept override;
 
-        ForwardRenderCommand& operator=(const ForwardRenderCommand&) = delete;
+        GraphicsRenderCommand& operator=(const GraphicsRenderCommand&) = delete;
 
-        ForwardRenderCommand& operator=(ForwardRenderCommand&&) = delete;
+        GraphicsRenderCommand& operator=(GraphicsRenderCommand&&) = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] ForwardRenderer* getRenderer() const noexcept;
+        [[nodiscard]] GraphicsRenderer* getRenderer() const noexcept;
 
         [[nodiscard]] VulkanRenderPass* getRenderPass() const noexcept;
 
@@ -58,9 +58,9 @@ namespace sol
         // Setters.
         ////////////////////////////////////////////////////////////////
 
-        void setRenderer(ForwardRenderer& render);
+        void setRenderer(GraphicsRenderer& render);
 
-        void setRenderData(ForwardRenderData& data);
+        void setRenderData(GraphicsRenderData& data);
 
         void setRenderPass(VulkanRenderPass& pass);
 
@@ -91,9 +91,9 @@ namespace sol
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        ForwardRenderer* renderer = nullptr;
+        GraphicsRenderer* renderer = nullptr;
 
-        ForwardRenderData* renderData = nullptr;
+        GraphicsRenderData* renderData = nullptr;
 
         VulkanRenderPass* renderPass = nullptr;
 

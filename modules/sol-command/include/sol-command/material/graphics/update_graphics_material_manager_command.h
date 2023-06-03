@@ -14,30 +14,30 @@
 
 namespace sol
 {
-    class UpdateForwardMaterialManagerCommand final : public ICommand
+    class UpdateGraphicsMaterialManagerCommand final : public ICommand
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        UpdateForwardMaterialManagerCommand();
+        UpdateGraphicsMaterialManagerCommand();
 
-        UpdateForwardMaterialManagerCommand(const UpdateForwardMaterialManagerCommand&) = delete;
+        UpdateGraphicsMaterialManagerCommand(const UpdateGraphicsMaterialManagerCommand&) = delete;
 
-        UpdateForwardMaterialManagerCommand(UpdateForwardMaterialManagerCommand&&) = delete;
+        UpdateGraphicsMaterialManagerCommand(UpdateGraphicsMaterialManagerCommand&&) = delete;
 
-        ~UpdateForwardMaterialManagerCommand() noexcept override;
+        ~UpdateGraphicsMaterialManagerCommand() noexcept override;
 
-        UpdateForwardMaterialManagerCommand& operator=(const UpdateForwardMaterialManagerCommand&) = delete;
+        UpdateGraphicsMaterialManagerCommand& operator=(const UpdateGraphicsMaterialManagerCommand&) = delete;
 
-        UpdateForwardMaterialManagerCommand& operator=(UpdateForwardMaterialManagerCommand&&) = delete;
+        UpdateGraphicsMaterialManagerCommand& operator=(UpdateGraphicsMaterialManagerCommand&&) = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] IForwardMaterialManager* getMaterialManager() const noexcept;
+        [[nodiscard]] IGraphicsMaterialManager* getMaterialManager() const noexcept;
 
         [[nodiscard]] const uint32_t* getFrameIndexPtr() const noexcept;
 
@@ -45,7 +45,7 @@ namespace sol
         // Setters.
         ////////////////////////////////////////////////////////////////
 
-        void setMaterialManager(IForwardMaterialManager& manager);
+        void setMaterialManager(IGraphicsMaterialManager& manager);
 
         void setFrameIndexPtr(uint32_t* ptr);
 
@@ -68,7 +68,7 @@ namespace sol
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        IForwardMaterialManager* materialManager = nullptr;
+        IGraphicsMaterialManager* materialManager = nullptr;
 
         uint32_t* frameIndexPtr = nullptr;
     };

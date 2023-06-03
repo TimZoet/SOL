@@ -22,7 +22,7 @@
 
 namespace sol
 {
-    class ForwardRenderer
+    class GraphicsRenderer
     {
     public:
         ////////////////////////////////////////////////////////////////
@@ -31,30 +31,30 @@ namespace sol
 
         struct Parameters
         {
-            const ForwardRenderData& renderData;
-            VulkanRenderPass&        renderPass;
-            const VulkanFramebuffer& framebuffer;
-            VkCommandBuffer          commandBuffer;
-            const uint32_t           index;
+            const GraphicsRenderData& renderData;
+            VulkanRenderPass&         renderPass;
+            const VulkanFramebuffer&  framebuffer;
+            VkCommandBuffer           commandBuffer;
+            const uint32_t            index;
         };
 
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        ForwardRenderer();
+        GraphicsRenderer();
 
-        explicit ForwardRenderer(RenderSettingsSharedPtr settings);
+        explicit GraphicsRenderer(RenderSettingsSharedPtr settings);
 
-        ForwardRenderer(const ForwardRenderer&) = delete;
+        GraphicsRenderer(const GraphicsRenderer&) = delete;
 
-        ForwardRenderer(ForwardRenderer&&) = delete;
+        GraphicsRenderer(GraphicsRenderer&&) = delete;
 
-        ~ForwardRenderer() noexcept;
+        ~GraphicsRenderer() noexcept;
 
-        ForwardRenderer& operator=(const ForwardRenderer&) = delete;
+        GraphicsRenderer& operator=(const GraphicsRenderer&) = delete;
 
-        ForwardRenderer& operator=(ForwardRenderer&&) = delete;
+        GraphicsRenderer& operator=(GraphicsRenderer&&) = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.

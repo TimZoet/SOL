@@ -18,40 +18,40 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    ForwardMaterialInstance::ForwardMaterialInstance() = default;
+    GraphicsMaterialInstance::GraphicsMaterialInstance() = default;
 
-    ForwardMaterialInstance::~ForwardMaterialInstance() = default;
+    GraphicsMaterialInstance::~GraphicsMaterialInstance() = default;
 
     ////////////////////////////////////////////////////////////////
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    IForwardMaterialManager& ForwardMaterialInstance::getMaterialManager() noexcept { return *materialManager; }
+    IGraphicsMaterialManager& GraphicsMaterialInstance::getMaterialManager() noexcept { return *materialManager; }
 
-    const IForwardMaterialManager& ForwardMaterialInstance::getMaterialManager() const noexcept
+    const IGraphicsMaterialManager& GraphicsMaterialInstance::getMaterialManager() const noexcept
     {
         return *materialManager;
     }
 
-    Material& ForwardMaterialInstance::getMaterial() noexcept { return *material; }
+    Material& GraphicsMaterialInstance::getMaterial() noexcept { return *material; }
 
-    const Material& ForwardMaterialInstance::getMaterial() const noexcept { return *material; }
+    const Material& GraphicsMaterialInstance::getMaterial() const noexcept { return *material; }
 
-    ForwardMaterial& ForwardMaterialInstance::getForwardMaterial() noexcept { return *material; }
+    GraphicsMaterial& GraphicsMaterialInstance::getGraphicsMaterial() noexcept { return *material; }
 
-    const ForwardMaterial& ForwardMaterialInstance::getForwardMaterial() const noexcept { return *material; }
+    const GraphicsMaterial& GraphicsMaterialInstance::getGraphicsMaterial() const noexcept { return *material; }
 
     ////////////////////////////////////////////////////////////////
     // Setters.
     ////////////////////////////////////////////////////////////////
 
-    void ForwardMaterialInstance::setMaterialManager(IForwardMaterialManager& manager)
+    void GraphicsMaterialInstance::setMaterialManager(IGraphicsMaterialManager& manager)
     {
         if (materialManager) throw SolError("Cannot set material manager more than once.");
         materialManager = &manager;
     }
 
-    void ForwardMaterialInstance::setMaterial(ForwardMaterial& fwdMaterial)
+    void GraphicsMaterialInstance::setMaterial(GraphicsMaterial& fwdMaterial)
     {
         if (material) throw SolError("Cannot set material more than once.");
         assert(fwdMaterial.getLayout().isFinalized());

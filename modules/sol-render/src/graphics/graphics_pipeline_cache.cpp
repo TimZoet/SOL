@@ -20,19 +20,20 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    ForwardPipelineCache::ForwardPipelineCache() = default;
+    GraphicsPipelineCache::GraphicsPipelineCache() = default;
 
-    ForwardPipelineCache::~ForwardPipelineCache() noexcept = default;
+    GraphicsPipelineCache::~GraphicsPipelineCache() noexcept = default;
 
     ////////////////////////////////////////////////////////////////
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    VulkanGraphicsPipeline& ForwardPipelineCache::getPipeline(const ForwardMaterial&  material,
-                                                              const VulkanRenderPass& renderPass) const
+    VulkanGraphicsPipeline& GraphicsPipelineCache::getPipeline(const GraphicsMaterial& material,
+                                                               const VulkanRenderPass& renderPass) const
     {
         const auto it = pipelines.find(&material);
-        if (it == pipelines.end()) throw SolError("Cannot get pipeline for ForwardMaterial: no pipelines created yet.");
+        if (it == pipelines.end())
+            throw SolError("Cannot get pipeline for GraphicsMaterial: no pipelines created yet.");
 
         for (const auto& obj : it->second)
         {
@@ -40,14 +41,14 @@ namespace sol
         }
 
         throw SolError(
-          "Cannot get pipeline for ForwardMaterial: no pipeline with compatible settings and renderpass found.");
+          "Cannot get pipeline for GraphicsMaterial: no pipeline with compatible settings and renderpass found.");
     }
 
     ////////////////////////////////////////////////////////////////
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    bool ForwardPipelineCache::createPipeline(const ForwardMaterial& material, VulkanRenderPass& renderPass)
+    bool GraphicsPipelineCache::createPipeline(const GraphicsMaterial& material, VulkanRenderPass& renderPass)
     {
         // Look for existing pipeline list for this material.
         const auto it = pipelines.find(&material);
@@ -78,19 +79,19 @@ namespace sol
     // Destroy.
     ////////////////////////////////////////////////////////////////
 
-    bool ForwardPipelineCache::destroyPipeline(const ForwardMaterial& material)
+    bool GraphicsPipelineCache::destroyPipeline(const GraphicsMaterial& material)
     {
         // TODO: This destroys all pipelines for this material, regardless of rendersettings and renderpass.
         return pipelines.erase(&material);
     }
 
-    VulkanGraphicsPipelinePtr ForwardPipelineCache::createPipelineImpl(const ForwardMaterial& material,
-                                                                       VulkanRenderPass&      renderPass)
+    VulkanGraphicsPipelinePtr GraphicsPipelineCache::createPipelineImpl(const GraphicsMaterial& material,
+                                                                        VulkanRenderPass&       renderPass)
     {
         const auto* meshLayout = material.getMeshLayout();
         if (!meshLayout) throw SolError("Cannot create pipeline: material has no mesh layout.");
 
-        // TODO: To what extent are the RenderSettings needed here? Things like culling should perhaps be put in the ForwardMaterial class instead.
+        // TODO: To what extent are the RenderSettings needed here? Things like culling should perhaps be put in the GraphicsMaterial class instead.
         VulkanGraphicsPipeline::Settings pipelineSettings;
         pipelineSettings.renderPass   = renderPass;
         pipelineSettings.vertexShader = const_cast<VulkanShaderModule&>(material.getVertexShader());  //TODO: const_cast
@@ -99,28 +100,28 @@ namespace sol
         pipelineSettings.vertexBindings       = meshLayout->getBindingDescriptions();
         pipelineSettings.descriptorSetLayouts = material.getLayout().getDescriptorSetLayouts();
         pipelineSettings.pushConstants        = material.getLayout().getPushConstants();
-        pipelineSettings.colorBlending        = material.getForwardLayout().getColorBlending();
+        pipelineSettings.colorBlending        = material.getGraphicsLayout().getColorBlending();
 
         VkPipelineRasterizationStateCreateInfo rasterization{};
         rasterization.sType     = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
         rasterization.lineWidth = 1.0f;
         switch (material.getPolyonMode())
         {
-        case ForwardMaterial::PolygonMode::Fill: rasterization.polygonMode = VK_POLYGON_MODE_FILL; break;
-        case ForwardMaterial::PolygonMode::Line: rasterization.polygonMode = VK_POLYGON_MODE_LINE; break;
-        case ForwardMaterial::PolygonMode::Point: rasterization.polygonMode = VK_POLYGON_MODE_POINT; break;
+        case GraphicsMaterial::PolygonMode::Fill: rasterization.polygonMode = VK_POLYGON_MODE_FILL; break;
+        case GraphicsMaterial::PolygonMode::Line: rasterization.polygonMode = VK_POLYGON_MODE_LINE; break;
+        case GraphicsMaterial::PolygonMode::Point: rasterization.polygonMode = VK_POLYGON_MODE_POINT; break;
         }
         switch (material.getCullMode())
         {
-        case ForwardMaterial::CullMode::None: rasterization.cullMode = VK_CULL_MODE_NONE; break;
-        case ForwardMaterial::CullMode::Front: rasterization.cullMode = VK_CULL_MODE_FRONT_BIT; break;
-        case ForwardMaterial::CullMode::Back: rasterization.cullMode = VK_CULL_MODE_BACK_BIT; break;
-        case ForwardMaterial::CullMode::Both: rasterization.cullMode = VK_CULL_MODE_FRONT_AND_BACK; break;
+        case GraphicsMaterial::CullMode::None: rasterization.cullMode = VK_CULL_MODE_NONE; break;
+        case GraphicsMaterial::CullMode::Front: rasterization.cullMode = VK_CULL_MODE_FRONT_BIT; break;
+        case GraphicsMaterial::CullMode::Back: rasterization.cullMode = VK_CULL_MODE_BACK_BIT; break;
+        case GraphicsMaterial::CullMode::Both: rasterization.cullMode = VK_CULL_MODE_FRONT_AND_BACK; break;
         }
         switch (material.getFrontFace())
         {
-        case ForwardMaterial::FrontFace::Clockwise: rasterization.frontFace = VK_FRONT_FACE_CLOCKWISE; break;
-        case ForwardMaterial::FrontFace::CounterClockwise:
+        case GraphicsMaterial::FrontFace::Clockwise: rasterization.frontFace = VK_FRONT_FACE_CLOCKWISE; break;
+        case GraphicsMaterial::FrontFace::CounterClockwise:
             rasterization.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
             break;
         }

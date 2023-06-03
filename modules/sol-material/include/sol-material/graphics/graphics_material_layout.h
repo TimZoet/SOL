@@ -26,26 +26,26 @@
 
 namespace sol
 {
-    class ForwardMaterialLayout final : public MaterialLayout
+    class GraphicsMaterialLayout final : public MaterialLayout
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        ForwardMaterialLayout() = delete;
+        GraphicsMaterialLayout() = delete;
 
-        explicit ForwardMaterialLayout(VulkanDevice& vkDevice);
+        explicit GraphicsMaterialLayout(VulkanDevice& vkDevice);
 
-        ForwardMaterialLayout(const ForwardMaterialLayout&) = delete;
+        GraphicsMaterialLayout(const GraphicsMaterialLayout&) = delete;
 
-        ForwardMaterialLayout(ForwardMaterialLayout&&) = delete;
+        GraphicsMaterialLayout(GraphicsMaterialLayout&&) = delete;
 
-        ~ForwardMaterialLayout() noexcept override;
+        ~GraphicsMaterialLayout() noexcept override;
 
-        ForwardMaterialLayout& operator=(const ForwardMaterialLayout&) = delete;
+        GraphicsMaterialLayout& operator=(const GraphicsMaterialLayout&) = delete;
 
-        ForwardMaterialLayout& operator=(ForwardMaterialLayout&&) = delete;
+        GraphicsMaterialLayout& operator=(GraphicsMaterialLayout&&) = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
