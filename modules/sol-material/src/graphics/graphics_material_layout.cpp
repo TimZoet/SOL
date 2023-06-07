@@ -14,6 +14,10 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
+    uint32_t GraphicsMaterialLayout::getDynamicViewportCount() const noexcept { return dynamicViewportCount; }
+
+    uint32_t GraphicsMaterialLayout::getDynamicScissorCount() const noexcept { return dynamicScissorCount; }
+
     CullMode GraphicsMaterialLayout::getCullMode() const noexcept { return cullMode; }
 
     FrontFace GraphicsMaterialLayout::getFrontFace() const noexcept { return frontFace; }
@@ -29,6 +33,10 @@ namespace sol
     ////////////////////////////////////////////////////////////////
     // Modifiers.
     ////////////////////////////////////////////////////////////////
+
+    void GraphicsMaterialLayout::setDynamicViewportCount(const uint32_t value) { dynamicViewportCount = value; }
+
+    void GraphicsMaterialLayout::setDynamicScissorCount(const uint32_t value) { dynamicScissorCount = value; }
 
     void GraphicsMaterialLayout::setCullMode(const CullMode value) noexcept { cullMode = value; }
 

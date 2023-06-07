@@ -78,24 +78,6 @@ namespace sol
 
         [[nodiscard]] const std::vector<GraphicsMaterialInstance*>& getInstances() const noexcept;
 
-        /**
-         * \brief Get the dynamic cull mode state.
-         * \return State.
-         */
-        [[nodiscard]] CullMode getCullMode() const noexcept;
-
-        /**
-         * \brief Get the dynamic front face state.
-         * \return State.
-         */
-        [[nodiscard]] FrontFace getFrontFace() const noexcept;
-
-        /**
-         * \brief Get the dynamic polygon mode state.
-         * \return State.
-         */
-        [[nodiscard]] PolygonMode getPolygonMode() const noexcept;
-
         [[nodiscard]] int32_t getLayer() const noexcept;
 
         ////////////////////////////////////////////////////////////////
@@ -113,24 +95,6 @@ namespace sol
          * \param mLayout MeshLayout. Must be compatible with input attributes and bindings as defined in vertex shader.
          */
         void setMeshLayout(MeshLayout& mLayout);
-
-        /**
-         * \brief Set the dynamic cull mode state. Does not have any effect if the dynamic state was not enabled in the material layout.
-         * \param value New state.
-         */
-        void setCullMode(CullMode value) noexcept;
-
-        /**
-         * \brief Set the dynamic front face state. Does not have any effect if the dynamic state was not enabled in the material layout.
-         * \param value New state.
-         */
-        void setFrontFace(FrontFace value) noexcept;
-
-        /**
-         * \brief Set the dynamic polygon mode state. Does not have any effect if the dynamic state was not enabled in the material layout.
-         * \param value New state.
-         */
-        void setPolygonMode(PolygonMode value) noexcept;
 
         void setLayer(int32_t l) noexcept;
 
@@ -153,12 +117,6 @@ namespace sol
 
     protected:
         GraphicsMaterialLayout layout;
-
-        CullMode cullMode = CullMode::None;
-
-        FrontFace frontFace = FrontFace::CounterClockwise;
-
-        PolygonMode polygonMode = PolygonMode::Fill;
 
         int32_t layer = 0;
     };

@@ -5,6 +5,7 @@
 ////////////////////////////////////////////////////////////////
 
 #include <ranges>
+#include <unordered_map>
 
 ////////////////////////////////////////////////////////////////
 // Module includes.
@@ -20,7 +21,6 @@
 #include "sol-material/graphics/graphics_material.h"
 #include "sol-memory/memory_manager.h"
 #include "sol-mesh/i_mesh.h"
-
 ////////////////////////////////////////////////////////////////
 // Current target includes.
 ////////////////////////////////////////////////////////////////
@@ -104,36 +104,80 @@ namespace sol
 
     void GraphicsRenderer::render(const Parameters& params)
     {
-        bool                  setDynamicState = false;
+        const auto& device = params.framebuffer.getDevice();
+
         std::vector<VkBuffer> vertexBuffers;
         std::vector<size_t>   vertexBufferOffsets;
 
         for (const auto& [mesh, material, materialOffset, pushConstantOffset, pushConstantCount] :
              params.renderData.drawables)
         {
-            const auto& materialLayout  = material->getLayout();
+            const auto& materialLayout  = material->getGraphicsLayout();
             const auto& materialManager = material->getMaterialManager();
             auto&       pipeline        = materialManager.getPipeline(*material, params.renderPass);
             vkCmdBindPipeline(params.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getPipeline());
 
-            // Set the dynamic state after binding the first pipeline.
-            if (!setDynamicState)
+            // Just bind all dynamic states for now.
+            for (size_t i = 0; i < materialLayout.getSetCount(); i++)
             {
-                VkViewport viewport{};
-                viewport.x        = 0.0f;
-                viewport.y        = 0.0f;
-                viewport.width    = static_cast<float>(params.framebuffer.getExtent().width);
-                viewport.height   = static_cast<float>(params.framebuffer.getExtent().height);
-                viewport.minDepth = 0.0f;
-                viewport.maxDepth = 1.0f;
-                vkCmdSetViewportWithCount(params.commandBuffer, 1, &viewport);
+                const auto& inst = *params.renderData.materialInstances[materialOffset + i];
+                if (materialLayout.isDynamicStateEnabled<VK_DYNAMIC_STATE_VIEWPORT>())
+                {
+                    if (const auto& viewports = inst.getViewports(); viewports)
+                    {
+                        vkCmdSetViewport(
+                          params.commandBuffer, 0, static_cast<uint32_t>(viewports->size()), viewports->data());
+                    }
+                }
 
-                VkRect2D scissor{};
-                scissor.offset = {0, 0};
-                scissor.extent = params.framebuffer.getExtent();
-                vkCmdSetScissorWithCount(params.commandBuffer, 1, &scissor);
+                if (materialLayout.isDynamicStateEnabled<VK_DYNAMIC_STATE_SCISSOR>())
+                {
+                    if (const auto& scissors = inst.getScissors(); scissors)
+                    {
+                        vkCmdSetScissor(
+                          params.commandBuffer, 0, static_cast<uint32_t>(scissors->size()), scissors->data());
+                    }
+                }
 
-                setDynamicState = true;
+                if (materialLayout.isDynamicStateEnabled<VK_DYNAMIC_STATE_CULL_MODE>())
+                {
+                    if (const auto cull = inst.getCullMode(); cull)
+                    {
+                        vkCmdSetCullMode(params.commandBuffer, toVulkanEnum(*cull));
+                    }
+                }
+
+                if (materialLayout.isDynamicStateEnabled<VK_DYNAMIC_STATE_FRONT_FACE>())
+                {
+                    if (const auto face = inst.getFrontFace(); face)
+                    {
+                        vkCmdSetFrontFace(params.commandBuffer, toVulkanEnum(*face));
+                    }
+                }
+
+                if (materialLayout.isDynamicStateEnabled<VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT>())
+                {
+                    if (const auto& viewports = inst.getViewports(); viewports)
+                    {
+                        vkCmdSetViewportWithCount(params.commandBuffer, 0, viewports->data());
+                    }
+                }
+
+                if (materialLayout.isDynamicStateEnabled<VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT>())
+                {
+                    if (const auto& scissors = inst.getScissors(); scissors)
+                    {
+                        vkCmdSetScissorWithCount(params.commandBuffer, 0, scissors->data());
+                    }
+                }
+
+                if (materialLayout.isDynamicStateEnabled<VK_DYNAMIC_STATE_POLYGON_MODE_EXT>())
+                {
+                    if (const auto polygon = inst.getPolygonMode(); polygon)
+                    {
+                        device.vkCmdSetPolygonModeEXT(params.commandBuffer, toVulkanEnum(*polygon));
+                    }
+                }
             }
 
             materialManager.bindDescriptorSets(

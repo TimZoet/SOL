@@ -11,6 +11,7 @@
 ////////////////////////////////////////////////////////////////
 
 #include "uuid.h"
+#include <vulkan/vulkan.hpp>
 
 ////////////////////////////////////////////////////////////////
 // Module includes.
@@ -113,4 +114,37 @@ namespace sol
         Line  = 1,
         Point = 2
     };
+
+    inline auto toVulkanEnum(const CullMode value)
+    {
+        switch (value)
+        {
+        case CullMode::None: return VK_CULL_MODE_NONE;
+        case CullMode::Front: return VK_CULL_MODE_FRONT_BIT;
+        case CullMode::Back: return VK_CULL_MODE_BACK_BIT;
+        case CullMode::Both: return VK_CULL_MODE_FRONT_AND_BACK;
+        }
+        return VK_CULL_MODE_NONE;
+    }
+
+    inline auto toVulkanEnum(const FrontFace value)
+    {
+        switch (value)
+        {
+        case FrontFace::Clockwise: return VK_FRONT_FACE_CLOCKWISE;
+        case FrontFace::CounterClockwise: return VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        }
+        return VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    }
+
+    inline auto toVulkanEnum(const PolygonMode value)
+    {
+        switch (value)
+        {
+        case PolygonMode::Fill: return VK_POLYGON_MODE_FILL;
+        case PolygonMode::Line: return VK_POLYGON_MODE_LINE;
+        case PolygonMode::Point: return VK_POLYGON_MODE_POINT;
+        }
+        return VK_POLYGON_MODE_FILL;
+    }
 }  // namespace sol

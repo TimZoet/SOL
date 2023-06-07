@@ -108,6 +108,7 @@ namespace sol
         if (layout.isDynamicStateEnabled<VK_DYNAMIC_STATE_VIEWPORT>())
         {
             settings.enabledDynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
+            settings.viewport.viewportCount = layout.getDynamicViewportCount();
         }
         else if (layout.isDynamicStateEnabled<VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT>())
         {
@@ -123,6 +124,7 @@ namespace sol
         if (layout.isDynamicStateEnabled<VK_DYNAMIC_STATE_SCISSOR>())
         {
             settings.enabledDynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
+            settings.viewport.scissorCount = layout.getDynamicScissorCount();
         }
         else if (layout.isDynamicStateEnabled<VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT>())
         {

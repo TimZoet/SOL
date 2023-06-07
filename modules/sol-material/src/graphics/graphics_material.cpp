@@ -45,12 +45,6 @@ namespace sol
 
     const std::vector<GraphicsMaterialInstance*>& GraphicsMaterial::getInstances() const noexcept { return instances; }
 
-    CullMode GraphicsMaterial::getCullMode() const noexcept { return cullMode; }
-
-    FrontFace GraphicsMaterial::getFrontFace() const noexcept { return frontFace; }
-
-    PolygonMode GraphicsMaterial::getPolygonMode() const noexcept { return polygonMode; }
-
     int32_t GraphicsMaterial::getLayer() const noexcept { return layer; }
 
     ////////////////////////////////////////////////////////////////
@@ -74,12 +68,6 @@ namespace sol
     }
 
     void GraphicsMaterial::addInstance(GraphicsMaterialInstance& instance) { instances.emplace_back(&instance); }
-
-    void GraphicsMaterial::setCullMode(const CullMode value) noexcept { cullMode = value; }
-
-    void GraphicsMaterial::setFrontFace(const FrontFace value) noexcept { frontFace = value; }
-
-    void GraphicsMaterial::setPolygonMode(const PolygonMode value) noexcept { polygonMode = value; }
 
     void GraphicsMaterial::setLayer(const int32_t l) noexcept { layer = l; }
 }  // namespace sol

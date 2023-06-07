@@ -65,6 +65,18 @@ namespace sol
         }
 
         /**
+         * \brief Get the number of dynamic viewports.
+         * \return Number of dynamic viewports.
+         */
+        [[nodiscard]] uint32_t getDynamicViewportCount()const noexcept;
+
+        /**
+         * \brief Get the number of dynamic scissors.
+         * \return Number of dynamic viewports.
+         */
+        [[nodiscard]] uint32_t getDynamicScissorCount()const noexcept;
+
+        /**
          * \brief Get the cull mode.
          * \return State.
          */
@@ -99,6 +111,18 @@ namespace sol
             requireNonFinalized();
             getDynamicState<S>() = enabled;
         }
+
+        /**
+         * \brief Set the number of dynamic viewports. Required if VK_DYNAMIC_STATE_VIEWPORT is enabled.
+         * \param value Number of viewports.
+         */
+        void setDynamicViewportCount(uint32_t value);
+
+        /**
+         * \brief Set the number of dynamic scissors. Required if VK_DYNAMIC_STATE_SCISSOR is enabled.
+         * \param value Number of scissors.
+         */
+        void setDynamicScissorCount(uint32_t value);
 
         /**
          * \brief Set the cull mode.
@@ -158,6 +182,10 @@ namespace sol
             bool scissorCount  = false;
             bool polygonMode   = false;
         } enabledDynamicStates;
+
+        uint32_t dynamicViewportCount = 0;
+
+        uint32_t dynamicScissorCount = 0;
 
         CullMode cullMode = CullMode::None;
 

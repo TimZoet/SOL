@@ -184,6 +184,10 @@ namespace sol
         PFN_vkGetAccelerationStructureBuildSizesKHR    vkGetAccelerationStructureBuildSizesKHR    = VK_NULL_HANDLE;
         PFN_vkGetAccelerationStructureDeviceAddressKHR vkGetAccelerationStructureDeviceAddressKHR = VK_NULL_HANDLE;
 
+        /* VK_EXT_extended_dynamic_state3 */
+
+        PFN_vkCmdSetPolygonModeEXT vkCmdSetPolygonModeEXT = VK_NULL_HANDLE;
+
         /* VK_KHR_ray_tracing_pipeline */
 
         PFN_vkCreateRayTracingPipelinesKHR       vkCreateRayTracingPipelinesKHR       = VK_NULL_HANDLE;
