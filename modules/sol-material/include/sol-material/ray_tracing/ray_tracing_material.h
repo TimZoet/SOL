@@ -71,33 +71,23 @@ namespace sol
 
         [[nodiscard]] bool hasRaygenShader() const noexcept;
 
-        [[nodiscard]] VulkanShaderModule& getRaygenShader() noexcept;
-
-        [[nodiscard]] const VulkanShaderModule& getRaygenShader() const noexcept;
+        [[nodiscard]] VulkanShaderModule& getRaygenShader() const noexcept;
 
         [[nodiscard]] bool hasMissShader() const noexcept;
 
-        [[nodiscard]] VulkanShaderModule& getMissShader() noexcept;
-
-        [[nodiscard]] const VulkanShaderModule& getMissShader() const noexcept;
+        [[nodiscard]] VulkanShaderModule& getMissShader() const noexcept;
 
         [[nodiscard]] bool hasClosestHitShader() const noexcept;
 
-        [[nodiscard]] VulkanShaderModule& getClosestHitShader() noexcept;
-
-        [[nodiscard]] const VulkanShaderModule& getClosestHitShader() const noexcept;
+        [[nodiscard]] VulkanShaderModule& getClosestHitShader() const noexcept;
 
         [[nodiscard]] bool hasAnyHitShader() const noexcept;
 
-        [[nodiscard]] VulkanShaderModule& getAnyHitShader() noexcept;
-
-        [[nodiscard]] const VulkanShaderModule& getAnyHitShader() const noexcept;
+        [[nodiscard]] VulkanShaderModule& getAnyHitShader() const noexcept;
 
         [[nodiscard]] bool hasIntersectionShader() const noexcept;
 
-        [[nodiscard]] VulkanShaderModule& getIntersectionShader() noexcept;
-
-        [[nodiscard]] const VulkanShaderModule& getIntersectionShader() const noexcept;
+        [[nodiscard]] VulkanShaderModule& getIntersectionShader() const noexcept;
 
         [[nodiscard]] const MaterialLayout& getLayout() const noexcept override;
 

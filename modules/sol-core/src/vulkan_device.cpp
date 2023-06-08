@@ -196,6 +196,10 @@ namespace sol
                 load(vkGetAccelerationStructureBuildSizesKHR, "vkGetAccelerationStructureBuildSizesKHR");
                 load(vkGetAccelerationStructureDeviceAddressKHR, "vkGetAccelerationStructureDeviceAddressKHR");
             }
+            else if (ext == VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME)
+            {
+                load(vkCmdSetPolygonModeEXT, "vkCmdSetPolygonModeEXT");
+            }
             else if (ext == VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)
             {
                 load(vkCreateRayTracingPipelinesKHR, "vkCreateRayTracingPipelinesKHR");

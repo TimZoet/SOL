@@ -33,9 +33,9 @@ namespace sol
 
     const IGraphicsMaterialManager& GraphicsMaterial::getMaterialManager() const noexcept { return *materialManager; }
 
-    const VulkanShaderModule& GraphicsMaterial::getVertexShader() const noexcept { return *vertexShader; }
+    VulkanShaderModule& GraphicsMaterial::getVertexShader() const noexcept { return *vertexShader; }
 
-    const VulkanShaderModule& GraphicsMaterial::getFragmentShader() const noexcept { return *fragmentShader; }
+    VulkanShaderModule& GraphicsMaterial::getFragmentShader() const noexcept { return *fragmentShader; }
 
     const MaterialLayout& GraphicsMaterial::getLayout() const noexcept { return layout; }
 
@@ -44,12 +44,6 @@ namespace sol
     const MeshLayout* GraphicsMaterial::getMeshLayout() const noexcept { return meshLayout; }
 
     const std::vector<GraphicsMaterialInstance*>& GraphicsMaterial::getInstances() const noexcept { return instances; }
-
-    GraphicsMaterial::CullMode GraphicsMaterial::getCullMode() const noexcept { return cullMode; }
-
-    GraphicsMaterial::FrontFace GraphicsMaterial::getFrontFace() const noexcept { return frontFace; }
-
-    GraphicsMaterial::PolygonMode GraphicsMaterial::getPolyonMode() const noexcept { return polygonMode; }
 
     int32_t GraphicsMaterial::getLayer() const noexcept { return layer; }
 
@@ -74,12 +68,6 @@ namespace sol
     }
 
     void GraphicsMaterial::addInstance(GraphicsMaterialInstance& instance) { instances.emplace_back(&instance); }
-
-    void GraphicsMaterial::setCullMode(const CullMode value) noexcept { cullMode = value; }
-
-    void GraphicsMaterial::setFrontFace(const FrontFace value) noexcept { frontFace = value; }
-
-    void GraphicsMaterial::setPolygonMode(PolygonMode value) noexcept { polygonMode = value; }
 
     void GraphicsMaterial::setLayer(const int32_t l) noexcept { layer = l; }
 }  // namespace sol

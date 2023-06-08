@@ -1,3 +1,4 @@
+find_package(common REQUIRED)
 find_package(stduuid REQUIRED)
 
 set(NAME sol-material)
@@ -61,6 +62,8 @@ set(DEPS_PUBLIC
     sol-memory
     sol-mesh
     sol-texture
+
+    common::common
     stduuid::stduuid
 )
 

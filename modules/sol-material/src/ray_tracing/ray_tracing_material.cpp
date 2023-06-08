@@ -46,33 +46,23 @@ namespace sol
 
     bool RayTracingMaterial::hasRaygenShader() const noexcept { return raygenShader; }
 
-    VulkanShaderModule& RayTracingMaterial::getRaygenShader() noexcept { return *raygenShader; }
-
-    const VulkanShaderModule& RayTracingMaterial::getRaygenShader() const noexcept { return *raygenShader; }
+    VulkanShaderModule& RayTracingMaterial::getRaygenShader() const noexcept { return *raygenShader; }
 
     bool RayTracingMaterial::hasMissShader() const noexcept { return missShader; }
 
-    VulkanShaderModule& RayTracingMaterial::getMissShader() noexcept { return *missShader; }
-
-    const VulkanShaderModule& RayTracingMaterial::getMissShader() const noexcept { return *missShader; }
+    VulkanShaderModule& RayTracingMaterial::getMissShader() const noexcept { return *missShader; }
 
     bool RayTracingMaterial::hasClosestHitShader() const noexcept { return closestHitShader; }
 
-    VulkanShaderModule& RayTracingMaterial::getClosestHitShader() noexcept { return *closestHitShader; }
-
-    const VulkanShaderModule& RayTracingMaterial::getClosestHitShader() const noexcept { return *closestHitShader; }
+    VulkanShaderModule& RayTracingMaterial::getClosestHitShader() const noexcept { return *closestHitShader; }
 
     bool RayTracingMaterial::hasAnyHitShader() const noexcept { return anyHitShader; }
 
-    VulkanShaderModule& RayTracingMaterial::getAnyHitShader() noexcept { return *anyHitShader; }
-
-    const VulkanShaderModule& RayTracingMaterial::getAnyHitShader() const noexcept { return *anyHitShader; }
+    VulkanShaderModule& RayTracingMaterial::getAnyHitShader() const noexcept { return *anyHitShader; }
 
     bool RayTracingMaterial::hasIntersectionShader() const noexcept { return intersectionShader; }
 
-    VulkanShaderModule& RayTracingMaterial::getIntersectionShader() noexcept { return *intersectionShader; }
-
-    const VulkanShaderModule& RayTracingMaterial::getIntersectionShader() const noexcept { return *intersectionShader; }
+    VulkanShaderModule& RayTracingMaterial::getIntersectionShader() const noexcept { return *intersectionShader; }
 
     const MaterialLayout& RayTracingMaterial::getLayout() const noexcept { return layout; }
 

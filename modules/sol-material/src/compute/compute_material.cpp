@@ -32,9 +32,7 @@ namespace sol
 
     const IComputeMaterialManager& ComputeMaterial::getMaterialManager() const noexcept { return *materialManager; }
 
-    VulkanShaderModule& ComputeMaterial::getComputeShader() noexcept { return *computeShader; }
-
-    const VulkanShaderModule& ComputeMaterial::getComputeShader() const noexcept { return *computeShader; }
+    VulkanShaderModule& ComputeMaterial::getComputeShader() const noexcept { return *computeShader; }
 
     const MaterialLayout& ComputeMaterial::getLayout() const noexcept { return layout; }
 
