@@ -1,4 +1,3 @@
-include(vs2022-release)
-
 [options]
 build_tests=True
+use_conan=True

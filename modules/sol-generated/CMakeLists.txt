@@ -28,13 +28,6 @@ set(DEPS_PUBLIC
     Vulkan::Vulkan
 )
 
-set(DEPS_PRIVATE
-)
-
-set(INCS_PUBLIC
-${CMAKE_CURRENT_BINARY_DIR}
-)
-
 make_target(
     NAME ${NAME}
     TYPE ${TYPE}
@@ -43,7 +36,11 @@ make_target(
     HEADERS "${HEADERS}"
     SOURCES "${SOURCES}"
     DEPS_PUBLIC "${DEPS_PUBLIC}"
-    INCS_PUBLIC "${INCS_PUBLIC}"
+)
+
+target_include_directories(${NAME} PUBLIC  
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>  
+    $<INSTALL_INTERFACE:>
 )
 
 install_target(
