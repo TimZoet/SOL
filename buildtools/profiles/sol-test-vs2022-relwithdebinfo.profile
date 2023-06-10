@@ -1,4 +1,2 @@
 include(vs2022-relwithdebinfo)
-
-[options]
-build_tests=True
+include(sol-test.subprofile)

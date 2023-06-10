@@ -48,3 +48,11 @@ install_target(
     VERSION ${SOL_VERSION}
     HEADERS "${HEADERS}"
 )
+
+# Install dependencies.
+# TODO: Not needed as long as glfw is not linked dynamically.
+# TODO: Add new parameters to install_target function that just takes a list of DLLs and installs to bin automatically?
+#install(
+#    FILES ${CMAKE_BINARY_DIR}/bin/glfw3.dll
+#    DESTINATION bin
+#)

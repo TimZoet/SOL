@@ -1,3 +1,5 @@
+import os
+
 from conan import ConanFile
 from conan.tools.files import copy
 
@@ -32,7 +34,7 @@ class SolConan(ConanFile):
     ## Settings.                                                              ##
     ############################################################################
 
-    python_requires = "pyreq/1.0.1@timzoet/v1.0.1"
+    python_requires = "pyreq/1.1.0@timzoet/v1.1.0"
     
     python_requires_extend = "pyreq.BaseConan"
     
@@ -82,6 +84,9 @@ class SolConan(ConanFile):
         self.requires("glfw/3.3.6")
         self.requires("math/1.0.0@timzoet/v1.0.0")
         self.requires("stduuid/1.0.0@timzoet/stable")
+
+        if self.options.build_examples:
+            self.requires("parsertongue/1.3.1@timzoet/v1.3.1")
 
         if self.options.build_tests:
             self.requires("bettertest/1.0.1@timzoet/v1.0.1")
@@ -176,7 +181,17 @@ class SolConan(ConanFile):
         
         deps = base.generate_deps(self)
         deps.generate()
-    
+
+        # Copy dependencies into build/bin folder.
+        # TODO: This can perhaps be moved into the pyreq package.
+        for dep in self.dependencies.values():
+            for bindir in dep.cpp_info.bindirs:
+                if os.path.isabs(bindir):
+                    copy(self, "*.dll", bindir, os.path.join(self.build_folder, "bin"))
+                # For some reason, package_folder can be None.
+                elif dep.package_folder:
+                    copy(self, "*.dll", os.path.join(dep.package_folder, bindir), os.path.join(self.build_folder, "bin"))
+
     def configure_cmake(self):
         base = self.python_requires["pyreq"].module.BaseConan
         cmake = base.configure_cmake(self)
