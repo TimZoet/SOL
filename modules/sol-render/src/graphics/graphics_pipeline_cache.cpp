@@ -88,17 +88,14 @@ namespace sol
     VulkanGraphicsPipelinePtr GraphicsPipelineCache::createPipelineImpl(const GraphicsMaterial& material,
                                                                         VulkanRenderPass&       renderPass)
     {
-        const auto* meshLayout = material.getMeshLayout();
-        if (!meshLayout) throw SolError("Cannot create pipeline: material has no mesh layout.");
-
         const auto& layout = material.getGraphicsLayout();
 
         VulkanGraphicsPipeline::Settings settings;
         settings.renderPass            = renderPass;
         settings.vertexShader          = material.getVertexShader();
         settings.fragmentShader        = material.getFragmentShader();
-        settings.vertexAttributes      = meshLayout->getAttributeDescriptions();
-        settings.vertexBindings        = meshLayout->getBindingDescriptions();
+        settings.vertexAttributes      = layout.getMeshLayout()->getAttributeDescriptions();
+        settings.vertexBindings        = layout.getMeshLayout()->getBindingDescriptions();
         settings.descriptorSetLayouts  = layout.getDescriptorSetLayouts();
         settings.pushConstants         = layout.getPushConstants();
         settings.colorBlendAttachments = layout.getColorBlendAttachments();

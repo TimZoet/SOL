@@ -41,8 +41,6 @@ namespace sol
 
     const GraphicsMaterialLayout& GraphicsMaterial::getGraphicsLayout() const noexcept { return layout; }
 
-    const MeshLayout* GraphicsMaterial::getMeshLayout() const noexcept { return meshLayout; }
-
     const std::vector<GraphicsMaterialInstance*>& GraphicsMaterial::getInstances() const noexcept { return instances; }
 
     int32_t GraphicsMaterial::getLayer() const noexcept { return layer; }
@@ -60,12 +58,6 @@ namespace sol
     void GraphicsMaterial::setVertexShader(VulkanShaderModule& module) noexcept { vertexShader = &module; }
 
     void GraphicsMaterial::setFragmentShader(VulkanShaderModule& module) noexcept { fragmentShader = &module; }
-
-    void GraphicsMaterial::setMeshLayout(MeshLayout& mLayout)
-    {
-        if (meshLayout) throw SolError("Cannot set mesh layout more than once.");
-        meshLayout = &mLayout;
-    }
 
     void GraphicsMaterial::addInstance(GraphicsMaterialInstance& instance) { instances.emplace_back(&instance); }
 
