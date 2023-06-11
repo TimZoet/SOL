@@ -71,8 +71,6 @@ namespace sol
     {
         if (material) throw SolError("Cannot set material more than once.");
         assert(fwdMaterial.getLayout().isFinalized());
-        assert(fwdMaterial.getMeshLayout());
-        assert(fwdMaterial.getMeshLayout()->isFinalized());
         material = &fwdMaterial;
         material->addInstance(*this);
     }

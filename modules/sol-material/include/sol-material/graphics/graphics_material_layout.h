@@ -18,6 +18,7 @@
 
 #include "common/static_assert.h"
 #include "sol-core/fwd.h"
+#include "sol-mesh/mesh_layout.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
@@ -52,6 +53,8 @@ namespace sol
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
+
+        [[nodiscard]] const MeshLayout* getMeshLayout() const noexcept;
 
         /**
          * \brief Returns whether the specified dynamic state is enabled.
@@ -99,6 +102,14 @@ namespace sol
         ////////////////////////////////////////////////////////////////
         // Modifiers.
         ////////////////////////////////////////////////////////////////
+
+        void finalize(MaterialLayoutDescription desc) override;
+
+        /**
+         * \brief Set mesh layout.
+         * \param mLayout MeshLayout. Must be compatible with input attributes and bindings as defined in vertex shader.
+         */
+        void setMeshLayout(MeshLayout& mLayout);
 
         /**
          * \brief Enable or disable the specified dynamic state.
@@ -171,6 +182,8 @@ namespace sol
         ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////
+
+        MeshLayout* meshLayout = nullptr;
 
         struct
         {

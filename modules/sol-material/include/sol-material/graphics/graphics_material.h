@@ -11,7 +11,6 @@
 ////////////////////////////////////////////////////////////////
 
 #include "sol-core/fwd.h"
-#include "sol-mesh/mesh_layout.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
@@ -74,8 +73,6 @@ namespace sol
 
         [[nodiscard]] const GraphicsMaterialLayout& getGraphicsLayout() const noexcept;
 
-        [[nodiscard]] const MeshLayout* getMeshLayout() const noexcept;
-
         [[nodiscard]] const std::vector<GraphicsMaterialInstance*>& getInstances() const noexcept;
 
         [[nodiscard]] int32_t getLayer() const noexcept;
@@ -89,12 +86,6 @@ namespace sol
         void setVertexShader(VulkanShaderModule& module) noexcept;
 
         void setFragmentShader(VulkanShaderModule& module) noexcept;
-
-        /**
-         * \brief Set mesh layout.
-         * \param mLayout MeshLayout. Must be compatible with input attributes and bindings as defined in vertex shader.
-         */
-        void setMeshLayout(MeshLayout& mLayout);
 
         void setLayer(int32_t l) noexcept;
 
@@ -110,8 +101,6 @@ namespace sol
         VulkanShaderModule* vertexShader = nullptr;
 
         VulkanShaderModule* fragmentShader = nullptr;
-
-        MeshLayout* meshLayout = nullptr;
 
         std::vector<GraphicsMaterialInstance*> instances;
 
