@@ -13,8 +13,11 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
+    ComputeMaterial::ComputeMaterial(VulkanDevice& device) : Material(device), layout(device) {}
+
+
     ComputeMaterial::ComputeMaterial(VulkanShaderModule& computeModule) :
-        computeShader(&computeModule), layout(computeShader->getDevice())
+        Material(computeModule.getDevice()), computeShader(&computeModule), layout(getDevice())
     {
     }
 
@@ -24,17 +27,17 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    VulkanDevice& ComputeMaterial::getDevice() noexcept { return computeShader->getDevice(); }
-
-    const VulkanDevice& ComputeMaterial::getDevice() const noexcept { return computeShader->getDevice(); }
-
     IComputeMaterialManager& ComputeMaterial::getMaterialManager() noexcept { return *materialManager; }
 
     const IComputeMaterialManager& ComputeMaterial::getMaterialManager() const noexcept { return *materialManager; }
 
     VulkanShaderModule& ComputeMaterial::getComputeShader() const noexcept { return *computeShader; }
 
+    MaterialLayout& ComputeMaterial::getLayout() noexcept { return layout; }
+
     const MaterialLayout& ComputeMaterial::getLayout() const noexcept { return layout; }
+
+    ComputeMaterialLayout& ComputeMaterial::getComputeLayout() noexcept { return layout; }
 
     const ComputeMaterialLayout& ComputeMaterial::getComputeLayout() const noexcept { return layout; }
 

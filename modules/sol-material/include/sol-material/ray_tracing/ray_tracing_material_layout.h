@@ -23,7 +23,7 @@ namespace sol
 
         RayTracingMaterialLayout() = delete;
 
-        explicit RayTracingMaterialLayout(VulkanDevice& vkDevice);
+        explicit RayTracingMaterialLayout(VulkanDevice& device);
 
         RayTracingMaterialLayout(const RayTracingMaterialLayout&) = delete;
 

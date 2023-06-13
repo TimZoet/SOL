@@ -6,7 +6,7 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    ComputeMaterialLayout::ComputeMaterialLayout(VulkanDevice& vkDevice) : MaterialLayout(vkDevice) {}
+    ComputeMaterialLayout::ComputeMaterialLayout(VulkanDevice& device) : MaterialLayout(device) {}
 
     ComputeMaterialLayout::~ComputeMaterialLayout() noexcept = default;
 }  // namespace sol

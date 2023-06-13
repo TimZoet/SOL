@@ -38,7 +38,7 @@ namespace sol
 
         GraphicsMaterialLayout() = delete;
 
-        explicit GraphicsMaterialLayout(VulkanDevice& vkDevice);
+        GraphicsMaterialLayout(VulkanDevice& device);
 
         GraphicsMaterialLayout(const GraphicsMaterialLayout&) = delete;
 
@@ -71,13 +71,13 @@ namespace sol
          * \brief Get the number of dynamic viewports.
          * \return Number of dynamic viewports.
          */
-        [[nodiscard]] uint32_t getDynamicViewportCount()const noexcept;
+        [[nodiscard]] uint32_t getDynamicViewportCount() const noexcept;
 
         /**
          * \brief Get the number of dynamic scissors.
          * \return Number of dynamic viewports.
          */
-        [[nodiscard]] uint32_t getDynamicScissorCount()const noexcept;
+        [[nodiscard]] uint32_t getDynamicScissorCount() const noexcept;
 
         /**
          * \brief Get the cull mode.

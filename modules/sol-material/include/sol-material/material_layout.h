@@ -35,7 +35,7 @@ namespace sol
 
         MaterialLayout() = delete;
 
-        explicit MaterialLayout(VulkanDevice& vkDevice);
+        explicit MaterialLayout(VulkanDevice& device);
 
         MaterialLayout(const MaterialLayout&) = delete;
 

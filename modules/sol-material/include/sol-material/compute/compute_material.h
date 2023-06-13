@@ -33,6 +33,8 @@ namespace sol
 
         ComputeMaterial() = delete;
 
+        explicit ComputeMaterial(VulkanDevice& device);
+
         explicit ComputeMaterial(VulkanShaderModule& computeModule);
 
         ComputeMaterial(const ComputeMaterial&) = delete;
@@ -49,10 +51,6 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] VulkanDevice& getDevice() noexcept override;
-
-        [[nodiscard]] const VulkanDevice& getDevice() const noexcept override;
-
         /**
          * \brief Get the IComputeMaterialManager.
          * \return IComputeMaterialManager.
@@ -67,7 +65,11 @@ namespace sol
 
         [[nodiscard]] VulkanShaderModule& getComputeShader() const noexcept;
 
+        [[nodiscard]] MaterialLayout& getLayout() noexcept override;
+
         [[nodiscard]] const MaterialLayout& getLayout() const noexcept override;
+
+        [[nodiscard]] ComputeMaterialLayout& getComputeLayout() noexcept;
 
         [[nodiscard]] const ComputeMaterialLayout& getComputeLayout() const noexcept;
 

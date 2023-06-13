@@ -8,7 +8,7 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    GraphicsMaterialLayout::GraphicsMaterialLayout(VulkanDevice& vkDevice) : MaterialLayout(vkDevice) {}
+    GraphicsMaterialLayout::GraphicsMaterialLayout(VulkanDevice& device) : MaterialLayout(device) {}
 
     GraphicsMaterialLayout::~GraphicsMaterialLayout() noexcept = default;
 
@@ -40,7 +40,8 @@ namespace sol
 
     void GraphicsMaterialLayout::finalize(MaterialLayoutDescription desc)
     {
-        if (!meshLayout || !meshLayout->isFinalized()) throw SolError("Cannot finalize GraphicsMateralLayout without finalized MeshLayout.");
+        if (!meshLayout || !meshLayout->isFinalized())
+            throw SolError("Cannot finalize GraphicsMateralLayout without finalized MeshLayout.");
         MaterialLayout::finalize(std::move(desc));
     }
 

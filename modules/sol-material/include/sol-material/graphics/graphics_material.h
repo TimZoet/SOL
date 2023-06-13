@@ -33,6 +33,8 @@ namespace sol
 
         GraphicsMaterial() = delete;
 
+        explicit GraphicsMaterial(VulkanDevice& device);
+
         GraphicsMaterial(VulkanShaderModule& vertexModule, VulkanShaderModule& fragmentModule);
 
         GraphicsMaterial(const GraphicsMaterial&) = delete;
@@ -48,10 +50,6 @@ namespace sol
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
-
-        [[nodiscard]] VulkanDevice& getDevice() noexcept override;
-
-        [[nodiscard]] const VulkanDevice& getDevice() const noexcept override;
 
         /**
          * \brief Get the IGraphicsMaterialManager.
@@ -69,7 +67,11 @@ namespace sol
 
         [[nodiscard]] VulkanShaderModule& getFragmentShader() const noexcept;
 
+        [[nodiscard]] MaterialLayout& getLayout() noexcept override;
+
         [[nodiscard]] const MaterialLayout& getLayout() const noexcept override;
+
+        [[nodiscard]] GraphicsMaterialLayout& getGraphicsLayout() noexcept;
 
         [[nodiscard]] const GraphicsMaterialLayout& getGraphicsLayout() const noexcept;
 

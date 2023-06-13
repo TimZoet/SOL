@@ -23,7 +23,7 @@ namespace sol
 
         ComputeMaterialLayout() = delete;
 
-        explicit ComputeMaterialLayout(VulkanDevice& vkDevice);
+        ComputeMaterialLayout(VulkanDevice& device);
 
         ComputeMaterialLayout(const ComputeMaterialLayout&) = delete;
 

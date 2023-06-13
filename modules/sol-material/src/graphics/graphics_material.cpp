@@ -13,8 +13,13 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
+    GraphicsMaterial::GraphicsMaterial(VulkanDevice& device) : Material(device), layout(device) {}
+
     GraphicsMaterial::GraphicsMaterial(VulkanShaderModule& vertexModule, VulkanShaderModule& fragmentModule) :
-        vertexShader(&vertexModule), fragmentShader(&fragmentModule), layout(vertexShader->getDevice())
+        Material(vertexModule.getDevice()),
+        vertexShader(&vertexModule),
+        fragmentShader(&fragmentModule),
+        layout(vertexModule.getDevice())
     {
         assert(&vertexShader->getDevice() == &fragmentShader->getDevice());
     }
@@ -25,10 +30,6 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    VulkanDevice& GraphicsMaterial::getDevice() noexcept { return fragmentShader->getDevice(); }
-
-    const VulkanDevice& GraphicsMaterial::getDevice() const noexcept { return fragmentShader->getDevice(); }
-
     IGraphicsMaterialManager& GraphicsMaterial::getMaterialManager() noexcept { return *materialManager; }
 
     const IGraphicsMaterialManager& GraphicsMaterial::getMaterialManager() const noexcept { return *materialManager; }
@@ -37,7 +38,11 @@ namespace sol
 
     VulkanShaderModule& GraphicsMaterial::getFragmentShader() const noexcept { return *fragmentShader; }
 
+    MaterialLayout& GraphicsMaterial::getLayout() noexcept { return layout; }
+
     const MaterialLayout& GraphicsMaterial::getLayout() const noexcept { return layout; }
+
+    GraphicsMaterialLayout& GraphicsMaterial::getGraphicsLayout() noexcept { return layout; }
 
     const GraphicsMaterialLayout& GraphicsMaterial::getGraphicsLayout() const noexcept { return layout; }
 

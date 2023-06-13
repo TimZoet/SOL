@@ -13,17 +13,20 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
+    RayTracingMaterial::RayTracingMaterial(VulkanDevice& device) : Material(device), layout(getDevice()) {}
+
     RayTracingMaterial::RayTracingMaterial(VulkanShaderModule* raygenModule,
                                            VulkanShaderModule* missModule,
                                            VulkanShaderModule* closestHitModule,
                                            VulkanShaderModule* anyHitModule,
                                            VulkanShaderModule* intersectionModule) :
+        Material(raygenModule->getDevice()),
         raygenShader(raygenModule),
         missShader(missModule),
         closestHitShader(closestHitModule),
         anyHitShader(anyHitModule),
         intersectionShader(intersectionModule),
-        layout(raygenModule->getDevice())
+        layout(getDevice())
     {
     }
 
@@ -32,10 +35,6 @@ namespace sol
     ////////////////////////////////////////////////////////////////
     // Getters.
     ////////////////////////////////////////////////////////////////
-
-    VulkanDevice& RayTracingMaterial::getDevice() noexcept { return raygenShader->getDevice(); }
-
-    const VulkanDevice& RayTracingMaterial::getDevice() const noexcept { return raygenShader->getDevice(); }
 
     IRayTracingMaterialManager& RayTracingMaterial::getMaterialManager() noexcept { return *materialManager; }
 
@@ -64,7 +63,11 @@ namespace sol
 
     VulkanShaderModule& RayTracingMaterial::getIntersectionShader() const noexcept { return *intersectionShader; }
 
+    MaterialLayout& RayTracingMaterial::getLayout() noexcept { return layout; }
+
     const MaterialLayout& RayTracingMaterial::getLayout() const noexcept { return layout; }
+
+    RayTracingMaterialLayout& RayTracingMaterial::getRayTracingLayout() noexcept { return layout; }
 
     const RayTracingMaterialLayout& RayTracingMaterial::getRayTracingLayout() const noexcept { return layout; }
 
