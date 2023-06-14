@@ -18,7 +18,12 @@
 
 #include "sol-core/fwd.h"
 #include "sol-material/fwd.h"
-#include "sol-material/common/uniform_buffer_manager.h"
+
+////////////////////////////////////////////////////////////////
+// Current target includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-render/common/uniform_buffer_manager.h"
 
 namespace sol
 {

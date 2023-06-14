@@ -24,8 +24,6 @@ namespace sol
     class RayTracingMaterialInstance;
     class RayTracingMaterialLayout;
     class IRayTracingMaterialManager;
-    class UniformBuffer;
-    class UniformBufferManager;
 
     using ComputeMaterialPtr                  = std::unique_ptr<ComputeMaterial>;
     using ComputeMaterialSharedPtr            = std::shared_ptr<ComputeMaterial>;
@@ -49,8 +47,4 @@ namespace sol
     using RayTracingMaterialInstanceSharedPtr = std::shared_ptr<RayTracingMaterialInstance>;
     using IRayTracingMaterialManagerPtr       = std::unique_ptr<IRayTracingMaterialManager>;
     using IRayTracingMaterialManagerSharedPtr = std::shared_ptr<IRayTracingMaterialManager>;
-    using UniformBufferPtr                    = std::unique_ptr<UniformBuffer>;
-    using UniformBufferSharedPtr              = std::shared_ptr<UniformBuffer>;
-    using UniformBufferManagerPtr             = std::unique_ptr<UniformBufferManager>;
-    using UniformBufferManagerSharedPtr       = std::shared_ptr<UniformBufferManager>;
 }  // namespace sol
