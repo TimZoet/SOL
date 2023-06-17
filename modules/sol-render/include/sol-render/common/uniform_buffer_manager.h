@@ -16,14 +16,10 @@
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-memory/fwd.h"
-
-////////////////////////////////////////////////////////////////
-// Current target includes.
-////////////////////////////////////////////////////////////////
-
 #include "sol-material/fwd.h"
-#include "sol-material/common/uniform_buffer.h"
+#include "sol-memory/fwd.h"
+#include "sol-render/fwd.h"
+#include "sol-render/common/uniform_buffer.h"
 
 namespace sol
 {

@@ -34,7 +34,9 @@ namespace sol
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        Material();
+        Material() = delete;
+
+        explicit Material(VulkanDevice& device);
 
         Material(const Material&) = delete;
 
@@ -50,9 +52,11 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] virtual VulkanDevice& getDevice() noexcept = 0;
+        [[nodiscard]] VulkanDevice& getDevice() noexcept;
 
-        [[nodiscard]] virtual const VulkanDevice& getDevice() const noexcept = 0;
+        [[nodiscard]] const VulkanDevice& getDevice() const noexcept;
+
+        [[nodiscard]] virtual MaterialLayout& getLayout() noexcept = 0;
 
         [[nodiscard]] virtual const MaterialLayout& getLayout() const noexcept = 0;
 
@@ -82,6 +86,8 @@ namespace sol
         ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////
+
+        VulkanDevice* device = nullptr;
 
         /**
          * \brief UUID.

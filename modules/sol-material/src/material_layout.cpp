@@ -47,7 +47,7 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    MaterialLayout::MaterialLayout(VulkanDevice& vkDevice) : device(&vkDevice) {}
+    MaterialLayout::MaterialLayout(VulkanDevice& device) : device(&device) {}
 
     MaterialLayout::~MaterialLayout() noexcept = default;
 
@@ -142,6 +142,8 @@ namespace sol
     void MaterialLayout::finalize(MaterialLayoutDescription desc)
     {
         requireNonFinalized();
+
+        if (!device) throw SolError("Cannot finalize MaterialLayout. It does not have a device assigned.");
 
         // Sort bindings by set and binding index.
         const auto sorter = [](const auto& lhs, const auto& rhs) {

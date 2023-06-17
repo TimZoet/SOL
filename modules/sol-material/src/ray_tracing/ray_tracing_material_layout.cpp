@@ -6,7 +6,7 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    RayTracingMaterialLayout::RayTracingMaterialLayout(VulkanDevice& vkDevice) : MaterialLayout(vkDevice) {}
+    RayTracingMaterialLayout::RayTracingMaterialLayout(VulkanDevice& device) : MaterialLayout(device) {}
 
     RayTracingMaterialLayout::~RayTracingMaterialLayout() noexcept = default;
 }  // namespace sol

@@ -1,4 +1,4 @@
-#include "sol-material/common/uniform_buffer.h"
+#include "sol-render/common/uniform_buffer.h"
 
 ////////////////////////////////////////////////////////////////
 // Standard includes.

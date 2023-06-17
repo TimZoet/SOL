@@ -12,9 +12,6 @@ set(HEADERS
     ${INCLUDE_DIR}/material_instance.h
     ${INCLUDE_DIR}/material_layout.h
     ${INCLUDE_DIR}/material_layout_description.h
-    
-    ${INCLUDE_DIR}/common/uniform_buffer.h
-    ${INCLUDE_DIR}/common/uniform_buffer_manager.h
 
     ${INCLUDE_DIR}/compute/compute_material.h
     ${INCLUDE_DIR}/compute/compute_material_instance.h
@@ -37,9 +34,6 @@ set(SOURCES
     ${SRC_DIR}/material_instance.cpp
     ${SRC_DIR}/material_layout.cpp
     ${SRC_DIR}/material_layout_description.cpp
-    
-    ${SRC_DIR}/common/uniform_buffer.cpp
-    ${SRC_DIR}/common/uniform_buffer_manager.cpp
 
     ${SRC_DIR}/compute/compute_material.cpp
     ${SRC_DIR}/compute/compute_material_instance.cpp

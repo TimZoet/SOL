@@ -18,7 +18,6 @@
 
 #include "sol-core/fwd.h"
 #include "sol-material/fwd.h"
-#include "sol-material/common/uniform_buffer_manager.h"
 #include "sol-material/graphics/graphics_material_instance.h"
 #include "sol-material/graphics/i_graphics_material_manager.h"
 #include "sol-memory/fwd.h"
@@ -27,6 +26,7 @@
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
+#include "sol-render/common/uniform_buffer_manager.h"
 #include "sol-render/graphics/fwd.h"
 
 namespace sol

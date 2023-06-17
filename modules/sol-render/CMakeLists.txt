@@ -9,6 +9,8 @@ set(HEADERS
     ${INCLUDE_DIR}/common/descriptors.h
     ${INCLUDE_DIR}/common/i_traverser.h
     ${INCLUDE_DIR}/common/render_settings.h
+    ${INCLUDE_DIR}/common/uniform_buffer.h
+    ${INCLUDE_DIR}/common/uniform_buffer_manager.h
     
     ${INCLUDE_DIR}/compute/compute_material_manager.h
     ${INCLUDE_DIR}/compute/compute_pipeline_cache.h
@@ -36,6 +38,8 @@ set(SOURCES
     ${SRC_DIR}/common/descriptors.cpp
     ${SRC_DIR}/common/i_traverser.cpp
     ${SRC_DIR}/common/render_settings.cpp
+    ${SRC_DIR}/common/uniform_buffer.cpp
+    ${SRC_DIR}/common/uniform_buffer_manager.cpp
     
     ${SRC_DIR}/compute/compute_material_manager.cpp
     ${SRC_DIR}/compute/compute_pipeline_cache.cpp

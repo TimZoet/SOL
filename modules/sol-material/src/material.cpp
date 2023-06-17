@@ -12,13 +12,17 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    Material::Material() { uuid = uuids::uuid_system_generator{}(); }
+    Material::Material(VulkanDevice& device) : device(&device) { uuid = uuids::uuid_system_generator{}(); }
 
     Material::~Material() noexcept = default;
 
     ////////////////////////////////////////////////////////////////
     // Getters.
     ////////////////////////////////////////////////////////////////
+
+    VulkanDevice& Material::getDevice() noexcept { return *device; }
+
+    const VulkanDevice& Material::getDevice() const noexcept { return *device; }
 
     const uuids::uuid& Material::getUuid() const noexcept { return uuid; }
 

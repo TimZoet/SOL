@@ -33,6 +33,8 @@ namespace sol
 
         RayTracingMaterial() = delete;
 
+        explicit RayTracingMaterial(VulkanDevice& device);
+
         RayTracingMaterial(VulkanShaderModule* raygenModule,
                            VulkanShaderModule* missModule,
                            VulkanShaderModule* closestHitModule,
@@ -52,10 +54,6 @@ namespace sol
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
-
-        [[nodiscard]] VulkanDevice& getDevice() noexcept override;
-
-        [[nodiscard]] const VulkanDevice& getDevice() const noexcept override;
 
         /**
          * \brief Get the IRayTracingMaterialManager.
@@ -89,7 +87,11 @@ namespace sol
 
         [[nodiscard]] VulkanShaderModule& getIntersectionShader() const noexcept;
 
+        [[nodiscard]] MaterialLayout& getLayout() noexcept override;
+
         [[nodiscard]] const MaterialLayout& getLayout() const noexcept override;
+
+        [[nodiscard]] RayTracingMaterialLayout& getRayTracingLayout() noexcept;
 
         [[nodiscard]] const RayTracingMaterialLayout& getRayTracingLayout() const noexcept;
 
