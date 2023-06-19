@@ -12,6 +12,7 @@ namespace sol
     class GraphicsPipelineCache;
     class GraphicsRenderData;
     class GraphicsRenderer;
+    class GraphicsRenderingInfo;
     class GraphicsTraverser;
 
     using GraphicsMaterialManagerPtr       = std::unique_ptr<GraphicsMaterialManager>;
@@ -22,6 +23,8 @@ namespace sol
     using GraphicsRenderDataSharedPtr      = std::shared_ptr<GraphicsRenderData>;
     using GraphicsRendererPtr              = std::unique_ptr<GraphicsRenderer>;
     using GraphicsRendererSharedPtr        = std::shared_ptr<GraphicsRenderer>;
+    using GraphicsRenderingInfoPtr         = std::unique_ptr<GraphicsRenderingInfo>;
+    using GraphicsRenderingInfoSharedPtr   = std::shared_ptr<GraphicsRenderingInfo>;
     using GraphicsTraverserPtr             = std::unique_ptr<GraphicsTraverser>;
     using GraphicsTraverserSharedPtr       = std::shared_ptr<GraphicsTraverser>;
 }  // namespace sol

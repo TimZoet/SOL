@@ -28,70 +28,45 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    VulkanGraphicsPipeline& GraphicsPipelineCache::getPipeline(const GraphicsMaterial& material,
-                                                               const VulkanRenderPass& renderPass) const
+    VulkanGraphicsPipeline& GraphicsPipelineCache::getPipeline(const GraphicsMaterial& material) const
     {
         const auto it = pipelines.find(&material);
         if (it == pipelines.end())
             throw SolError("Cannot get pipeline for GraphicsMaterial: no pipelines created yet.");
 
-        for (const auto& obj : it->second)
-        {
-            if (obj.renderPass == &renderPass) return *obj.pipeline;
-        }
-
-        throw SolError(
-          "Cannot get pipeline for GraphicsMaterial: no pipeline with compatible settings and renderpass found.");
+        return *it->second;
     }
 
     ////////////////////////////////////////////////////////////////
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    bool GraphicsPipelineCache::createPipeline(const GraphicsMaterial& material, VulkanRenderPass& renderPass)
+    bool GraphicsPipelineCache::createPipeline(const GraphicsMaterial& material)
     {
         // Look for existing pipeline list for this material.
         const auto it = pipelines.find(&material);
 
-        // None found, create whole new list with new pipeline.
+        // None found, create new pipeline.
         if (it == pipelines.end())
         {
-            std::vector<Pipeline> p;
-            p.emplace_back(Pipeline{.pipeline = createPipelineImpl(material, renderPass), .renderPass = &renderPass});
-            pipelines.try_emplace(&material, std::move(p));
+            pipelines.try_emplace(&material, createPipelineImpl(material));
             return true;
         }
 
-        // Look for pipeline with same settings.
-        for (const auto& obj : it->second)
-        {
-            if (obj.renderPass == &renderPass) return false;
-        }
-
-        // Create new pipeline and add to list.
-        it->second.emplace_back(
-          Pipeline{.pipeline = createPipelineImpl(material, renderPass), .renderPass = &renderPass});
-
-        return true;
+        return false;
     }
 
     ////////////////////////////////////////////////////////////////
     // Destroy.
     ////////////////////////////////////////////////////////////////
 
-    bool GraphicsPipelineCache::destroyPipeline(const GraphicsMaterial& material)
-    {
-        // TODO: This destroys all pipelines for this material, regardless of rendersettings and renderpass.
-        return pipelines.erase(&material);
-    }
+    bool GraphicsPipelineCache::destroyPipeline(const GraphicsMaterial& material) { return pipelines.erase(&material); }
 
-    VulkanGraphicsPipelinePtr GraphicsPipelineCache::createPipelineImpl(const GraphicsMaterial& material,
-                                                                        VulkanRenderPass&       renderPass)
+    VulkanGraphicsPipelinePtr GraphicsPipelineCache::createPipelineImpl(const GraphicsMaterial& material)
     {
         const auto& layout = material.getGraphicsLayout();
 
         VulkanGraphicsPipeline::Settings settings;
-        settings.renderPass            = renderPass;
         settings.vertexShader          = material.getVertexShader();
         settings.fragmentShader        = material.getFragmentShader();
         settings.vertexAttributes      = layout.getMeshLayout()->getAttributeDescriptions();

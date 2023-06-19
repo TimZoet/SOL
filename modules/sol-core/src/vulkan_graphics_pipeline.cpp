@@ -49,7 +49,7 @@ namespace sol
 
     std::pair<VkPipeline, VkPipelineLayout> VulkanGraphicsPipeline::createImpl(const Settings& settings)
     {
-        auto& device = settings.renderPass().getDevice();
+        auto& device = settings.vertexShader().getDevice();
 
         // Create layout.
         VkPipelineLayout layout;
@@ -187,9 +187,12 @@ namespace sol
     const VulkanGraphicsPipeline::Settings& VulkanGraphicsPipeline::getSettings() const noexcept { return settings; }
 #endif
 
-    VulkanDevice& VulkanGraphicsPipeline::getDevice() noexcept { return settings.renderPass().getDevice(); }
+    VulkanDevice& VulkanGraphicsPipeline::getDevice() noexcept { return settings.vertexShader().getDevice(); }
 
-    const VulkanDevice& VulkanGraphicsPipeline::getDevice() const noexcept { return settings.renderPass().getDevice(); }
+    const VulkanDevice& VulkanGraphicsPipeline::getDevice() const noexcept
+    {
+        return settings.vertexShader().getDevice();
+    }
 
     const VkPipeline& VulkanGraphicsPipeline::getPipeline() const noexcept { return pipeline; }
 
