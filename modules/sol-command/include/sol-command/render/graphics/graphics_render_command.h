@@ -5,7 +5,6 @@
 ////////////////////////////////////////////////////////////////
 
 #include "sol-core/fwd.h"
-#include "sol-material/fwd.h"
 #include "sol-render/graphics/fwd.h"
 
 ////////////////////////////////////////////////////////////////
@@ -41,14 +40,9 @@ namespace sol
 
         [[nodiscard]] GraphicsRenderer* getRenderer() const noexcept;
 
-        [[nodiscard]] VulkanRenderPass* getRenderPass() const noexcept;
+        [[nodiscard]] const std::vector<GraphicsRenderingInfo*>& getRenderingInfos() const noexcept;
 
         [[nodiscard]] VulkanCommandBufferList* getCommandBufferList() const noexcept;
-
-        // TODO: This is a hack because we need to recreate framebuffers when the swapchain is recreated.
-        [[nodiscard]] std::vector<VulkanFramebuffer*>& getFramebuffers() noexcept;
-
-        [[nodiscard]] const std::vector<VulkanFramebuffer*>& getFramebuffers() const noexcept;
 
         [[nodiscard]] const uint32_t* getFrameIndexPtr() const noexcept;
 
@@ -62,11 +56,9 @@ namespace sol
 
         void setRenderData(GraphicsRenderData& data);
 
-        void setRenderPass(VulkanRenderPass& pass);
+        void addRenderingInfo(GraphicsRenderingInfo& info);
 
         void setCommandBufferList(VulkanCommandBufferList& buffers);
-
-        void addFramebuffer(VulkanFramebuffer& framebuffer);
 
         void setFrameIndexPtr(uint32_t* ptr);
 
@@ -95,11 +87,9 @@ namespace sol
 
         GraphicsRenderData* renderData = nullptr;
 
-        VulkanRenderPass* renderPass = nullptr;
+        std::vector<GraphicsRenderingInfo*> renderingInfos;
 
         VulkanCommandBufferList* commandBuffers = nullptr;
-
-        std::vector<VulkanFramebuffer*> framebuffers;
 
         uint32_t* frameIndexPtr = nullptr;
 

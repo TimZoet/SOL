@@ -106,8 +106,7 @@ namespace sol
 
         [[nodiscard]] const InstanceDataMap& getInstanceData() const noexcept;
 
-        VulkanGraphicsPipeline& getPipeline(const GraphicsMaterial& material,
-                                            const VulkanRenderPass& renderPass) const override;
+        [[nodiscard]] VulkanGraphicsPipeline& getPipeline(const GraphicsMaterial& material) const override;
 
         ////////////////////////////////////////////////////////////////
         // Setters.
@@ -149,12 +148,11 @@ namespace sol
         }
 
         /**
-         * \brief Create a new pipeline for the given material with the settings and renderpass, if one does not exist yet.
+         * \brief Create a new pipeline for the given material, if one does not exist yet.
          * \param material GraphicsMaterial.
-         * \param renderPass RenderPass.
          * \return True if a new pipeline was created, false if one already existed.
          */
-        bool createPipeline(const GraphicsMaterial& material, VulkanRenderPass& renderPass) const override;
+        [[nodiscard]] bool createPipeline(const GraphicsMaterial& material) const override;
 
         void bindDescriptorSets(std::span<const GraphicsMaterialInstance* const> instances,
                                 VkCommandBuffer                                  commandBuffer,

@@ -49,10 +49,9 @@ namespace sol
         // Interface.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] virtual VulkanGraphicsPipeline& getPipeline(const GraphicsMaterial& material,
-                                                                  const VulkanRenderPass& renderPass) const = 0;
+        [[nodiscard]] virtual VulkanGraphicsPipeline& getPipeline(const GraphicsMaterial& material) const = 0;
 
-        virtual bool createPipeline(const GraphicsMaterial& material, VulkanRenderPass& renderPass) const = 0;
+        virtual bool createPipeline(const GraphicsMaterial& material) const = 0;
 
         virtual void bindDescriptorSets(std::span<const GraphicsMaterialInstance* const> instances,
                                         VkCommandBuffer                                  commandBuffer,

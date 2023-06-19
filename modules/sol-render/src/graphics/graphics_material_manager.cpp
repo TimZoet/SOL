@@ -26,7 +26,6 @@
 ////////////////////////////////////////////////////////////////
 
 #include "sol-render/common/descriptors.h"
-#include "sol-render/common/render_settings.h"
 #include "sol-render/graphics/graphics_pipeline_cache.h"
 
 namespace
@@ -148,6 +147,8 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
+    GraphicsMaterialManager::GraphicsMaterialManager() = default;
+
     GraphicsMaterialManager::GraphicsMaterialManager(MemoryManager& memManager) :
         memoryManager(&memManager), pipelineCache(std::make_unique<GraphicsPipelineCache>())
     {
@@ -166,10 +167,9 @@ namespace sol
         return instanceDataMap;
     }
 
-    VulkanGraphicsPipeline& GraphicsMaterialManager::getPipeline(const GraphicsMaterial& material,
-                                                                 const VulkanRenderPass& renderPass) const
+    VulkanGraphicsPipeline& GraphicsMaterialManager::getPipeline(const GraphicsMaterial& material) const
     {
-        return pipelineCache->getPipeline(material, renderPass);
+        return pipelineCache->getPipeline(material);
     }
 
     ////////////////////////////////////////////////////////////////
@@ -189,15 +189,15 @@ namespace sol
     // Materials.
     ////////////////////////////////////////////////////////////////
 
-    bool GraphicsMaterialManager::createPipeline(const GraphicsMaterial& material, VulkanRenderPass& renderPass) const
+    bool GraphicsMaterialManager::createPipeline(const GraphicsMaterial& material) const
     {
-        return pipelineCache->createPipeline(material, renderPass);
+        return pipelineCache->createPipeline(material);
     }
 
-    void GraphicsMaterialManager::bindDescriptorSets(std::span<const GraphicsMaterialInstance* const> instances,
-                                                     VkCommandBuffer                                  commandBuffer,
-                                                     const VulkanGraphicsPipeline&                    pipeline,
-                                                     size_t                                           index) const
+    void GraphicsMaterialManager::bindDescriptorSets(const std::span<const GraphicsMaterialInstance* const> instances,
+                                                     const VkCommandBuffer         commandBuffer,
+                                                     const VulkanGraphicsPipeline& pipeline,
+                                                     const size_t                  index) const
     {
         std::vector<VkDescriptorSet> sets;
         for (const auto* mtlInstance : instances)

@@ -5,7 +5,6 @@
 ////////////////////////////////////////////////////////////////
 
 #include <ranges>
-#include <unordered_map>
 
 ////////////////////////////////////////////////////////////////
 // Module includes.
@@ -14,18 +13,13 @@
 #include "sol-core/vulkan_attachment.h"
 #include "sol-core/vulkan_command_buffer_list.h"
 #include "sol-core/vulkan_device.h"
-#include "sol-core/vulkan_frame_buffer.h"
 #include "sol-core/vulkan_graphics_pipeline.h"
-#include "sol-core/vulkan_render_pass.h"
-#include "sol-error/sol_error.h"
 #include "sol-material/graphics/graphics_material.h"
-#include "sol-memory/memory_manager.h"
 #include "sol-mesh/i_mesh.h"
 ////////////////////////////////////////////////////////////////
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-render/common/render_settings.h"
 #include "sol-render/graphics/graphics_material_manager.h"
 #include "sol-render/graphics/graphics_render_data.h"
 #include "sol-render/graphics/graphics_traverser.h"
@@ -36,27 +30,9 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    GraphicsRenderer::GraphicsRenderer() : renderSettings(std::make_shared<RenderSettings>()) {}
-
-    GraphicsRenderer::GraphicsRenderer(RenderSettingsSharedPtr settings) : renderSettings(std::move(settings)) {}
+    GraphicsRenderer::GraphicsRenderer() = default;
 
     GraphicsRenderer::~GraphicsRenderer() noexcept = default;
-
-    ////////////////////////////////////////////////////////////////
-    // Getters.
-    ////////////////////////////////////////////////////////////////
-
-    RenderSettingsSharedPtr& GraphicsRenderer::getRenderSettings() noexcept { return renderSettings; }
-
-    ////////////////////////////////////////////////////////////////
-    // Setters.
-    ////////////////////////////////////////////////////////////////
-
-    void GraphicsRenderer::setRenderSettings(RenderSettingsSharedPtr settings)
-    {
-        if (!settings) throw SolError("Cannot set RenderSettings to nullptr.");
-        renderSettings = std::move(settings);
-    }
 
     ////////////////////////////////////////////////////////////////
     // Render.
@@ -68,44 +44,12 @@ namespace sol
         // Ensure all pipelines have been created.
         for (const auto& [mesh, material, materialOffset, _a, _b] : params.renderData.drawables)
         {
-            material->getMaterialManager().createPipeline(*material, params.renderPass);
+            material->getMaterialManager().createPipeline(*material);
         }
-    }
-
-    void GraphicsRenderer::beginRenderPass(const Parameters& params) const
-    {
-        VkRenderPassBeginInfo       renderPassInfo{};
-        std::array<VkClearValue, 2> clearValues{};
-        switch (renderSettings->getClearColorFormat())
-        {
-        case RenderSettings::ClearColorFormat::Float:
-            const auto ccf = renderSettings->getClearColorFloat();
-            std::ranges::copy(ccf.begin(), ccf.end(), clearValues[0].color.float32);
-            break;
-        case RenderSettings::ClearColorFormat::Int:
-            const auto cci = renderSettings->getClearColorInt();
-            std::ranges::copy(cci.begin(), cci.end(), clearValues[0].color.int32);
-            break;
-        case RenderSettings::ClearColorFormat::Uint:
-            const auto ccu = renderSettings->getClearColorUint();
-            std::ranges::copy(ccu.begin(), ccu.end(), clearValues[0].color.uint32);
-            break;
-        }
-        clearValues[1].depthStencil      = {renderSettings->getClearDepth(), renderSettings->getClearStencil()};
-        renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass        = params.renderPass.get();
-        renderPassInfo.framebuffer       = params.framebuffer.get();
-        renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent = params.framebuffer.getExtent();
-        renderPassInfo.clearValueCount   = static_cast<uint32_t>(clearValues.size());
-        renderPassInfo.pClearValues      = clearValues.data();
-        vkCmdBeginRenderPass(params.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     }
 
     void GraphicsRenderer::render(const Parameters& params)
     {
-        const auto& device = params.framebuffer.getDevice();
-
         std::vector<VkBuffer> vertexBuffers;
         std::vector<size_t>   vertexBufferOffsets;
 
@@ -114,7 +58,7 @@ namespace sol
         {
             const auto& materialLayout  = material->getGraphicsLayout();
             const auto& materialManager = material->getMaterialManager();
-            auto&       pipeline        = materialManager.getPipeline(*material, params.renderPass);
+            auto&       pipeline        = materialManager.getPipeline(*material);
             vkCmdBindPipeline(params.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getPipeline());
 
             // Just bind all dynamic states for now.
@@ -175,7 +119,7 @@ namespace sol
                 {
                     if (const auto polygon = inst.getPolygonMode(); polygon)
                     {
-                        device.vkCmdSetPolygonModeEXT(params.commandBuffer, toVulkanEnum(*polygon));
+                        params.device.vkCmdSetPolygonModeEXT(params.commandBuffer, toVulkanEnum(*polygon));
                     }
                 }
             }
@@ -238,6 +182,4 @@ namespace sol
             }
         }
     }
-
-    void GraphicsRenderer::endRenderPass(const Parameters& params) { vkCmdEndRenderPass(params.commandBuffer); }
 }  // namespace sol

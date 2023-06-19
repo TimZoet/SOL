@@ -24,19 +24,8 @@ namespace sol
 {
     class GraphicsPipelineCache
     {
-        ////////////////////////////////////////////////////////////////
-        // Types.
-        ////////////////////////////////////////////////////////////////
-
-        struct Pipeline
-        {
-            VulkanGraphicsPipelinePtr pipeline;
-
-            VulkanRenderPass* renderPass = nullptr;
-        };
-
     public:
-        using PipelineMap = std::unordered_map<const GraphicsMaterial*, std::vector<Pipeline>>;
+        using PipelineMap = std::unordered_map<const GraphicsMaterial*, VulkanGraphicsPipelinePtr>;
 
         ////////////////////////////////////////////////////////////////
         // Constructors.
@@ -58,8 +47,7 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] VulkanGraphicsPipeline& getPipeline(const GraphicsMaterial& material,
-                                                          const VulkanRenderPass& renderPass) const;
+        [[nodiscard]] VulkanGraphicsPipeline& getPipeline(const GraphicsMaterial& material) const;
 
         ////////////////////////////////////////////////////////////////
         // Create.
@@ -70,7 +58,7 @@ namespace sol
          * \param material GraphicsMaterial.
          * \return True if a new pipeline was created, false if one already existed.
          */
-        bool createPipeline(const GraphicsMaterial& material, VulkanRenderPass& renderPass);
+        bool createPipeline(const GraphicsMaterial& material);
 
         ////////////////////////////////////////////////////////////////
         // Destroy.
@@ -79,8 +67,7 @@ namespace sol
         bool destroyPipeline(const GraphicsMaterial& material);
 
     private:
-        static VulkanGraphicsPipelinePtr createPipelineImpl(const GraphicsMaterial& material,
-                                                            VulkanRenderPass&       renderPass);
+        static VulkanGraphicsPipelinePtr createPipelineImpl(const GraphicsMaterial& material);
 
         ////////////////////////////////////////////////////////////////
         // Member variables.
