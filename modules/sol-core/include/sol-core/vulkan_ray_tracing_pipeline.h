@@ -26,6 +26,24 @@ namespace sol
     class VulkanRayTracingPipeline
     {
     public:
+        struct HitShaderGroup
+        {
+            /**
+             * \brief Index into the closestHitShaders list.
+             */
+            std::optional<uint32_t> closest;
+
+            /**
+             * \brief Index into the anyHitShaders list.
+             */
+            std::optional<uint32_t> any;
+
+            /**
+             * \brief Index into the intersectionShaders list.
+             */
+            std::optional<uint32_t> intersection;
+        };
+
         /**
          * \brief VulkanRayTracingPipeline settings.
          */
@@ -37,29 +55,73 @@ namespace sol
             ObjectRefSetting<VulkanShaderModule> raygenShader;
 
             /**
-             * \brief Miss shader.
+             * \brief Optional explicit entry point name for raygen shader. If empty, defaults to "main".
              */
-            ObjectRefSetting<VulkanShaderModule> missShader;
+            std::string raygenEntryPoint;
 
             /**
-             * \brief Closest hit shader.
+             * \brief Miss shaders.
              */
-            ObjectRefSetting<VulkanShaderModule> closestHitShader;
+            ObjectRefListSetting<VulkanShaderModule> missShaders;
 
             /**
-             * \brief Any hit shader.
+             * \brief Optional explicit entry point names for miss shaders. If empty, defaults to "main".
              */
-            ObjectRefSetting<VulkanShaderModule> anyHitShader;
+            std::vector<std::string> missEntryPoints;
 
             /**
-             * \brief Intersection shader.
+             * \brief Closest hit shaders.
              */
-            ObjectRefSetting<VulkanShaderModule> intersectionShader;
+            ObjectRefListSetting<VulkanShaderModule> closestHitShaders;
 
-            // TODO: No callables yet.
+            /**
+             * \brief Optional explicit entry point names for closest hit shaders. If empty, defaults to "main".
+             */
+            std::vector<std::string> closestHitEntryPoints;
 
+            /**
+             * \brief Any hit shaders.
+             */
+            ObjectRefListSetting<VulkanShaderModule> anyHitShaders;
+
+            /**
+             * \brief Optional explicit entry point names for any hit shaders. If empty, defaults to "main".
+             */
+            std::vector<std::string> anyHitEntryPoints;
+
+            /**
+             * \brief Intersection shaders.
+             */
+            ObjectRefListSetting<VulkanShaderModule> intersectionShaders;
+
+            /**
+             * \brief Optional explicit entry point names for intersection shaders. If empty, defaults to "main".
+             */
+            std::vector<std::string> intersectionEntryPoints;
+
+            /**
+             * \brief Callable shaders.
+             */
+            ObjectRefListSetting<VulkanShaderModule> callableShaders;
+
+            /**
+             * \brief Optional explicit entry point names for callable shaders. If empty, defaults to "main".
+             */
+            std::vector<std::string> callableEntryPoints;
+
+            /**
+             * \brief List of hit groups.
+             */
+            std::vector<HitShaderGroup> hitGroups;
+
+            /**
+             * \brief List of descriptor set layouts.
+             */
             ObjectRefListSetting<VulkanDescriptorSetLayout> descriptorSetLayouts;
 
+            /**
+             * \brief List of push constant ranges.
+             */
             std::vector<VkPushConstantRange> pushConstants;
         };
 
@@ -69,7 +131,7 @@ namespace sol
 
         VulkanRayTracingPipeline() = delete;
 
-        VulkanRayTracingPipeline(Settings set, VkPipeline vkPipeline, VkPipelineLayout vkLayout, uint32_t sGroupCount);
+        VulkanRayTracingPipeline(Settings set, VkPipeline vkPipeline, VkPipelineLayout vkLayout);
 
         VulkanRayTracingPipeline(const VulkanRayTracingPipeline&) = delete;
 
@@ -129,6 +191,12 @@ namespace sol
          * \brief Get the pipeline handle managed by this object.
          * \return Pipeline handle.
          */
+        [[nodiscard]] const VkPipeline& get() const noexcept;
+
+        /**
+         * \brief Get the pipeline handle managed by this object.
+         * \return Pipeline handle.
+         */
         [[nodiscard]] const VkPipeline& getPipeline() const noexcept;
 
         /**
@@ -137,10 +205,32 @@ namespace sol
          */
         [[nodiscard]] const VkPipelineLayout& getPipelineLayout() const noexcept;
 
-        [[nodiscard]] uint32_t getShaderGroupCount() const noexcept;
+        /**
+         * \brief Get the number of raygen shader groups.
+         * \return Group count.
+         */
+        [[nodiscard]] uint32_t getRaygenGroupCount() const noexcept;
+
+        /**
+         * \brief Get the number of miss shader groups.
+         * \return Group count.
+         */
+        [[nodiscard]] uint32_t getMissGroupCount() const noexcept;
+
+        /**
+         * \brief Get the number of hit shader groups.
+         * \return Group count.
+         */
+        [[nodiscard]] uint32_t getHitGroupCount() const noexcept;
+
+        /**
+         * \brief Get the number of callable shader groups.
+         * \return Group count.
+         */
+        [[nodiscard]] uint32_t getCallableGroupCount() const noexcept;
 
     private:
-        [[nodiscard]] static std::tuple<VkPipeline, VkPipelineLayout, uint32_t> createImpl(const Settings& settings);
+        [[nodiscard]] static std::tuple<VkPipeline, VkPipelineLayout> createImpl(const Settings& settings);
 
         /**
          * \brief Settings with which this object was created.
@@ -156,7 +246,5 @@ namespace sol
          * \brief Vulkan pipeline layout.
          */
         VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
-
-        uint32_t shaderGroupCount = 0;
     };
 }  // namespace sol

@@ -23,44 +23,34 @@ namespace sol
     ////////////////////////////////////////////////////////////////
 
 #ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
-    VulkanShaderBindingTable::VulkanShaderBindingTable(const Settings& set, std::vector<VulkanBufferPtr> b) :
-        settings(set), buffers(std::move(b))
+    VulkanShaderBindingTable::VulkanShaderBindingTable(const Settings&                       set,
+                                                       VulkanBufferPtr                       sbtBuffer,
+                                                       const VkStridedDeviceAddressRegionKHR raygen,
+                                                       const VkStridedDeviceAddressRegionKHR miss,
+                                                       const VkStridedDeviceAddressRegionKHR hit,
+                                                       const VkStridedDeviceAddressRegionKHR callable) :
+        settings(set),
+        buffer(std::move(sbtBuffer)),
+        raygenRegion(raygen),
+        missRegion(miss),
+        hitRegion(hit),
+        callableRegion(callable)
     {
-        // TODO: Perhaps get these properties from elsewhere instead of getting them here again and again?
-        VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties{};
-        rayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
-        VkPhysicalDeviceProperties2 deviceProperties2{};
-        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-        deviceProperties2.pNext = &rayTracingPipelineProperties;
-        vkGetPhysicalDeviceProperties2(getDevice().getPhysicalDevice().get(), &deviceProperties2);
-
-        const uint32_t handleSize        = rayTracingPipelineProperties.shaderGroupHandleSize;
-        const uint32_t alignment         = rayTracingPipelineProperties.shaderGroupHandleAlignment;
-        const uint32_t handleSizeAligned = (handleSize + alignment - 1) & ~(alignment - 1);
-        for (const auto& buf : buffers)
-        {
-            regions.emplace_back(buf->getDeviceAddress(), handleSizeAligned, handleSizeAligned);
-        }
     }
 #else
-    VulkanShaderBindingTable::VulkanShaderBindingTable(const Settings& set, std::vector<VulkanBufferPtr> b) :
-        settings(), buffers(std::move(b))
+    VulkanShaderBindingTable::VulkanShaderBindingTable(const Settings&                       set,
+                                                       VulkanBufferPtr                       sbtBuffer,
+                                                       const VkStridedDeviceAddressRegionKHR raygen,
+                                                       const VkStridedDeviceAddressRegionKHR miss,
+                                                       const VkStridedDeviceAddressRegionKHR hit,
+                                                       const VkStridedDeviceAddressRegionKHR callable) :
+        pipeline(&set.pipeline()),
+        buffer(std::move(sbtBuffer)),
+        raygenRegion(raygen),
+        missRegion(miss),
+        hitRegion(hit),
+        callableRegion(callable)
     {
-        // TODO: Perhaps get these properties from elsewhere instead of getting them here again and again?
-        VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties{};
-        rayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
-        VkPhysicalDeviceProperties2 deviceProperties2{};
-        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-        deviceProperties2.pNext = &rayTracingPipelineProperties;
-        vkGetPhysicalDeviceProperties2(getDevice().getPhysicalDevice().get(), &deviceProperties2);
-
-        const uint32_t handleSize        = rayTracingPipelineProperties.shaderGroupHandleSize;
-        const uint32_t alignment         = rayTracingPipelineProperties.shaderGroupHandleAlignment;
-        const uint32_t handleSizeAligned = (handleSize + alignment - 1) & ~(alignment - 1);
-        for (const auto& buf : buffers)
-        {
-            regions.emplace_back(buf->getDeviceAddress(), handleSizeAligned, handleSizeAligned);
-        }
     }
 #endif
 
@@ -72,42 +62,65 @@ namespace sol
 
     VulkanShaderBindingTablePtr VulkanShaderBindingTable::create(const Settings& settings)
     {
-        return std::make_unique<VulkanShaderBindingTable>(settings, createImpl(settings));
+        auto [b, r0, r1, r2, r3] = createImpl(settings);
+        return std::make_unique<VulkanShaderBindingTable>(settings, std::move(b), r0, r1, r2, r3);
     }
 
     VulkanShaderBindingTableSharedPtr VulkanShaderBindingTable::createShared(const Settings& settings)
     {
-        return std::make_shared<VulkanShaderBindingTable>(settings, createImpl(settings));
+        auto [b, r0, r1, r2, r3] = createImpl(settings);
+        return std::make_shared<VulkanShaderBindingTable>(settings, std::move(b), r0, r1, r2, r3);
     }
 
-    std::vector<VulkanBufferPtr> VulkanShaderBindingTable::createImpl(const Settings& settings)
+    std::tuple<VulkanBufferPtr,
+               VkStridedDeviceAddressRegionKHR,
+               VkStridedDeviceAddressRegionKHR,
+               VkStridedDeviceAddressRegionKHR,
+               VkStridedDeviceAddressRegionKHR>
+      VulkanShaderBindingTable::createImpl(const Settings& settings)
     {
+        constexpr auto alignUp = [](auto v, auto a) { return v + (a - 1) & ~(a - 1); };
+
         // TODO: Perhaps get these properties from elsewhere instead of getting them here again and again?
-        VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties{};
-        rayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+        VkPhysicalDeviceRayTracingPipelinePropertiesKHR rtProps{
+          .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR};
         VkPhysicalDeviceProperties2 deviceProperties2{};
         deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-        deviceProperties2.pNext = &rayTracingPipelineProperties;
+        deviceProperties2.pNext = &rtProps;
         vkGetPhysicalDeviceProperties2(settings.device().getPhysicalDevice().get(), &deviceProperties2);
 
-        const uint32_t handleSize        = rayTracingPipelineProperties.shaderGroupHandleSize;
-        const uint32_t alignment         = rayTracingPipelineProperties.shaderGroupHandleAlignment;
-        const uint32_t handleSizeAligned = (handleSize + alignment - 1) & ~(alignment - 1);
-        const uint32_t groupCount        = settings.pipeline().getShaderGroupCount();
-        const uint32_t sbtSize           = groupCount * handleSizeAligned;
+        const auto&    pipeline          = settings.pipeline();
+        const auto     raygenCount       = pipeline.getRaygenGroupCount();
+        const auto     missCount         = pipeline.getMissGroupCount();
+        const auto     hitCount          = pipeline.getHitGroupCount();
+        const auto     callableCount     = pipeline.getCallableGroupCount();
+        const auto     handleCount       = raygenCount + missCount + hitCount + callableCount;
+        const auto     handleSize        = rtProps.shaderGroupHandleSize;
+        const uint32_t handleSizeAligned = alignUp(handleSize, rtProps.shaderGroupHandleAlignment);
 
-        std::vector<uint8_t> shaderHandleStorage(sbtSize);
-        handleVulkanError(settings.device().vkGetRayTracingShaderGroupHandlesKHR(settings.device().get(),
-                                                                                 settings.pipeline().getPipeline(),
-                                                                                 0,
-                                                                                 groupCount,
-                                                                                 sbtSize,
-                                                                                 shaderHandleStorage.data()));
+        // Retrieve handles.
+        std::vector<uint8_t> handles(static_cast<size_t>(handleCount) * handleSize);
+        handleVulkanError(settings.device().vkGetRayTracingShaderGroupHandlesKHR(
+          settings.device, settings.pipeline, 0, handleCount, handles.size(), handles.data()));
 
+        // Prepare strides and sizes of device address regions.
+        VkStridedDeviceAddressRegionKHR raygenRegion{};
+        VkStridedDeviceAddressRegionKHR missRegion{};
+        VkStridedDeviceAddressRegionKHR hitRegion{};
+        VkStridedDeviceAddressRegionKHR callableRegion{};
+        raygenRegion.stride   = alignUp(handleSizeAligned, rtProps.shaderGroupBaseAlignment);
+        raygenRegion.size     = raygenRegion.stride;
+        missRegion.stride     = handleSizeAligned;
+        missRegion.size       = alignUp(missCount * handleSizeAligned, rtProps.shaderGroupBaseAlignment);
+        hitRegion.stride      = handleSizeAligned;
+        hitRegion.size        = alignUp(hitCount * handleSizeAligned, rtProps.shaderGroupBaseAlignment);
+        callableRegion.stride = handleSizeAligned;
+        callableRegion.size   = alignUp(callableCount * handleSizeAligned, rtProps.shaderGroupBaseAlignment);
 
+        // Allocate shader binding table buffer.
         VulkanBuffer::Settings bufferSettings;
         bufferSettings.device = settings.device;
-        bufferSettings.size   = sbtSize;
+        bufferSettings.size   = raygenRegion.size + missRegion.size + hitRegion.size + callableRegion.size;
         bufferSettings.bufferUsage =
           VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         bufferSettings.allocator     = settings.allocator;
@@ -115,19 +128,49 @@ namespace sol
         bufferSettings.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         bufferSettings.flags =
           VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-        bufferSettings.alignment =
-          rayTracingPipelineProperties
-            .shaderGroupBaseAlignment;  //TODO: Why do examples specify any alignment explicitly?
+        auto b = VulkanBuffer::create(bufferSettings);
 
-        std::vector<VulkanBufferPtr> buffers;
-        for (uint32_t i = 0; i < groupCount; i++)
+        // Calculate device addresses.
+        raygenRegion.deviceAddress = b->getDeviceAddress();
+        missRegion.deviceAddress   = raygenRegion.deviceAddress + raygenRegion.size;
+        if (hitCount) hitRegion.deviceAddress = missRegion.deviceAddress + missRegion.size;
+        if (callableCount) callableRegion.deviceAddress = hitRegion.deviceAddress + hitRegion.size;
+
+        // Copy raygen handle.
+        size_t handleOffset = 0, sbtOffset = 0;
+        b->setData(handles.data() + handleOffset, handleSize, sbtOffset);
+
+        // Copy miss handles.
+        handleOffset = handleSize;
+        sbtOffset    = raygenRegion.size;
+        for (uint32_t i = 0; i < missCount; i++)
         {
-            auto b = VulkanBuffer::create(bufferSettings);
-            b->setData(shaderHandleStorage.data() + handleSizeAligned * i, handleSize);
-            buffers.emplace_back(std::move(b));
+            b->setData(handles.data() + handleOffset, handleSize, sbtOffset);
+            handleOffset += handleSize;
+            sbtOffset += missRegion.stride;
         }
 
-        return buffers;
+        // Copy hit handles.
+        handleOffset = static_cast<size_t>(handleSize) * (1 + missCount);
+        sbtOffset    = raygenRegion.size + missRegion.size;
+        for (uint32_t i = 0; i < hitCount; i++)
+        {
+            b->setData(handles.data() + handleOffset, handleSize, sbtOffset);
+            handleOffset += handleSize;
+            sbtOffset += hitRegion.stride;
+        }
+
+        // Copy callable handles.
+        handleOffset = static_cast<size_t>(handleSize) * (1 + missCount + hitCount);
+        sbtOffset    = raygenRegion.size + missRegion.size + hitRegion.size;
+        for (uint32_t i = 0; i < callableCount; i++)
+        {
+            b->setData(handles.data() + handleOffset, handleSize, sbtOffset);
+            handleOffset += handleSize;
+            sbtOffset += callableRegion.stride;
+        }
+
+        return {std::move(b), raygenRegion, missRegion, hitRegion, callableRegion};
     }
 
     ////////////////////////////////////////////////////////////////
@@ -146,7 +189,7 @@ namespace sol
 #ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         return settings.device();
 #else
-        return buffer->getDevice();
+        return pipeline->getDevice();
 #endif
     }
 
@@ -155,14 +198,18 @@ namespace sol
 #ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         return settings.device();
 #else
-        return buffer->getDevice();
+        return pipeline->getDevice();
 #endif
     }
 
-    VkStridedDeviceAddressRegionKHR VulkanShaderBindingTable::getRegion(const size_t i) const noexcept
-    {
-        if (i >= regions.size()) return VkStridedDeviceAddressRegionKHR{};
-        return regions.at(i);
-    }
+    VkStridedDeviceAddressRegionKHR VulkanShaderBindingTable::getRaygenRegion() const noexcept { return raygenRegion; }
 
+    VkStridedDeviceAddressRegionKHR VulkanShaderBindingTable::getMissRegion() const noexcept { return missRegion; }
+
+    VkStridedDeviceAddressRegionKHR VulkanShaderBindingTable::getHitRegion() const noexcept { return hitRegion; }
+
+    VkStridedDeviceAddressRegionKHR VulkanShaderBindingTable::getCallableRegion() const noexcept
+    {
+        return callableRegion;
+    }
 }  // namespace sol

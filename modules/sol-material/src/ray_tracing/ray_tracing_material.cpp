@@ -15,21 +15,6 @@ namespace sol
 
     RayTracingMaterial::RayTracingMaterial(VulkanDevice& device) : Material(device), layout(getDevice()) {}
 
-    RayTracingMaterial::RayTracingMaterial(VulkanShaderModule* raygenModule,
-                                           VulkanShaderModule* missModule,
-                                           VulkanShaderModule* closestHitModule,
-                                           VulkanShaderModule* anyHitModule,
-                                           VulkanShaderModule* intersectionModule) :
-        Material(raygenModule->getDevice()),
-        raygenShader(raygenModule),
-        missShader(missModule),
-        closestHitShader(closestHitModule),
-        anyHitShader(anyHitModule),
-        intersectionShader(intersectionModule),
-        layout(getDevice())
-    {
-    }
-
     RayTracingMaterial::~RayTracingMaterial() = default;
 
     ////////////////////////////////////////////////////////////////
@@ -43,25 +28,34 @@ namespace sol
         return *materialManager;
     }
 
-    bool RayTracingMaterial::hasRaygenShader() const noexcept { return raygenShader; }
+    VulkanShaderModule* RayTracingMaterial::getRaygenShader() const noexcept { return raygenShader; }
 
-    VulkanShaderModule& RayTracingMaterial::getRaygenShader() const noexcept { return *raygenShader; }
+    const std::vector<VulkanShaderModule*>& RayTracingMaterial::getMissShaders() const noexcept { return missShaders; }
 
-    bool RayTracingMaterial::hasMissShader() const noexcept { return missShader; }
+    const std::vector<VulkanShaderModule*>& RayTracingMaterial::getClosestHitShaders() const noexcept
+    {
+        return closestHitShaders;
+    }
 
-    VulkanShaderModule& RayTracingMaterial::getMissShader() const noexcept { return *missShader; }
+    const std::vector<VulkanShaderModule*>& RayTracingMaterial::getAnyHitShaders() const noexcept
+    {
+        return anyHitShaders;
+    }
 
-    bool RayTracingMaterial::hasClosestHitShader() const noexcept { return closestHitShader; }
+    const std::vector<VulkanShaderModule*>& RayTracingMaterial::getIntersectionShaders() const noexcept
+    {
+        return intersectionShaders;
+    }
 
-    VulkanShaderModule& RayTracingMaterial::getClosestHitShader() const noexcept { return *closestHitShader; }
+    const std::vector<VulkanShaderModule*>& RayTracingMaterial::getCallableShaders() const noexcept
+    {
+        return callableShaders;
+    }
 
-    bool RayTracingMaterial::hasAnyHitShader() const noexcept { return anyHitShader; }
-
-    VulkanShaderModule& RayTracingMaterial::getAnyHitShader() const noexcept { return *anyHitShader; }
-
-    bool RayTracingMaterial::hasIntersectionShader() const noexcept { return intersectionShader; }
-
-    VulkanShaderModule& RayTracingMaterial::getIntersectionShader() const noexcept { return *intersectionShader; }
+    const std::vector<VulkanRayTracingPipeline::HitShaderGroup>& RayTracingMaterial::getHitGroups() const noexcept
+    {
+        return hitGroups;
+    }
 
     MaterialLayout& RayTracingMaterial::getLayout() noexcept { return layout; }
 
@@ -84,6 +78,37 @@ namespace sol
     {
         if (materialManager) throw SolError("Cannot set material manager more than once.");
         materialManager = &manager;
+    }
+
+    void RayTracingMaterial::setRaygenShader(VulkanShaderModule& shader) noexcept { raygenShader = &shader; }
+
+    void RayTracingMaterial::addMissShader(VulkanShaderModule& shader) noexcept { missShaders.emplace_back(&shader); }
+
+    void RayTracingMaterial::addClosestHitShader(VulkanShaderModule& shader) noexcept
+    {
+        closestHitShaders.emplace_back(&shader);
+    }
+
+    void RayTracingMaterial::addAnyHitShader(VulkanShaderModule& shader) noexcept
+    {
+        anyHitShaders.emplace_back(&shader);
+    }
+
+    void RayTracingMaterial::addIntersectionShader(VulkanShaderModule& shader) noexcept
+    {
+        intersectionShaders.emplace_back(&shader);
+    }
+
+    void RayTracingMaterial::addCallableShader(VulkanShaderModule& shader) noexcept
+    {
+        callableShaders.emplace_back(&shader);
+    }
+
+    void RayTracingMaterial::addHitGroup(std::optional<uint32_t> closest,
+                                         std::optional<uint32_t> any,
+                                         std::optional<uint32_t> intersection)
+    {
+        hitGroups.emplace_back(closest, any, intersection);
     }
 
     void RayTracingMaterial::addInstance(RayTracingMaterialInstance& instance) { instances.emplace_back(&instance); }

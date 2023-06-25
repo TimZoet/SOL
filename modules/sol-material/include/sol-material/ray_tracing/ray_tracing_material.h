@@ -16,6 +16,7 @@
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
+#include "sol-core/vulkan_ray_tracing_pipeline.h"
 #include "sol-material/fwd.h"
 #include "sol-material/material.h"
 #include "sol-material/ray_tracing/ray_tracing_material_layout.h"
@@ -34,12 +35,6 @@ namespace sol
         RayTracingMaterial() = delete;
 
         explicit RayTracingMaterial(VulkanDevice& device);
-
-        RayTracingMaterial(VulkanShaderModule* raygenModule,
-                           VulkanShaderModule* missModule,
-                           VulkanShaderModule* closestHitModule,
-                           VulkanShaderModule* anyHitModule,
-                           VulkanShaderModule* intersectionModule);
 
         RayTracingMaterial(const RayTracingMaterial&) = delete;
 
@@ -67,25 +62,19 @@ namespace sol
          */
         [[nodiscard]] const IRayTracingMaterialManager& getMaterialManager() const noexcept;
 
-        [[nodiscard]] bool hasRaygenShader() const noexcept;
+        [[nodiscard]] VulkanShaderModule* getRaygenShader() const noexcept;
 
-        [[nodiscard]] VulkanShaderModule& getRaygenShader() const noexcept;
+        [[nodiscard]] const std::vector<VulkanShaderModule*>& getMissShaders() const noexcept;
 
-        [[nodiscard]] bool hasMissShader() const noexcept;
+        [[nodiscard]] const std::vector<VulkanShaderModule*>& getClosestHitShaders() const noexcept;
 
-        [[nodiscard]] VulkanShaderModule& getMissShader() const noexcept;
+        [[nodiscard]] const std::vector<VulkanShaderModule*>& getAnyHitShaders() const noexcept;
 
-        [[nodiscard]] bool hasClosestHitShader() const noexcept;
+        [[nodiscard]] const std::vector<VulkanShaderModule*>& getIntersectionShaders() const noexcept;
 
-        [[nodiscard]] VulkanShaderModule& getClosestHitShader() const noexcept;
+        [[nodiscard]] const std::vector<VulkanShaderModule*>& getCallableShaders() const noexcept;
 
-        [[nodiscard]] bool hasAnyHitShader() const noexcept;
-
-        [[nodiscard]] VulkanShaderModule& getAnyHitShader() const noexcept;
-
-        [[nodiscard]] bool hasIntersectionShader() const noexcept;
-
-        [[nodiscard]] VulkanShaderModule& getIntersectionShader() const noexcept;
+        [[nodiscard]] const std::vector<VulkanRayTracingPipeline::HitShaderGroup>& getHitGroups() const noexcept;
 
         [[nodiscard]] MaterialLayout& getLayout() noexcept override;
 
@@ -103,6 +92,22 @@ namespace sol
 
         void setMaterialManager(IRayTracingMaterialManager& manager);
 
+        void setRaygenShader(VulkanShaderModule& shader) noexcept;
+
+        void addMissShader(VulkanShaderModule& shader) noexcept;
+
+        void addClosestHitShader(VulkanShaderModule& shader) noexcept;
+
+        void addAnyHitShader(VulkanShaderModule& shader) noexcept;
+
+        void addIntersectionShader(VulkanShaderModule& shader) noexcept;
+
+        void addCallableShader(VulkanShaderModule& shader) noexcept;
+
+        void addHitGroup(std::optional<uint32_t> closest,
+                         std::optional<uint32_t> any,
+                         std::optional<uint32_t> intersection);
+
     private:
         void addInstance(RayTracingMaterialInstance& instance);
 
@@ -114,13 +119,17 @@ namespace sol
 
         VulkanShaderModule* raygenShader = nullptr;
 
-        VulkanShaderModule* missShader = nullptr;
+        std::vector<VulkanShaderModule*> missShaders;
 
-        VulkanShaderModule* closestHitShader = nullptr;
+        std::vector<VulkanShaderModule*> closestHitShaders;
 
-        VulkanShaderModule* anyHitShader = nullptr;
+        std::vector<VulkanShaderModule*> anyHitShaders;
 
-        VulkanShaderModule* intersectionShader = nullptr;
+        std::vector<VulkanShaderModule*> intersectionShaders;
+
+        std::vector<VulkanShaderModule*> callableShaders;
+
+        std::vector<VulkanRayTracingPipeline::HitShaderGroup> hitGroups;
 
         std::vector<RayTracingMaterialInstance*> instances;
 
