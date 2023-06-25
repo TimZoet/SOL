@@ -136,6 +136,17 @@ namespace sol
         }
 
         /**
+         * \brief Add by vector of pointer.
+         * \param vec Vector of pointers.
+         * \return *this.
+         */
+        ObjectRefListSetting& operator+=(const std::vector<T*>& vec)
+        {
+            for (auto* obj : vec) *this += obj;
+            return *this;
+        }
+
+        /**
          * \brief Assign from list.
          * \param obj List of objects.
          * \return *this.
@@ -156,6 +167,8 @@ namespace sol
             for (const auto* o : objects) handles.emplace_back(o->get());
             return handles;
         }
+
+        [[nodiscard]] size_t size() const noexcept { return objects.size(); }
 
     private:
         std::vector<T*> objects;

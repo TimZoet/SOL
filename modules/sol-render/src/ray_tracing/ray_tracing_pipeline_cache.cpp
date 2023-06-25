@@ -61,11 +61,14 @@ namespace sol
     VulkanRayTracingPipelinePtr RayTracingPipelineCache::createPipelineImpl(const RayTracingMaterial& material)
     {
         VulkanRayTracingPipeline::Settings settings;
-        if (material.hasRaygenShader()) settings.raygenShader = material.getRaygenShader();
-        if (material.hasMissShader()) settings.missShader = material.getMissShader();
-        if (material.hasClosestHitShader()) settings.closestHitShader = material.getClosestHitShader();
-        if (material.hasAnyHitShader()) settings.anyHitShader = material.getAnyHitShader();
-        if (material.hasIntersectionShader()) settings.intersectionShader = material.getIntersectionShader();
+        settings.raygenShader = material.getRaygenShader();
+        settings.missShaders += material.getMissShaders();
+        settings.closestHitShaders += material.getClosestHitShaders();
+        settings.anyHitShaders += material.getAnyHitShaders();
+        settings.intersectionShaders += material.getIntersectionShaders();
+        settings.callableShaders += material.getCallableShaders();
+        settings.hitGroups = material.getHitGroups();
+        // TODO: Entry points.
         settings.descriptorSetLayouts = material.getLayout().getDescriptorSetLayouts();
         // TODO: Push constants.
 

@@ -1,6 +1,12 @@
 #pragma once
 
 ////////////////////////////////////////////////////////////////
+// Standard includes.
+////////////////////////////////////////////////////////////////
+
+#include <tuple>
+
+////////////////////////////////////////////////////////////////
 // External includes.
 ////////////////////////////////////////////////////////////////
 
@@ -45,7 +51,12 @@ namespace sol
 
         VulkanShaderBindingTable() = delete;
 
-        VulkanShaderBindingTable(const Settings& set, std::vector<VulkanBufferPtr> b);
+        VulkanShaderBindingTable(const Settings&                 set,
+                                 VulkanBufferPtr                 sbtBuffer,
+                                 VkStridedDeviceAddressRegionKHR raygen,
+                                 VkStridedDeviceAddressRegionKHR miss,
+                                 VkStridedDeviceAddressRegionKHR hit,
+                                 VkStridedDeviceAddressRegionKHR callable);
 
         VulkanShaderBindingTable(const VulkanShaderBindingTable&) = delete;
 
@@ -101,10 +112,37 @@ namespace sol
          */
         [[nodiscard]] const VulkanDevice& getDevice() const noexcept;
 
-        [[nodiscard]] VkStridedDeviceAddressRegionKHR getRegion(size_t i) const noexcept;
+        /**
+         * \brief Get the address region of the raygen record(s).
+         * \return Address region.
+         */
+        [[nodiscard]] VkStridedDeviceAddressRegionKHR getRaygenRegion() const noexcept;
+
+        /**
+         * \brief Get the address region of the miss record(s).
+         * \return Address region.
+         */
+        [[nodiscard]] VkStridedDeviceAddressRegionKHR getMissRegion() const noexcept;
+
+        /**
+         * \brief Get the address region of the hit record(s).
+         * \return Address region.
+         */
+        [[nodiscard]] VkStridedDeviceAddressRegionKHR getHitRegion() const noexcept;
+
+        /**
+         * \brief Get the address region of the callable record(s).
+         * \return Address region.
+         */
+        [[nodiscard]] VkStridedDeviceAddressRegionKHR getCallableRegion() const noexcept;
 
     private:
-        [[nodiscard]] static std::vector<VulkanBufferPtr> createImpl(const Settings& settings);
+        [[nodiscard]] static std::tuple<VulkanBufferPtr,
+                                        VkStridedDeviceAddressRegionKHR,
+                                        VkStridedDeviceAddressRegionKHR,
+                                        VkStridedDeviceAddressRegionKHR,
+                                        VkStridedDeviceAddressRegionKHR>
+          createImpl(const Settings& settings);
 
 #ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
@@ -118,8 +156,17 @@ namespace sol
         VulkanRayTracingPipeline* pipeline = nullptr;
 #endif
 
-        std::vector<VulkanBufferPtr> buffers;
+        /**
+         * \brief Shader binding table buffer.
+         */
+        VulkanBufferPtr buffer;
 
-        std::vector<VkStridedDeviceAddressRegionKHR> regions;
+        VkStridedDeviceAddressRegionKHR raygenRegion;
+
+        VkStridedDeviceAddressRegionKHR missRegion;
+
+        VkStridedDeviceAddressRegionKHR hitRegion;
+
+        VkStridedDeviceAddressRegionKHR callableRegion;
     };
 }  // namespace sol
