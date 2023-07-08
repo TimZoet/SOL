@@ -33,6 +33,7 @@ set(HEADERS
     ${INCLUDE_DIR}/vulkan_instance.h
     ${INCLUDE_DIR}/vulkan_memory_allocator.h
     ${INCLUDE_DIR}/vulkan_physical_device.h
+    ${INCLUDE_DIR}/vulkan_physical_device_features.h
     ${INCLUDE_DIR}/vulkan_queue.h
     ${INCLUDE_DIR}/vulkan_queue_family.h
     ${INCLUDE_DIR}/vulkan_ray_tracing_pipeline.h

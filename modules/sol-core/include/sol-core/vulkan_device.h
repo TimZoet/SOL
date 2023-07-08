@@ -20,6 +20,7 @@
 
 #include "sol-core/fwd.h"
 #include "sol-core/object_ref_setting.h"
+#include "sol-core/vulkan_physical_device_features.h"
 
 namespace sol
 {
@@ -42,7 +43,7 @@ namespace sol
             /**
              * \brief Optional features to enable.
              */
-            VkPhysicalDeviceFeatures2* features = nullptr;
+            RootVulkanPhysicalDeviceFeatures2* features = nullptr;
 
             /**
              * \brief List of required device extensions.
