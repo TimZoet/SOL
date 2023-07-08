@@ -23,6 +23,7 @@
 
 #include "sol-core/fwd.h"
 #include "sol-core/object_ref_setting.h"
+#include "sol-core/vulkan_physical_device_features.h"
 #include "sol-core/vulkan_queue_family.h"
 #include "sol-core/vulkan_swapchain_support_details.h"
 
@@ -60,14 +61,14 @@ namespace sol
             std::function<bool(const VkPhysicalDeviceProperties&)> propertyFilter;
 
             /**
-             * \brief Optional features to write to. If left empty, any feature filter function will still run.
+             * \brief Supported features struct to write to.
              */
-            VkPhysicalDeviceFeatures2* features = nullptr;
+            RootVulkanPhysicalDeviceFeatures2* features = nullptr;
 
             /**
              * \brief Function to filter devices by their features. Should return true if device fulfills requirements.
              */
-            std::function<bool(const VkPhysicalDeviceFeatures2&)> featureFilter;
+            std::function<bool(RootVulkanPhysicalDeviceFeatures2&)> featureFilter;
 
             /**
              * \brief Function to filter devices by their queue families. Should return true if device fulfills requirements.
@@ -133,6 +134,12 @@ namespace sol
 #endif
 
         /**
+         * \brief Get the supported features.
+         * \return VulkanPhysicalDeviceFeatures2
+         */
+        [[nodiscard]] const RootVulkanPhysicalDeviceFeatures2& getSupportedFeatures() const noexcept;
+
+        /**
          * \brief Get the instance.
          * \return VulkanInstance.
          */
@@ -189,6 +196,11 @@ namespace sol
          */
         Settings settings;
 #else
+        /**
+         * \brief Supported features.
+         */
+        VulkanPhysicalDeviceFeatures2* features = nullptr;
+
         VulkanInstance* instance = nullptr;
 
         VulkanSurface* surface = nullptr;

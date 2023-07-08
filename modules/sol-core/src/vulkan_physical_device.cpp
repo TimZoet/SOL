@@ -43,6 +43,7 @@ namespace sol
                                                const VkPhysicalDevice                       physicalDevice,
                                                std::vector<VulkanQueueFamily>               families,
                                                std::optional<VulkanSwapchainSupportDetails> details) :
+        features(set.features),
         instance(&set.instance()),
         surface(set.surface ? &set.surface() : nullptr),
         device(physicalDevice),
@@ -107,18 +108,8 @@ namespace sol
             }
 
             // Filter device based on its features.
-            if (settings.features)
-            {
-                vkGetPhysicalDeviceFeatures2(d, settings.features);
-                if (settings.featureFilter && !settings.featureFilter(*settings.features)) continue;
-            }
-            else
-            {
-                VkPhysicalDeviceFeatures2 features{};
-                features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-                vkGetPhysicalDeviceFeatures2(d, &features);
-                if (settings.featureFilter && !settings.featureFilter(features)) continue;
-            }
+            vkGetPhysicalDeviceFeatures2(d, &settings.features->features);
+            if (settings.featureFilter && !settings.featureFilter(*settings.features)) continue;
 
             // Retrieve queue families.
             uint32_t queueFamilyCount = 0;
@@ -183,6 +174,15 @@ namespace sol
     ////////////////////////////////////////////////////////////////
     // Getters.
     ////////////////////////////////////////////////////////////////
+
+    const RootVulkanPhysicalDeviceFeatures2& VulkanPhysicalDevice::getSupportedFeatures() const noexcept
+    {
+#ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
+        return *settings.features;
+#else
+        return *features;
+#endif
+    }
 
 #ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
     const VulkanPhysicalDevice::Settings& VulkanPhysicalDevice::getSettings() const noexcept { return settings; }
