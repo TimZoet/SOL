@@ -24,6 +24,22 @@ namespace sol
 {
     class GraphicsRenderingInfo
     {
+        ////////////////////////////////////////////////////////////////
+        // Types.
+        ////////////////////////////////////////////////////////////////
+
+        struct ColorAttachmentTransition
+        {
+            const VulkanQueueFamily* srcQueue;
+            const VulkanQueueFamily* dstQueue;
+            VkImageLayout            oldLayout;
+            VkImageLayout            newLayout;
+            VkPipelineStageFlags2    srcStage;
+            VkPipelineStageFlags2    dstStage;
+            VkAccessFlags2           srcAccess;
+            VkAccessFlags2           dstAccess;
+        };
+
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
@@ -85,6 +101,26 @@ namespace sol
                                 VkAttachmentStoreOp     storeOp,
                                 std::array<uint32_t, 4> clearColor);
 
+        void setColorAttachmentPreTransition(size_t                   index,
+                                             const VulkanQueueFamily* srcQueue,
+                                             const VulkanQueueFamily* dstQueue,
+                                             VkImageLayout            oldLayout,
+                                             VkImageLayout            newLayout,
+                                             VkPipelineStageFlags2    srcStage,
+                                             VkPipelineStageFlags2    dstStage,
+                                             VkAccessFlags2           srcAccess,
+                                             VkAccessFlags2           dstAccess);
+
+        void setColorAttachmentPostTransition(size_t                   index,
+                                              const VulkanQueueFamily* srcQueue,
+                                              const VulkanQueueFamily* dstQueue,
+                                              VkImageLayout            oldLayout,
+                                              VkImageLayout            newLayout,
+                                              VkPipelineStageFlags2    srcStage,
+                                              VkPipelineStageFlags2    dstStage,
+                                              VkAccessFlags2           srcAccess,
+                                              VkAccessFlags2           dstAccess);
+
         void addDepthAttachment(const VulkanImageView& imageView,
                                 VkImageLayout          imageLayout,
                                 VkAttachmentLoadOp     loadOp,
@@ -98,6 +134,18 @@ namespace sol
                                   uint32_t               clearStencil);
 
         void finalize();
+
+        ////////////////////////////////////////////////////////////////
+        // Commands.
+        ////////////////////////////////////////////////////////////////
+
+        void beginRendering(const VulkanCommandBuffer& buffer) const;
+
+        void endRendering(const VulkanCommandBuffer& buffer) const;
+
+        void preTransition(const VulkanCommandBuffer& buffer) const;
+
+        void postTransition(const VulkanCommandBuffer& buffer) const;
 
     private:
         void addColorAttachment(const VulkanImageView& imageView,
@@ -119,5 +167,13 @@ namespace sol
         std::vector<VkRenderingAttachmentInfo>   colorAttachmentInfo;
         std::optional<VkRenderingAttachmentInfo> depthAttachmentInfo;
         std::optional<VkRenderingAttachmentInfo> stencilAttachmentInfo;
+
+        std::vector<std::optional<ColorAttachmentTransition>> preColorTransitions;
+        std::vector<std::optional<ColorAttachmentTransition>> postColorTransitions;
+
+        std::vector<VkImageMemoryBarrier2> preBarriers;
+        std::vector<VkImageMemoryBarrier2> postBarriers;
+        VkDependencyInfo                   preDependencyInfo{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
+        VkDependencyInfo                   postDependencyInfo{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
     };
 }  // namespace sol
