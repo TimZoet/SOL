@@ -292,7 +292,7 @@ namespace sol
                 auto& cb   = *acquireCommandBuffers[i];
                 cb.resetCommand(VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
                 cb.beginOneTimeCommand();
-                info.imageMemoryBarrierCount = static_cast<uint32_t>(acquireBarriers.size());
+                info.imageMemoryBarrierCount = static_cast<uint32_t>(acquireBarriers[i].size());
                 info.pImageMemoryBarriers    = acquireBarriers[i].data();
                 vkCmdPipelineBarrier2(cb.get(), &info);
                 cb.endCommand();
@@ -453,6 +453,7 @@ namespace sol
                         barrier.srcQueueFamilyIndex = info.transition.srcFamily->getIndex();
                         barrier.dstQueueFamilyIndex = info.transition.dstFamily->getIndex();
                         const auto idx              = calcIdx(barrier.srcQueueFamilyIndex, barrier.dstQueueFamilyIndex);
+
                         releaseBarriers[idx].emplace_back(barrier);
                         acquireBarriers[idx].emplace_back(barrier);
                     }
@@ -475,8 +476,8 @@ namespace sol
             {
                 barrier.srcStageMask  = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
                 barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-                barrier.dstStageMask  = info.transition.dstStage;
-                barrier.dstAccessMask = info.transition.dstAccess;
+                barrier.dstStageMask  = VK_PIPELINE_STAGE_2_NONE;
+                barrier.dstAccessMask = VK_ACCESS_2_NONE;
                 barrier.oldLayout     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
                 barrier.newLayout     = info.transition.newLayout;
 
@@ -487,12 +488,17 @@ namespace sol
                     barrier.dstQueueFamilyIndex = info.transition.dstFamily->getIndex();
                     const auto idx              = calcIdx(barrier.srcQueueFamilyIndex, barrier.dstQueueFamilyIndex);
                     releaseBarriers[idx].emplace_back(barrier);
+
+                    barrier.dstStageMask  = info.transition.dstStage;
+                    barrier.dstAccessMask = info.transition.dstAccess;
                     acquireBarriers[idx].emplace_back(barrier);
                 }
                 // No ownership transfer was requested. Only acquire on the transfer queue is needed.
                 else
                 {
-                    const auto idx = calcIdx(VK_QUEUE_FAMILY_IGNORED, transferQueue.getFamily().getIndex());
+                    barrier.dstStageMask  = info.transition.dstStage;
+                    barrier.dstAccessMask = info.transition.dstAccess;
+                    const auto idx        = calcIdx(VK_QUEUE_FAMILY_IGNORED, transferQueue.getFamily().getIndex());
                     acquireBarriers[idx].emplace_back(barrier);
                 }
             }
