@@ -61,6 +61,8 @@ namespace sol
          */
         [[nodiscard]] static VulkanCommandBufferPtr create(const Settings& settings);
 
+        [[nodiscard]] static std::vector<VulkanCommandBufferPtr> create(const Settings& settings, uint32_t count);
+
         /**
          * \brief Create a new Vulkan command buffer.
          * \param settings Settings.
@@ -124,7 +126,7 @@ namespace sol
         void resetCommand(VkCommandBufferResetFlags flags) const;
 
     private:
-        [[nodiscard]] static VkCommandBuffer createImpl(const Settings& settings);
+        [[nodiscard]] static std::vector<VkCommandBuffer> createImpl(const Settings& settings, uint32_t count);
 
 #ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
