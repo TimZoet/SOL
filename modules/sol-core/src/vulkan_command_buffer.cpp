@@ -1,6 +1,12 @@
 #include "sol-core/vulkan_command_buffer.h"
 
 ////////////////////////////////////////////////////////////////
+// Standard includes.
+////////////////////////////////////////////////////////////////
+
+#include <ranges>
+
+////////////////////////////////////////////////////////////////
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
@@ -42,29 +48,38 @@ namespace sol
 
     VulkanCommandBufferPtr VulkanCommandBuffer::create(const Settings& settings)
     {
-        const auto buffer = createImpl(settings);
-        return std::make_unique<VulkanCommandBuffer>(settings, buffer);
+        const auto buffers = createImpl(settings, 1);
+        return std::make_unique<VulkanCommandBuffer>(settings, buffers[0]);
+    }
+
+    std::vector<VulkanCommandBufferPtr> VulkanCommandBuffer::create(const Settings& settings, const uint32_t count)
+    {
+        return createImpl(settings, count) | std::views::transform([&settings](const auto b) {
+                   return std::make_unique<VulkanCommandBuffer>(settings, b);
+               }) |
+               std::ranges::to<std::vector>();
     }
 
     VulkanCommandBufferSharedPtr VulkanCommandBuffer::createShared(const Settings& settings)
     {
-        const auto buffer = createImpl(settings);
-        return std::make_shared<VulkanCommandBuffer>(settings, buffer);
+        const auto buffers = createImpl(settings, 1);
+        return std::make_shared<VulkanCommandBuffer>(settings, buffers[0]);
     }
 
-    VkCommandBuffer VulkanCommandBuffer::createImpl(const Settings& settings)
+    std::vector<VkCommandBuffer> VulkanCommandBuffer::createImpl(const Settings& settings, const uint32_t count)
     {
         VkCommandBufferAllocateInfo allocInfo{};
         allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocInfo.commandPool        = settings.commandPool;
         allocInfo.level              = settings.level;
-        allocInfo.commandBufferCount = static_cast<uint32_t>(1);
+        allocInfo.commandBufferCount = count;
 
         // Allocate buffers.
-        VkCommandBuffer buffer;
-        handleVulkanError(vkAllocateCommandBuffers(settings.commandPool().getDevice().get(), &allocInfo, &buffer));
+        std::vector<VkCommandBuffer> buffers(count, VK_NULL_HANDLE);
+        handleVulkanError(
+          vkAllocateCommandBuffers(settings.commandPool().getDevice().get(), &allocInfo, buffers.data()));
 
-        return buffer;
+        return buffers;
     }
 
     ////////////////////////////////////////////////////////////////
