@@ -1,0 +1,22 @@
+#pragma once
+
+////////////////////////////////////////////////////////////////
+// Module includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-texture/fwd.h"
+
+////////////////////////////////////////////////////////////////
+// Current target includes.
+////////////////////////////////////////////////////////////////
+
+#include "pathtracing/global_state.h"
+
+/**
+ * \brief Create a checkerboard pattern for missing textures.
+ * \param manager TextureManager.
+ * \return Texture.
+ */
+sol::Texture2D& createMissingTexture(sol::TextureManager& manager);
+
+sol::Texture2D& createFontTexture(GlobalState& state);
