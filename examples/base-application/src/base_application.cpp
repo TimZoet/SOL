@@ -45,6 +45,8 @@ bool BaseApplication::parse(const int argc, char** argv)
     width->set_default(1024);
     const auto height = parser.add_value<int32_t>('\0', "height");
     height->set_default(512);
+    const auto frames = parser.add_value<int32_t>('\0', "max_frames");
+    frames->set_default(2);
 
     if (std::string e; !parser(e))
     {
@@ -58,8 +60,9 @@ bool BaseApplication::parse(const int argc, char** argv)
         return false;
     }
 
-    args.width  = width->get_value();
-    args.height = height->get_value();
+    args.width     = width->get_value();
+    args.height    = height->get_value();
+    args.maxFrames = frames->get_value();
 
     return true;
 }
