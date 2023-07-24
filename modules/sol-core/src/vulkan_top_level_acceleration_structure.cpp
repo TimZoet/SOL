@@ -85,10 +85,10 @@ namespace sol
         bufferSettings.size        = sizeof(VkAccelerationStructureInstanceKHR);
         bufferSettings.bufferUsage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                      VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-        bufferSettings.allocator     = settings.allocator;
-        bufferSettings.memoryUsage   = VMA_MEMORY_USAGE_AUTO;
-        bufferSettings.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        bufferSettings.flags =
+        bufferSettings.allocator         = settings.allocator;
+        bufferSettings.vma.memoryUsage   = VMA_MEMORY_USAGE_AUTO;
+        bufferSettings.vma.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        bufferSettings.vma.flags =
           VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
         auto instanceBuffer = VulkanBuffer::create(bufferSettings);
         instanceBuffer->setData(&instance, sizeof(VkAccelerationStructureInstanceKHR));
@@ -121,8 +121,8 @@ namespace sol
         bufferSettings.size = sizeInfo.accelerationStructureSize;
         bufferSettings.bufferUsage =
           VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-        bufferSettings.memoryUsage = VMA_MEMORY_USAGE_AUTO;
-        auto buffer                = VulkanBuffer::create(bufferSettings);
+        bufferSettings.vma.memoryUsage = VMA_MEMORY_USAGE_AUTO;
+        auto buffer                    = VulkanBuffer::create(bufferSettings);
 
         // Create acceleration structure.
         VkAccelerationStructureKHR           as;
@@ -136,8 +136,9 @@ namespace sol
         // Create scratch buffer.
         bufferSettings.size        = sizeInfo.buildScratchSize;
         bufferSettings.bufferUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-        bufferSettings.alignment   = 256;  // TODO: Hardcoded to 256 because VMA doesn't return properly aligned memory?
-        auto scratchBuffer         = VulkanBuffer::create(bufferSettings);
+        bufferSettings.vma.alignment =
+          256;  // TODO: Hardcoded to 256 because VMA doesn't return properly aligned memory?
+        auto scratchBuffer = VulkanBuffer::create(bufferSettings);
 
         VkAccelerationStructureBuildRangeInfoKHR buildRangeInfo{};
         buildRangeInfo.primitiveCount  = 1;

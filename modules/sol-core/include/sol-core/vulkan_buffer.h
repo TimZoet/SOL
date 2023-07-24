@@ -45,34 +45,40 @@ namespace sol
             VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
             /**
-             * \brief Optional allocator.
+             * \brief Optional allocator. If set, also fill in the properties of the vma member.
              */
             ObjectRefSetting<VulkanMemoryAllocator> allocator;
 
             /**
-             * \brief Memory usage. Only used when allocator is specified.
+             * \brief Settings for the VulkanMemoryAllocator.
              */
-            VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_UNKNOWN;
+            struct
+            {
+                /**
+                 * \brief Memory usage.
+                 */
+                VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_UNKNOWN;
 
-            /**
-             * \brief Required memory property flags. Only used when allocator is specified.
-             */
-            VkMemoryPropertyFlags requiredFlags = 0;
+                /**
+                 * \brief Required memory property flags.
+                 */
+                VkMemoryPropertyFlags requiredFlags = 0;
 
-            /**
-             * \brief Preferred memory property flags. Only used when allocator is specified.
-             */
-            VkMemoryPropertyFlags preferredFlags = 0;
+                /**
+                 * \brief Preferred memory property flags.
+                 */
+                VkMemoryPropertyFlags preferredFlags = 0;
 
-            /**
-             * \brief Preferred allocation flags. Only used when allocator is specified.
-             */
-            VmaAllocationCreateFlags flags = 0;
+                /**
+                 * \brief Preferred allocation flags.
+                 */
+                VmaAllocationCreateFlags flags = 0;
 
-            /**
-             * \brief Optional alignment. Only used when allocator is specified.
-             */
-            VkDeviceSize alignment = 0;
+                /**
+                 * \brief Optional alignment.
+                 */
+                VkDeviceSize alignment = 0;
+            } vma;
         };
 
         ////////////////////////////////////////////////////////////////

@@ -97,10 +97,10 @@ namespace sol
         if (settings.allocator)
         {
             VmaAllocationCreateInfo allocInfo = {};
-            allocInfo.usage                   = settings.memoryUsage;
-            allocInfo.requiredFlags           = settings.requiredFlags;
-            allocInfo.preferredFlags          = settings.preferredFlags;
-            allocInfo.flags                   = settings.flags;
+            allocInfo.usage                   = settings.vma.memoryUsage;
+            allocInfo.requiredFlags           = settings.vma.requiredFlags;
+            allocInfo.preferredFlags          = settings.vma.preferredFlags;
+            allocInfo.flags                   = settings.vma.flags;
             handleVulkanError(
               vmaCreateImage(settings.allocator, &createInfo, &allocInfo, &vkImage, &vmaAllocation, nullptr));
         }

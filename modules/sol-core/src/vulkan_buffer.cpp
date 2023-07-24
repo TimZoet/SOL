@@ -90,23 +90,23 @@ namespace sol
         {
             VmaAllocationInfo       vmaAllocationInfo;
             VmaAllocationCreateInfo allocInfo = {};
-            allocInfo.usage                   = settings.memoryUsage;
-            allocInfo.requiredFlags           = settings.requiredFlags;
-            allocInfo.preferredFlags          = settings.preferredFlags;
-            allocInfo.flags                   = settings.flags;
-            if (settings.alignment == 0)
+            allocInfo.usage                   = settings.vma.memoryUsage;
+            allocInfo.requiredFlags           = settings.vma.requiredFlags;
+            allocInfo.preferredFlags          = settings.vma.preferredFlags;
+            allocInfo.flags                   = settings.vma.flags;
+            if (settings.vma.alignment == 0)
                 handleVulkanError(vmaCreateBuffer(
                   settings.allocator, &bufferInfo, &allocInfo, &vkBuffer, &vmaAllocation, &vmaAllocationInfo));
             else
                 handleVulkanError(vmaCreateBufferWithAlignment(settings.allocator,
                                                                &bufferInfo,
                                                                &allocInfo,
-                                                               settings.alignment,
+                                                               settings.vma.alignment,
                                                                &vkBuffer,
                                                                &vmaAllocation,
                                                                &vmaAllocationInfo));
 
-            if (settings.flags & VMA_ALLOCATION_CREATE_MAPPED_BIT) pMappedData = vmaAllocationInfo.pMappedData;
+            if (settings.vma.flags & VMA_ALLOCATION_CREATE_MAPPED_BIT) pMappedData = vmaAllocationInfo.pMappedData;
         }
         // Create buffer.
         else { handleVulkanError(vkCreateBuffer(settings.device, &bufferInfo, nullptr, &vkBuffer)); }

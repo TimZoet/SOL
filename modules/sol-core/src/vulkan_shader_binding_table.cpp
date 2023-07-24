@@ -123,10 +123,10 @@ namespace sol
         bufferSettings.size   = raygenRegion.size + missRegion.size + hitRegion.size + callableRegion.size;
         bufferSettings.bufferUsage =
           VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-        bufferSettings.allocator     = settings.allocator;
-        bufferSettings.memoryUsage   = VMA_MEMORY_USAGE_AUTO;
-        bufferSettings.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        bufferSettings.flags =
+        bufferSettings.allocator         = settings.allocator;
+        bufferSettings.vma.memoryUsage   = VMA_MEMORY_USAGE_AUTO;
+        bufferSettings.vma.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        bufferSettings.vma.flags =
           VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
         auto b = VulkanBuffer::create(bufferSettings);
 
