@@ -55,6 +55,11 @@ namespace sol
             struct
             {
                 /**
+                 * \brief Optional memory pool.
+                 */
+                ObjectRefSetting<VulkanMemoryPool> pool;
+
+                /**
                  * \brief Memory usage.
                  */
                 VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_UNKNOWN;

@@ -15,6 +15,7 @@
 #include "sol-core/vulkan_device.h"
 #include "sol-core/vulkan_device_memory.h"
 #include "sol-core/vulkan_memory_allocator.h"
+#include "sol-core/vulkan_memory_pool.h"
 
 namespace sol
 {
@@ -94,7 +95,8 @@ namespace sol
             allocInfo.requiredFlags           = settings.vma.requiredFlags;
             allocInfo.preferredFlags          = settings.vma.preferredFlags;
             allocInfo.flags                   = settings.vma.flags;
-            if (settings.vma.alignment == 0)
+            allocInfo.pool                    = settings.vma.pool ? settings.vma.pool().get() : VK_NULL_HANDLE;
+            if (settings.vma.alignment == 0 || settings.vma.pool.valid())
                 handleVulkanError(vmaCreateBuffer(
                   settings.allocator, &bufferInfo, &allocInfo, &vkBuffer, &vmaAllocation, &vmaAllocationInfo));
             else

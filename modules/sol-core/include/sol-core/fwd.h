@@ -27,6 +27,7 @@ namespace sol
     class VulkanImageView;
     class VulkanInstance;
     class VulkanMemoryAllocator;
+    class VulkanMemoryPool;
     class VulkanPhysicalDevice;
     class VulkanQueue;
     class VulkanQueueFamily;
@@ -79,6 +80,8 @@ namespace sol
     using VulkanInstanceSharedPtr                         = std::shared_ptr<VulkanInstance>;
     using VulkanMemoryAllocatorPtr                        = std::unique_ptr<VulkanMemoryAllocator>;
     using VulkanMemoryAllocatorSharedPtr                  = std::shared_ptr<VulkanMemoryAllocator>;
+    using VulkanMemoryPoolPtr                             = std::unique_ptr<VulkanMemoryPool>;
+    using VulkanMemoryPoolSharedPtr                       = std::shared_ptr<VulkanMemoryPool>;
     using VulkanPhysicalDevicePtr                         = std::unique_ptr<VulkanPhysicalDevice>;
     using VulkanPhysicalDeviceSharedPtr                   = std::shared_ptr<VulkanPhysicalDevice>;
     using VulkanQueuePtr                                  = std::unique_ptr<VulkanQueue>;
