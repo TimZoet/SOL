@@ -111,18 +111,19 @@ namespace sol
         /**
          * \brief Create a new Vulkan buffer.
          * \param settings Settings.
-         * \throws VulkanError Thrown if buffer creation failed.
-         * \return Vulkan buffer.
+         * \param throwOnOutOfMemory Throw an exception if buffer allocation failed due to an out of memory error.
+         * \return Vulkan buffer or nullptr if out of memory and throwOnOutOfMemory is false.
          */
-        [[nodiscard]] static VulkanBufferPtr create(const Settings& settings);
+        [[nodiscard]] static VulkanBufferPtr create(const Settings& settings, bool throwOnOutOfMemory = true);
 
         /**
          * \brief Create a new Vulkan buffer.
          * \param settings Settings.
-         * \throws VulkanError Thrown if buffer creation failed.
-         * \return Vulkan buffer.
+         * \param throwOnOutOfMemory Throw an exception if buffer allocation failed due to an out of memory error.
+         * \return Vulkan buffer or nullptr if out of memory and throwOnOutOfMemory is false.
          */
-        [[nodiscard]] static VulkanBufferSharedPtr createShared(const Settings& settings);
+        [[nodiscard]] static VulkanBufferSharedPtr createShared(const Settings& settings,
+                                                                bool            throwOnOutOfMemory = true);
 
         ////////////////////////////////////////////////////////////////
         // Getters.
@@ -261,7 +262,8 @@ namespace sol
         void flush() const;
 
     private:
-        [[nodiscard]] static std::tuple<VkBuffer, VmaAllocation, void*> createImpl(const Settings& settings);
+        [[nodiscard]] static std::tuple<VkBuffer, VmaAllocation, void*> createImpl(const Settings& settings,
+                                                                                   bool            throwOnOutOfMemory);
 
 #ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**
