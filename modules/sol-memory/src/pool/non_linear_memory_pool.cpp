@@ -1,4 +1,4 @@
-#include "sol-memory/non_linear_memory_pool.h"
+#include "sol-memory/pool/non_linear_memory_pool.h"
 
 ////////////////////////////////////////////////////////////////
 // External includes.
@@ -18,7 +18,7 @@
 ////////////////////////////////////////////////////////////////
 
 #include "sol-memory/memory_manager.h"
-#include "sol-memory/memory_pool_buffer.h"
+#include "sol-memory/pool/memory_pool_buffer.h"
 
 namespace sol
 {

@@ -4,6 +4,7 @@
 // Standard includes.
 ////////////////////////////////////////////////////////////////
 
+#include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -15,40 +16,44 @@
 #include <vma/vk_mem_alloc.h>
 
 ////////////////////////////////////////////////////////////////
-// Current target includes.
+// Module includes.
 ////////////////////////////////////////////////////////////////
 
 #include "sol-core/fwd.h"
-#include "sol-memory/i_memory_pool.h"
+
+////////////////////////////////////////////////////////////////
+// Current target includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-memory/pool/i_memory_pool.h"
 
 namespace sol
 {
-    class NonLinearMemoryPool : public IMemoryPool
+    class RingBufferMemoryPool : public IMemoryPool
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        NonLinearMemoryPool() = delete;
+        RingBufferMemoryPool() = delete;
 
-        NonLinearMemoryPool(MemoryManager&     memoryManager,
-                            std::string        poolName,
-                            VkBufferUsageFlags bufferUsage,
-                            VmaMemoryUsage     memoryUsage,
-                            size_t             blockSize,
-                            size_t             minBlocks,
-                            size_t             maxBlocks);
+        RingBufferMemoryPool(MemoryManager&     memoryManager,
+                             std::string        poolName,
+                             VkBufferUsageFlags bufferUsage,
+                             VmaMemoryUsage     memoryUsage,
+                             size_t             blockSize,
+                             bool               preallocate);
 
-        NonLinearMemoryPool(const NonLinearMemoryPool&) = delete;
+        RingBufferMemoryPool(const RingBufferMemoryPool&) = delete;
 
-        NonLinearMemoryPool(NonLinearMemoryPool&&) noexcept = delete;
+        RingBufferMemoryPool(RingBufferMemoryPool&&) noexcept = delete;
 
-        ~NonLinearMemoryPool() noexcept override;
+        ~RingBufferMemoryPool() noexcept override;
 
-        NonLinearMemoryPool& operator=(const NonLinearMemoryPool&) = delete;
+        RingBufferMemoryPool& operator=(const RingBufferMemoryPool&) = delete;
 
-        NonLinearMemoryPool& operator=(NonLinearMemoryPool&&) noexcept = delete;
+        RingBufferMemoryPool& operator=(RingBufferMemoryPool&&) noexcept = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
@@ -64,7 +69,6 @@ namespace sol
         // Allocations.
         ////////////////////////////////////////////////////////////////
 
-    protected:
         [[nodiscard]] std::expected<MemoryPoolBufferPtr, std::unique_ptr<std::latch>>
           allocateBufferImpl(size_t size, bool waitOnOutOfMemory) override;
 
@@ -76,6 +80,8 @@ namespace sol
         ////////////////////////////////////////////////////////////////
 
         std::vector<VulkanBufferPtr> buffers;
+
+        std::vector<std::latch*> latches;
 
         std::mutex mutex;
     };

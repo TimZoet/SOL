@@ -4,7 +4,6 @@
 // Standard includes.
 ////////////////////////////////////////////////////////////////
 
-#include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -16,39 +15,45 @@
 #include <vma/vk_mem_alloc.h>
 
 ////////////////////////////////////////////////////////////////
-// Current target includes.
+// Module includes.
 ////////////////////////////////////////////////////////////////
 
 #include "sol-core/fwd.h"
-#include "sol-memory/i_memory_pool.h"
+
+////////////////////////////////////////////////////////////////
+// Current target includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-memory/pool/i_memory_pool.h"
 
 namespace sol
 {
-    class RingBufferMemoryPool : public IMemoryPool
+    class StackMemoryPool : public IMemoryPool
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        RingBufferMemoryPool() = delete;
+        StackMemoryPool() = delete;
 
-        RingBufferMemoryPool(MemoryManager&     memoryManager,
-                             std::string        poolName,
-                             VkBufferUsageFlags bufferUsage,
-                             VmaMemoryUsage     memoryUsage,
-                             size_t             blockSize,
-                             bool               preallocate);
+        StackMemoryPool(MemoryManager&     memoryManager,
+                        std::string        poolName,
+                        VkBufferUsageFlags bufferUsage,
+                        VmaMemoryUsage     memoryUsage,
+                        size_t             blockSize,
+                        size_t             minBlocks,
+                        size_t             maxBlocks);
 
-        RingBufferMemoryPool(const RingBufferMemoryPool&) = delete;
+        StackMemoryPool(const StackMemoryPool&) = delete;
 
-        RingBufferMemoryPool(RingBufferMemoryPool&&) noexcept = delete;
+        StackMemoryPool(StackMemoryPool&&) noexcept = delete;
 
-        ~RingBufferMemoryPool() noexcept override;
+        ~StackMemoryPool() noexcept override;
 
-        RingBufferMemoryPool& operator=(const RingBufferMemoryPool&) = delete;
+        StackMemoryPool& operator=(const StackMemoryPool&) = delete;
 
-        RingBufferMemoryPool& operator=(RingBufferMemoryPool&&) noexcept = delete;
+        StackMemoryPool& operator=(StackMemoryPool&&) noexcept = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
@@ -76,8 +81,10 @@ namespace sol
 
         std::vector<VulkanBufferPtr> buffers;
 
-        std::vector<std::latch*> latches;
-
         std::mutex mutex;
+
+        size_t currentIndex = 0;
+
+        bool invalidOrder = false;
     };
 }  // namespace sol

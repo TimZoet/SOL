@@ -1,4 +1,4 @@
-#include "sol-memory/i_memory_pool.h"
+#include "sol-memory/pool/i_memory_pool.h"
 
 ////////////////////////////////////////////////////////////////
 // External includes.
@@ -20,7 +20,7 @@
 
 #include "sol-memory/memory_manager.h"
 // ReSharper disable once CppUnusedIncludeDirective
-#include "sol-memory/memory_pool_buffer.h"
+#include "sol-memory/pool/memory_pool_buffer.h"
 
 namespace sol
 {

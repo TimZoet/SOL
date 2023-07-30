@@ -6,25 +6,26 @@ set(INCLUDE_DIR "include/sol-memory")
 set(SRC_DIR "src")
 
 set(HEADERS
-    ${INCLUDE_DIR}/free_at_once_memory_pool.h
     ${INCLUDE_DIR}/fwd.h
-    ${INCLUDE_DIR}/i_memory_pool.h
     ${INCLUDE_DIR}/memory_manager.h
-    ${INCLUDE_DIR}/memory_pool_buffer.h
-    ${INCLUDE_DIR}/non_linear_memory_pool.h
-    ${INCLUDE_DIR}/ring_buffer_memory_pool.h
-    ${INCLUDE_DIR}/stack_memory_pool.h
+
+    ${INCLUDE_DIR}/pool/free_at_once_memory_pool.h
+    ${INCLUDE_DIR}/pool/i_memory_pool.h
+    ${INCLUDE_DIR}/pool/memory_pool_buffer.h
+    ${INCLUDE_DIR}/pool/non_linear_memory_pool.h
+    ${INCLUDE_DIR}/pool/ring_buffer_memory_pool.h
+    ${INCLUDE_DIR}/pool/stack_memory_pool.h
 )
 
 set(SOURCES
     ${SRC_DIR}/memory_manager.cpp
-    ${SRC_DIR}/free_at_once_memory_pool.cpp
-    ${SRC_DIR}/i_memory_pool.cpp
-    ${SRC_DIR}/memory_manager.cpp
-    ${SRC_DIR}/memory_pool_buffer.cpp
-    ${SRC_DIR}/non_linear_memory_pool.cpp
-    ${SRC_DIR}/ring_buffer_memory_pool.cpp
-    ${SRC_DIR}/stack_memory_pool.cpp
+
+    ${SRC_DIR}/pool/free_at_once_memory_pool.cpp
+    ${SRC_DIR}/pool/i_memory_pool.cpp
+    ${SRC_DIR}/pool/memory_pool_buffer.cpp
+    ${SRC_DIR}/pool/non_linear_memory_pool.cpp
+    ${SRC_DIR}/pool/ring_buffer_memory_pool.cpp
+    ${SRC_DIR}/pool/stack_memory_pool.cpp
 )
 
 set(DEPS_PUBLIC

@@ -15,40 +15,45 @@
 #include <vma/vk_mem_alloc.h>
 
 ////////////////////////////////////////////////////////////////
-// Current target includes.
+// Module includes.
 ////////////////////////////////////////////////////////////////
 
 #include "sol-core/fwd.h"
-#include "sol-memory/i_memory_pool.h"
+
+////////////////////////////////////////////////////////////////
+// Current target includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-memory/pool/i_memory_pool.h"
 
 namespace sol
 {
-    class FreeAtOnceMemoryPool : public IMemoryPool
+    class NonLinearMemoryPool : public IMemoryPool
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        FreeAtOnceMemoryPool() = delete;
+        NonLinearMemoryPool() = delete;
 
-        FreeAtOnceMemoryPool(MemoryManager&     memoryManager,
-                             std::string        poolName,
-                             VkBufferUsageFlags bufferUsage,
-                             VmaMemoryUsage     memoryUsage,
-                             size_t             blockSize,
-                             size_t             minBlocks,
-                             size_t             maxBlocks);
+        NonLinearMemoryPool(MemoryManager&     memoryManager,
+                            std::string        poolName,
+                            VkBufferUsageFlags bufferUsage,
+                            VmaMemoryUsage     memoryUsage,
+                            size_t             blockSize,
+                            size_t             minBlocks,
+                            size_t             maxBlocks);
 
-        FreeAtOnceMemoryPool(const FreeAtOnceMemoryPool&) = delete;
+        NonLinearMemoryPool(const NonLinearMemoryPool&) = delete;
 
-        FreeAtOnceMemoryPool(FreeAtOnceMemoryPool&&) noexcept = delete;
+        NonLinearMemoryPool(NonLinearMemoryPool&&) noexcept = delete;
 
-        ~FreeAtOnceMemoryPool() noexcept override;
+        ~NonLinearMemoryPool() noexcept override;
 
-        FreeAtOnceMemoryPool& operator=(const FreeAtOnceMemoryPool&) = delete;
+        NonLinearMemoryPool& operator=(const NonLinearMemoryPool&) = delete;
 
-        FreeAtOnceMemoryPool& operator=(FreeAtOnceMemoryPool&&) noexcept = delete;
+        NonLinearMemoryPool& operator=(NonLinearMemoryPool&&) noexcept = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
@@ -64,6 +69,7 @@ namespace sol
         // Allocations.
         ////////////////////////////////////////////////////////////////
 
+    protected:
         [[nodiscard]] std::expected<MemoryPoolBufferPtr, std::unique_ptr<std::latch>>
           allocateBufferImpl(size_t size, bool waitOnOutOfMemory) override;
 
@@ -77,7 +83,5 @@ namespace sol
         std::vector<VulkanBufferPtr> buffers;
 
         std::mutex mutex;
-
-        size_t deallocCount = 0;
     };
 }  // namespace sol

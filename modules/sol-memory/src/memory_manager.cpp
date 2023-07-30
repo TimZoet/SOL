@@ -28,10 +28,10 @@
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-memory/free_at_once_memory_pool.h"
-#include "sol-memory/non_linear_memory_pool.h"
-#include "sol-memory/ring_buffer_memory_pool.h"
-#include "sol-memory/stack_memory_pool.h"
+#include "sol-memory/pool/free_at_once_memory_pool.h"
+#include "sol-memory/pool/non_linear_memory_pool.h"
+#include "sol-memory/pool/ring_buffer_memory_pool.h"
+#include "sol-memory/pool/stack_memory_pool.h"
 
 namespace sol
 {

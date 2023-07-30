@@ -1,10 +1,10 @@
-#include "sol-memory/memory_pool_buffer.h"
+#include "sol-memory/pool/memory_pool_buffer.h"
 
 ////////////////////////////////////////////////////////////////
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-memory/i_memory_pool.h"
+#include "sol-memory/pool/i_memory_pool.h"
 
 namespace sol
 {

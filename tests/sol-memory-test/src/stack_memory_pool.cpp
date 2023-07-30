@@ -9,8 +9,8 @@
 #include "sol-core/vulkan_queue.h"
 #include "sol-core/vulkan_queue_family.h"
 #include "sol-memory/memory_manager.h"
-#include "sol-memory/memory_pool_buffer.h"
-#include "sol-memory/stack_memory_pool.h"
+#include "sol-memory/pool/memory_pool_buffer.h"
+#include "sol-memory/pool/stack_memory_pool.h"
 
 void StackMemoryPool::operator()()
 {
