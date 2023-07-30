@@ -45,34 +45,45 @@ namespace sol
             VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
             /**
-             * \brief Optional allocator.
+             * \brief Optional allocator. If set, also fill in the properties of the vma member.
              */
             ObjectRefSetting<VulkanMemoryAllocator> allocator;
 
             /**
-             * \brief Memory usage. Only used when allocator is specified.
+             * \brief Settings for the VulkanMemoryAllocator.
              */
-            VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_UNKNOWN;
+            struct
+            {
+                /**
+                 * \brief Optional memory pool.
+                 */
+                ObjectRefSetting<VulkanMemoryPool> pool;
 
-            /**
-             * \brief Required memory property flags. Only used when allocator is specified.
-             */
-            VkMemoryPropertyFlags requiredFlags = 0;
+                /**
+                 * \brief Memory usage.
+                 */
+                VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_UNKNOWN;
 
-            /**
-             * \brief Preferred memory property flags. Only used when allocator is specified.
-             */
-            VkMemoryPropertyFlags preferredFlags = 0;
+                /**
+                 * \brief Required memory property flags.
+                 */
+                VkMemoryPropertyFlags requiredFlags = 0;
 
-            /**
-             * \brief Preferred allocation flags. Only used when allocator is specified.
-             */
-            VmaAllocationCreateFlags flags = 0;
+                /**
+                 * \brief Preferred memory property flags.
+                 */
+                VkMemoryPropertyFlags preferredFlags = 0;
 
-            /**
-             * \brief Optional alignment. Only used when allocator is specified.
-             */
-            VkDeviceSize alignment = 0;
+                /**
+                 * \brief Preferred allocation flags.
+                 */
+                VmaAllocationCreateFlags flags = 0;
+
+                /**
+                 * \brief Optional alignment.
+                 */
+                VkDeviceSize alignment = 0;
+            } vma;
         };
 
         ////////////////////////////////////////////////////////////////
@@ -100,18 +111,19 @@ namespace sol
         /**
          * \brief Create a new Vulkan buffer.
          * \param settings Settings.
-         * \throws VulkanError Thrown if buffer creation failed.
-         * \return Vulkan buffer.
+         * \param throwOnOutOfMemory Throw an exception if buffer allocation failed due to an out of memory error.
+         * \return Vulkan buffer or nullptr if out of memory and throwOnOutOfMemory is false.
          */
-        [[nodiscard]] static VulkanBufferPtr create(const Settings& settings);
+        [[nodiscard]] static VulkanBufferPtr create(const Settings& settings, bool throwOnOutOfMemory = true);
 
         /**
          * \brief Create a new Vulkan buffer.
          * \param settings Settings.
-         * \throws VulkanError Thrown if buffer creation failed.
-         * \return Vulkan buffer.
+         * \param throwOnOutOfMemory Throw an exception if buffer allocation failed due to an out of memory error.
+         * \return Vulkan buffer or nullptr if out of memory and throwOnOutOfMemory is false.
          */
-        [[nodiscard]] static VulkanBufferSharedPtr createShared(const Settings& settings);
+        [[nodiscard]] static VulkanBufferSharedPtr createShared(const Settings& settings,
+                                                                bool            throwOnOutOfMemory = true);
 
         ////////////////////////////////////////////////////////////////
         // Getters.
@@ -250,7 +262,8 @@ namespace sol
         void flush() const;
 
     private:
-        [[nodiscard]] static std::tuple<VkBuffer, VmaAllocation, void*> createImpl(const Settings& settings);
+        [[nodiscard]] static std::tuple<VkBuffer, VmaAllocation, void*> createImpl(const Settings& settings,
+                                                                                   bool            throwOnOutOfMemory);
 
 #ifdef SOL_CORE_ENABLE_CACHE_SETTINGS
         /**

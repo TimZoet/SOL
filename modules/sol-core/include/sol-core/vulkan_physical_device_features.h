@@ -83,7 +83,7 @@ namespace sol
 
         VulkanPhysicalDeviceFeatures2& operator=(VulkanPhysicalDeviceFeatures2&&) = delete;
 
-        [[nodiscard]] void* getImpl(const VkStructureType s) noexcept override { return nullptr; }
+        [[nodiscard]] void* getImpl(const VkStructureType) noexcept override { return nullptr; }
 
         template<typename = void>
         [[nodiscard]] VkPhysicalDeviceFeatures2& get() noexcept

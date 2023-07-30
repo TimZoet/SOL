@@ -15,6 +15,7 @@
 #include "sol-core/vulkan_device.h"
 #include "sol-core/vulkan_device_memory.h"
 #include "sol-core/vulkan_memory_allocator.h"
+#include "sol-core/vulkan_memory_pool.h"
 
 namespace sol
 {
@@ -60,19 +61,21 @@ namespace sol
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    VulkanBufferPtr VulkanBuffer::create(const Settings& settings)
+    VulkanBufferPtr VulkanBuffer::create(const Settings& settings, const bool throwOnOutOfMemory)
     {
-        const auto [buffer, alloc, pMappedData] = createImpl(settings);
+        const auto [buffer, alloc, pMappedData] = createImpl(settings, throwOnOutOfMemory);
+        if (!buffer) return nullptr;
         return std::make_unique<VulkanBuffer>(settings, buffer, alloc, pMappedData);
     }
 
-    VulkanBufferSharedPtr VulkanBuffer::createShared(const Settings& settings)
+    VulkanBufferSharedPtr VulkanBuffer::createShared(const Settings& settings, const bool throwOnOutOfMemory)
     {
-        const auto [buffer, alloc, pMappedData] = createImpl(settings);
+        const auto [buffer, alloc, pMappedData] = createImpl(settings, throwOnOutOfMemory);
         return std::make_shared<VulkanBuffer>(settings, buffer, alloc, pMappedData);
     }
 
-    std::tuple<VkBuffer, VmaAllocation, void*> VulkanBuffer::createImpl(const Settings& settings)
+    std::tuple<VkBuffer, VmaAllocation, void*> VulkanBuffer::createImpl(const Settings& settings,
+                                                                        const bool      throwOnOutOfMemory)
     {
         // Prepare buffer creation info.
         VkBufferCreateInfo bufferInfo{};
@@ -88,30 +91,40 @@ namespace sol
         // Create buffer using VMA allocator.
         if (settings.allocator)
         {
+
             VmaAllocationInfo       vmaAllocationInfo;
             VmaAllocationCreateInfo allocInfo = {};
-            allocInfo.usage                   = settings.memoryUsage;
-            allocInfo.requiredFlags           = settings.requiredFlags;
-            allocInfo.preferredFlags          = settings.preferredFlags;
-            allocInfo.flags                   = settings.flags;
-            if (settings.alignment == 0)
-                handleVulkanError(vmaCreateBuffer(
-                  settings.allocator, &bufferInfo, &allocInfo, &vkBuffer, &vmaAllocation, &vmaAllocationInfo));
-            else
-                handleVulkanError(vmaCreateBufferWithAlignment(settings.allocator,
-                                                               &bufferInfo,
-                                                               &allocInfo,
-                                                               settings.alignment,
-                                                               &vkBuffer,
-                                                               &vmaAllocation,
-                                                               &vmaAllocationInfo));
+            allocInfo.usage                   = settings.vma.memoryUsage;
+            allocInfo.requiredFlags           = settings.vma.requiredFlags;
+            allocInfo.preferredFlags          = settings.vma.preferredFlags;
+            allocInfo.flags                   = settings.vma.flags;
+            allocInfo.pool                    = settings.vma.pool ? settings.vma.pool().get() : VK_NULL_HANDLE;
 
-            if (settings.flags & VMA_ALLOCATION_CREATE_MAPPED_BIT) pMappedData = vmaAllocationInfo.pMappedData;
+            VkResult result;
+            if (settings.vma.alignment == 0 || settings.vma.pool.valid())
+                result = vmaCreateBuffer(
+                  settings.allocator, &bufferInfo, &allocInfo, &vkBuffer, &vmaAllocation, &vmaAllocationInfo);
+            else
+                result = vmaCreateBufferWithAlignment(settings.allocator,
+                                                      &bufferInfo,
+                                                      &allocInfo,
+                                                      settings.vma.alignment,
+                                                      &vkBuffer,
+                                                      &vmaAllocation,
+                                                      &vmaAllocationInfo);
+
+            // Return null instead of throwing.
+            if (result == VK_ERROR_OUT_OF_DEVICE_MEMORY && !throwOnOutOfMemory)
+                return {VK_NULL_HANDLE, VK_NULL_HANDLE, nullptr};
+
+            handleVulkanError(result);
+
+            if (settings.vma.flags & VMA_ALLOCATION_CREATE_MAPPED_BIT) pMappedData = vmaAllocationInfo.pMappedData;
         }
         // Create buffer.
         else { handleVulkanError(vkCreateBuffer(settings.device, &bufferInfo, nullptr, &vkBuffer)); }
 
-        return std::make_tuple(vkBuffer, vmaAllocation, pMappedData);
+        return {vkBuffer, vmaAllocation, pMappedData};
     }
 
     ////////////////////////////////////////////////////////////////

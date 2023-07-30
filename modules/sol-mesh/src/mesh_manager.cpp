@@ -110,10 +110,10 @@ namespace sol
         bufferSettings.size   = meshDescription->getVertexCount(0) * meshDescription->getVertexSize(0);
         bufferSettings.bufferUsage =
           VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | meshDescription->getVertexFlags(0);
-        bufferSettings.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        bufferSettings.allocator   = memoryManager->getAllocator();
-        bufferSettings.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-        bufferSettings.flags       = 0;
+        bufferSettings.sharingMode     = VK_SHARING_MODE_EXCLUSIVE;
+        bufferSettings.allocator       = memoryManager->getAllocator();
+        bufferSettings.vma.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+        bufferSettings.vma.flags       = 0;
         mesh.setVertexBuffer(VulkanBuffer::create(bufferSettings));
         mesh.setVertexCount(meshDescription->getVertexCount(0));
 
@@ -174,10 +174,10 @@ namespace sol
         bufferSettings.size   = meshDescription->getVertexCount(0) * meshDescription->getVertexSize(0);
         bufferSettings.bufferUsage =
           VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | meshDescription->getVertexFlags(0);
-        bufferSettings.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        bufferSettings.allocator   = memoryManager->getAllocator();
-        bufferSettings.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-        bufferSettings.flags       = 0;
+        bufferSettings.sharingMode     = VK_SHARING_MODE_EXCLUSIVE;
+        bufferSettings.allocator       = memoryManager->getAllocator();
+        bufferSettings.vma.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+        bufferSettings.vma.flags       = 0;
         mesh.setVertexBuffer(VulkanBuffer::create(bufferSettings));
         mesh.setVertexCount(meshDescription->getVertexCount(0));
 
@@ -249,11 +249,11 @@ namespace sol
 
         // Create vertex buffers.
         VulkanBuffer::Settings bufferSettings;
-        bufferSettings.device      = memoryManager->getDevice();
-        bufferSettings.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        bufferSettings.allocator   = memoryManager->getAllocator();
-        bufferSettings.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-        bufferSettings.flags       = 0;
+        bufferSettings.device          = memoryManager->getDevice();
+        bufferSettings.sharingMode     = VK_SHARING_MODE_EXCLUSIVE;
+        bufferSettings.allocator       = memoryManager->getAllocator();
+        bufferSettings.vma.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+        bufferSettings.vma.flags       = 0;
         for (size_t i = 0; i < meshDescription->getVertexBufferCount(); i++)
         {
             bufferSettings.bufferUsage =

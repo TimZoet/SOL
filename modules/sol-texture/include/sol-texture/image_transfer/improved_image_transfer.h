@@ -35,18 +35,6 @@ namespace sol
         // Types.
         ////////////////////////////////////////////////////////////////
 
-        struct TransitionInfo
-        {
-            VkPipelineStageFlags2    srcStage  = VK_PIPELINE_STAGE_2_NONE;
-            VkPipelineStageFlags2    dstStage  = VK_PIPELINE_STAGE_2_NONE;
-            VkAccessFlags2           srcAccess = VK_ACCESS_2_NONE;
-            VkAccessFlags2           dstAccess = VK_ACCESS_2_NONE;
-            VkImageLayout            oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            VkImageLayout            newLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            const VulkanQueueFamily* srcFamily = nullptr;
-            const VulkanQueueFamily* dstFamily = nullptr;
-        };
-
         struct CopyInfo
         {
             VulkanBufferPtr         buffer;
@@ -56,10 +44,6 @@ namespace sol
 
         struct TransferInfo
         {
-            TransitionInfo     transition;
-            VkImage            image  = VK_NULL_HANDLE;
-            VkImageAspectFlags aspect = VK_IMAGE_ASPECT_NONE;
-
             /**
              * \brief List of 0 or more staged copies. If empty, only a transition needs to be performed.
              */
@@ -105,13 +89,7 @@ namespace sol
 
         [[nodiscard]] ImageStagingBuffer getStagingBuffer(Image2D& image, size_t index) override;
 
-        void stageTransition(Image2D&                     image,
-                             const VulkanQueueFamily*     queueFamily,
-                             std::optional<VkImageLayout> imageLayout,
-                             VkPipelineStageFlags2        srcStage,
-                             VkPipelineStageFlags2        dstStage,
-                             VkAccessFlags2               srcAccess,
-                             VkAccessFlags2               dstAccess) override;
+        void stageTransition(Image2D& image) override;
 
         void transfer() override;
 

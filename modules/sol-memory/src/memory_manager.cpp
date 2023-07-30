@@ -1,6 +1,13 @@
 #include "sol-memory/memory_manager.h"
 
 ////////////////////////////////////////////////////////////////
+// Standard includes.
+////////////////////////////////////////////////////////////////
+
+#include <format>
+#include <fstream>
+
+////////////////////////////////////////////////////////////////
 // External includes.
 ////////////////////////////////////////////////////////////////
 
@@ -17,6 +24,15 @@
 #include "sol-core/vulkan_queue.h"
 #include "sol-error/sol_error.h"
 
+////////////////////////////////////////////////////////////////
+// Current target includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-memory/free_at_once_memory_pool.h"
+#include "sol-memory/non_linear_memory_pool.h"
+#include "sol-memory/ring_buffer_memory_pool.h"
+#include "sol-memory/stack_memory_pool.h"
+
 namespace sol
 {
     ////////////////////////////////////////////////////////////////
@@ -32,6 +48,7 @@ namespace sol
     MemoryManager::MemoryManager(VulkanMemoryAllocatorPtr alloc) :
         device(&alloc->getDevice()), allocator(std::move(alloc))
     {
+        assert(allocator);
         initializeCommandPools();
     }
 
@@ -148,4 +165,70 @@ namespace sol
 
         transferQueue = &queue;
     }
+
+    ////////////////////////////////////////////////////////////////
+    // Memory pools.
+    ////////////////////////////////////////////////////////////////
+
+    FreeAtOnceMemoryPool& MemoryManager::createFreeAtOnceMemoryPool(const std::string&       name,
+                                                                    const VkBufferUsageFlags bufferUsage,
+                                                                    const VmaMemoryUsage     memoryUsage,
+                                                                    const size_t             blockSize,
+                                                                    const size_t             minBlocks,
+                                                                    const size_t             maxBlocks)
+    {
+        assert(minBlocks <= maxBlocks);
+        return createMemoryPool<FreeAtOnceMemoryPool>(name, bufferUsage, memoryUsage, blockSize, minBlocks, maxBlocks);
+    }
+
+    NonLinearMemoryPool& MemoryManager::createNonLinearMemoryPool(const std::string&       name,
+                                                                  const VkBufferUsageFlags bufferUsage,
+                                                                  const VmaMemoryUsage     memoryUsage,
+                                                                  const size_t             blockSize,
+                                                                  const size_t             minBlocks,
+                                                                  const size_t             maxBlocks)
+    {
+        assert(minBlocks <= maxBlocks);
+        return createMemoryPool<NonLinearMemoryPool>(name, bufferUsage, memoryUsage, blockSize, minBlocks, maxBlocks);
+    }
+
+    RingBufferMemoryPool& MemoryManager::createRingBufferMemoryPool(const std::string&       name,
+                                                                    const VkBufferUsageFlags bufferUsage,
+                                                                    const VmaMemoryUsage     memoryUsage,
+                                                                    const size_t             blockSize,
+                                                                    const bool               preallocate)
+    {
+        return createMemoryPool<RingBufferMemoryPool>(name, bufferUsage, memoryUsage, blockSize, preallocate);
+    }
+
+    StackMemoryPool& MemoryManager::createStackMemoryPool(const std::string&       name,
+                                                          const VkBufferUsageFlags bufferUsage,
+                                                          const VmaMemoryUsage     memoryUsage,
+                                                          const size_t             blockSize,
+                                                          const size_t             minBlocks,
+                                                          const size_t             maxBlocks)
+    {
+        assert(minBlocks <= maxBlocks);
+        return createMemoryPool<StackMemoryPool>(name, bufferUsage, memoryUsage, blockSize, minBlocks, maxBlocks);
+    }
+
+    void MemoryManager::createMemoryPoolImpl(const std::string& name, IMemoryPoolPtr pool)
+    {
+        if (const auto [_, inserted] = memoryPools.try_emplace(name, std::move(pool)); !inserted)
+            throw SolError(std::format("Cannot create new memory pool. Name {} is already in use.", name));
+    }
+
+    ////////////////////////////////////////////////////////////////
+    // Stats.
+    ////////////////////////////////////////////////////////////////
+
+    void MemoryManager::writeAllocatorStatsToFile(const std::filesystem::path& path) const
+    {
+        char* str = nullptr;
+        vmaBuildStatsString(allocator->get(), &str, true);
+        std::ofstream file(path);
+        file << str;
+        vmaFreeStatsString(allocator->get(), str);
+    }
+
 }  // namespace sol

@@ -4,6 +4,8 @@
 // Standard includes.
 ////////////////////////////////////////////////////////////////
 
+#include <filesystem>
+#include <unordered_map>
 #include <vector>
 
 ////////////////////////////////////////////////////////////////
@@ -18,6 +20,12 @@
 
 #include "sol-core/fwd.h"
 
+////////////////////////////////////////////////////////////////
+// Current target includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-memory/fwd.h"
+
 namespace sol
 {
     class MemoryManager
@@ -29,19 +37,27 @@ namespace sol
 
         MemoryManager() = default;
 
+        /**
+         * \brief Construct a new MemoryManager. Will automatically initialize a VulkanMemoryAllocator with all default settings.
+         * \param vkDevice VulkanDevice.
+         */
         explicit MemoryManager(VulkanDevice& vkDevice);
 
+        /**
+         * \brief Construct a new MemoryManager with a user supplied allocator.
+         * \param alloc VulkanMemoryAllocator.
+         */
         explicit MemoryManager(VulkanMemoryAllocatorPtr alloc);
 
         MemoryManager(const MemoryManager&) = delete;
 
-        MemoryManager(MemoryManager&&) = delete;
+        MemoryManager(MemoryManager&&) noexcept = default;
 
         ~MemoryManager() noexcept;
 
         MemoryManager& operator=(const MemoryManager&) = delete;
 
-        MemoryManager& operator=(MemoryManager&&) = delete;
+        MemoryManager& operator=(MemoryManager&&) noexcept = default;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
@@ -79,6 +95,104 @@ namespace sol
 
         void setTransferQueue(VulkanQueue& queue);
 
+        ////////////////////////////////////////////////////////////////
+        // Memory pools.
+        ////////////////////////////////////////////////////////////////
+
+        /**
+         * \brief Create a new memory pool.
+         * \tparam Pool Pool type. Must derive from IMemoryPool.
+         * \tparam Args Additional parameter types passed to the constructor.
+         * \param name Unique pool name.
+         * \param args Additional parameter values passed to the constructor.
+         * \return New memory pool.
+         */
+        template<std::derived_from<IMemoryPool> Pool, typename... Args>
+            requires std::constructible_from<Pool, MemoryManager&, std::string, Args...>
+        Pool& createMemoryPool(const std::string& name, Args&&... args)
+        {
+            auto  pool    = std::make_unique<Pool>(*this, name, std::forward<Args>(args)...);
+            auto& poolRef = *pool;
+            createMemoryPoolImpl(name, std::move(pool));
+            return poolRef;
+        }
+
+        /**
+         * \brief Create a new FreeAtOnceMemoryPool.
+         * \param name Unique pool name.
+         * \param bufferUsage Buffer usage flags.
+         * \param memoryUsage Memory usage flags.
+         * \param blockSize Size of memory blocks in bytes.
+         * \param minBlocks Minimum number of memory blocks. If > 0, these blocks are preallocated.
+         * \param maxBlocks Maximum number of memory blocks.
+         * \return New FreeAtOnceMemoryPool.
+         */
+        FreeAtOnceMemoryPool& createFreeAtOnceMemoryPool(const std::string& name,
+                                                         VkBufferUsageFlags bufferUsage,
+                                                         VmaMemoryUsage     memoryUsage,
+                                                         size_t             blockSize,
+                                                         size_t             minBlocks,
+                                                         size_t             maxBlocks);
+
+        /**
+         * \brief Create a new NonLinearMemoryPool.
+         * \param name Unique pool name.
+         * \param bufferUsage Buffer usage flags.
+         * \param memoryUsage Memory usage flags.
+         * \param blockSize Size of memory blocks in bytes.
+         * \param minBlocks Minimum number of memory blocks. If > 0, these blocks are preallocated.
+         * \param maxBlocks Maximum number of memory blocks.
+         * \return New NonLinearMemoryPool.
+         */
+        NonLinearMemoryPool& createNonLinearMemoryPool(const std::string& name,
+                                                       VkBufferUsageFlags bufferUsage,
+                                                       VmaMemoryUsage     memoryUsage,
+                                                       size_t             blockSize,
+                                                       size_t             minBlocks,
+                                                       size_t             maxBlocks);
+
+        /**
+         * \brief Create a new RingBufferMemoryPool.
+         * \param name Unique pool name.
+         * \param bufferUsage Buffer usage flags.
+         * \param memoryUsage Memory usage flags.
+         * \param blockSize Size of memory block in bytes.
+         * \param preallocate Preallocate the memory block.
+         * \return New RingBufferMemoryPool.
+         */
+        RingBufferMemoryPool& createRingBufferMemoryPool(const std::string& name,
+                                                         VkBufferUsageFlags bufferUsage,
+                                                         VmaMemoryUsage     memoryUsage,
+                                                         size_t             blockSize,
+                                                         bool               preallocate);
+
+        /**
+         * \brief Create a new StackMemoryPool.
+         * \param name Unique pool name.
+         * \param bufferUsage Buffer usage flags.
+         * \param memoryUsage Memory usage flags.
+         * \param blockSize Size of memory blocks in bytes.
+         * \param minBlocks Minimum number of memory blocks. If > 0, these blocks are preallocated.
+         * \param maxBlocks Maximum number of memory blocks.
+         * \return New StackMemoryPool.
+         */
+        StackMemoryPool& createStackMemoryPool(const std::string& name,
+                                               VkBufferUsageFlags bufferUsage,
+                                               VmaMemoryUsage     memoryUsage,
+                                               size_t             blockSize,
+                                               size_t             minBlocks,
+                                               size_t             maxBlocks);
+
+    private:
+        void createMemoryPoolImpl(const std::string& name, IMemoryPoolPtr pool);
+
+    public:
+        ////////////////////////////////////////////////////////////////
+        // Stats.
+        ////////////////////////////////////////////////////////////////
+
+        void writeAllocatorStatsToFile(const std::filesystem::path& path) const;
+
     private:
         ////////////////////////////////////////////////////////////////
         // Initialization.
@@ -103,5 +217,7 @@ namespace sol
         VulkanQueue* transferQueue = nullptr;
 
         std::vector<VulkanCommandPoolPtr> commandPools;
+
+        std::unordered_map<std::string, IMemoryPoolPtr> memoryPools;
     };
 }  // namespace sol

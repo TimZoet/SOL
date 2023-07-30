@@ -32,6 +32,7 @@ set(HEADERS
     ${INCLUDE_DIR}/vulkan_image_view.h
     ${INCLUDE_DIR}/vulkan_instance.h
     ${INCLUDE_DIR}/vulkan_memory_allocator.h
+    ${INCLUDE_DIR}/vulkan_memory_pool.h
     ${INCLUDE_DIR}/vulkan_physical_device.h
     ${INCLUDE_DIR}/vulkan_physical_device_features.h
     ${INCLUDE_DIR}/vulkan_queue.h
@@ -73,6 +74,7 @@ set(SOURCES
     ${SRC_DIR}/vulkan_image_view.cpp
     ${SRC_DIR}/vulkan_instance.cpp
     ${SRC_DIR}/vulkan_memory_allocator.cpp
+    ${SRC_DIR}/vulkan_memory_pool.cpp
     ${SRC_DIR}/vulkan_physical_device.cpp
     ${SRC_DIR}/vulkan_queue.cpp
     ${SRC_DIR}/vulkan_queue_family.cpp
