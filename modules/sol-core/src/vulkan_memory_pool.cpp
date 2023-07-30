@@ -40,17 +40,24 @@ namespace sol
 
     VmaPool VulkanMemoryPool::createImpl(const Settings& settings)
     {
-        VkBufferCreateInfo bInfo{};
-        bInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bInfo.size  = 1024;
-        bInfo.usage = settings.bufferUsage;
-
-        VmaAllocationCreateInfo aInfo = {};
-        aInfo.usage                   = settings.memoryUsage;
-
         // Query for appropriate memory type.
-        uint32_t memIndex = 0;
-        handleVulkanError(vmaFindMemoryTypeIndexForBufferInfo(settings.allocator, &bInfo, &aInfo, &memIndex));
+        uint32_t                memIndex = 0;
+        VmaAllocationCreateInfo aInfo    = {};
+        aInfo.usage                      = settings.memoryUsage;
+        if (settings.bufferUsage)
+        {
+            VkBufferCreateInfo bInfo{};
+            bInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+            bInfo.usage = settings.bufferUsage;
+            handleVulkanError(vmaFindMemoryTypeIndexForBufferInfo(settings.allocator, &bInfo, &aInfo, &memIndex));
+        }
+        else
+        {
+            VkImageCreateInfo iInfo{};
+            iInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+            iInfo.usage = settings.imageUsage;
+            handleVulkanError(vmaFindMemoryTypeIndexForImageInfo(settings.allocator, &iInfo, &aInfo, &memIndex));
+        }
 
         VmaPoolCreateInfo poolCreateInfo{};
         poolCreateInfo.memoryTypeIndex = memIndex;

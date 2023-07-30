@@ -32,9 +32,14 @@ namespace sol
             VmaPoolCreateFlags flags = 0;
 
             /**
-             * \brief Buffer usage.
+             * \brief Buffer usage. If not 0, this memory pool can be used for buffer allocation.
              */
             VkBufferUsageFlags bufferUsage = 0;
+
+            /**
+             * \brief Image usage. If not 0, this memory pool can be used for image allocation.
+             */
+            VkImageUsageFlags imageUsage = 0;
 
             /**
              * \brief Memory usage. Defaults to VMA_MEMORY_USAGE_AUTO.
