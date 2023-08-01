@@ -15,41 +15,34 @@
 
 namespace sol
 {
-    class MemoryPoolBuffer : public IBuffer
+    class Buffer : public IBuffer
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        MemoryPoolBuffer() = delete;
+        Buffer() = delete;
 
-        MemoryPoolBuffer(
-          IMemoryPool& memoryPool, size_t id, VulkanBuffer& buffer, size_t bufferSize, size_t bufferOffset);
+        Buffer(MemoryManager& memoryManager,VulkanBufferPtr b);
 
-        MemoryPoolBuffer(const MemoryPoolBuffer&) = delete;
+        Buffer(const Buffer&) = delete;
 
-        MemoryPoolBuffer(MemoryPoolBuffer&&) noexcept;
+        Buffer(Buffer&&) noexcept = default;
 
-        ~MemoryPoolBuffer() noexcept override;
+        ~Buffer() noexcept override;
 
-        MemoryPoolBuffer& operator=(const MemoryPoolBuffer&) = delete;
+        Buffer& operator=(const Buffer&) = delete;
 
-        MemoryPoolBuffer& operator=(MemoryPoolBuffer&&) noexcept;
+        Buffer& operator=(Buffer&&) noexcept = default;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] IMemoryPool& getMemoryPool() noexcept;
+        [[nodiscard]] VulkanBuffer& getBuffer() override;
 
-        [[nodiscard]] const IMemoryPool& getMemoryPool() const noexcept;
-
-        [[nodiscard]] size_t getId() const noexcept;
-
-        [[nodiscard]] VulkanBuffer& getBuffer() noexcept override;
-
-        [[nodiscard]] const VulkanBuffer& getBuffer() const noexcept override;
+        [[nodiscard]] const VulkanBuffer& getBuffer() const override;
 
         [[nodiscard]] size_t getBufferSize() const noexcept override;
 
@@ -62,14 +55,6 @@ namespace sol
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        IMemoryPool* pool = nullptr;
-
-        size_t identifier = 0;
-
-        VulkanBuffer* buffer = nullptr;
-
-        size_t size = 0;
-
-        size_t offset = 0;
+        VulkanBufferPtr buffer;
     };
 }  // namespace sol

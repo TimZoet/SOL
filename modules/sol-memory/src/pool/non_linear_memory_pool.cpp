@@ -26,14 +26,25 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    NonLinearMemoryPool::NonLinearMemoryPool(MemoryManager&           memoryManager,
-                                             std::string              poolName,
-                                             const VkBufferUsageFlags bufferUsage,
-                                             const VmaMemoryUsage     memoryUsage,
-                                             const size_t             blockSize,
-                                             const size_t             minBlocks,
-                                             const size_t             maxBlocks) :
-        IMemoryPool(memoryManager, std::move(poolName), 0, bufferUsage, memoryUsage, blockSize, minBlocks, maxBlocks)
+    NonLinearMemoryPool::NonLinearMemoryPool(MemoryManager&              memoryManager,
+                                             std::string                 poolName,
+                                             const VkBufferUsageFlags    bufferUsage,
+                                             const VmaMemoryUsage        memoryUsage,
+                                             const VkMemoryPropertyFlags requiredMemFlags,
+                                             const VkMemoryPropertyFlags preferredMemFlags,
+                                             const size_t                blockSize,
+                                             const size_t                minBlocks,
+                                             const size_t                maxBlocks) :
+        IMemoryPool(memoryManager,
+                    std::move(poolName),
+                    0,
+                    bufferUsage,
+                    memoryUsage,
+                    requiredMemFlags,
+                    preferredMemFlags,
+                    blockSize,
+                    minBlocks,
+                    maxBlocks)
     {
     }
 
@@ -64,7 +75,7 @@ namespace sol
     }
 
     std::expected<MemoryPoolBufferPtr, std::unique_ptr<std::latch>>
-      NonLinearMemoryPool::allocateBufferImpl(const size_t size, const bool)
+      NonLinearMemoryPool::allocateMemoryPoolBufferImpl(const size_t size, const bool)
     {
         std::scoped_lock lock(mutex);
 

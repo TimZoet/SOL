@@ -25,17 +25,18 @@
 ////////////////////////////////////////////////////////////////
 
 #include "sol-memory/fwd.h"
+#include "sol-memory/i_buffer_allocator.h"
 
 namespace sol
 {
-    class MemoryManager
+    class MemoryManager : public IBufferAllocator
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        MemoryManager() = default;
+        MemoryManager() = delete;
 
         /**
          * \brief Construct a new MemoryManager. Will automatically initialize a VulkanMemoryAllocator with all default settings.
@@ -53,7 +54,7 @@ namespace sol
 
         MemoryManager(MemoryManager&&) noexcept = default;
 
-        ~MemoryManager() noexcept;
+        ~MemoryManager() noexcept override;
 
         MemoryManager& operator=(const MemoryManager&) = delete;
 
@@ -63,9 +64,9 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] VulkanDevice& getDevice() noexcept;
+        [[nodiscard]] VulkanDevice& getDevice() noexcept override;
 
-        [[nodiscard]] const VulkanDevice& getDevice() const noexcept;
+        [[nodiscard]] const VulkanDevice& getDevice() const noexcept override;
 
         [[nodiscard]] VulkanMemoryAllocator& getAllocator() noexcept;
 
@@ -85,6 +86,8 @@ namespace sol
 
         [[nodiscard]] VulkanQueue& getTransferQueue() const;
 
+        [[nodiscard]] Capabilities getCapabilities() const noexcept override;
+
         ////////////////////////////////////////////////////////////////
         // Setters.
         ////////////////////////////////////////////////////////////////
@@ -94,6 +97,14 @@ namespace sol
         void setGraphicsQueue(VulkanQueue& queue);
 
         void setTransferQueue(VulkanQueue& queue);
+
+        ////////////////////////////////////////////////////////////////
+        // Allocations.
+        ////////////////////////////////////////////////////////////////
+
+        [[nodiscard]] IBufferPtr allocateBufferImpl(const Allocation& alloc) override;
+
+        [[nodiscard]] IBufferPtr allocateBufferImpl(const AllocationAligned& alloc) override;
 
         ////////////////////////////////////////////////////////////////
         // Memory pools.
@@ -127,12 +138,14 @@ namespace sol
          * \param maxBlocks Maximum number of memory blocks.
          * \return New FreeAtOnceMemoryPool.
          */
-        FreeAtOnceMemoryPool& createFreeAtOnceMemoryPool(const std::string& name,
-                                                         VkBufferUsageFlags bufferUsage,
-                                                         VmaMemoryUsage     memoryUsage,
-                                                         size_t             blockSize,
-                                                         size_t             minBlocks,
-                                                         size_t             maxBlocks);
+        FreeAtOnceMemoryPool& createFreeAtOnceMemoryPool(const std::string&    name,
+                                                         VkBufferUsageFlags    bufferUsage,
+                                                         VmaMemoryUsage        memoryUsage,
+                                                         VkMemoryPropertyFlags requiredMemoryFlags,
+                                                         VkMemoryPropertyFlags preferredMemoryFlags,
+                                                         size_t                blockSize,
+                                                         size_t                minBlocks,
+                                                         size_t                maxBlocks);
 
         /**
          * \brief Create a new NonLinearMemoryPool.
@@ -144,12 +157,14 @@ namespace sol
          * \param maxBlocks Maximum number of memory blocks.
          * \return New NonLinearMemoryPool.
          */
-        NonLinearMemoryPool& createNonLinearMemoryPool(const std::string& name,
-                                                       VkBufferUsageFlags bufferUsage,
-                                                       VmaMemoryUsage     memoryUsage,
-                                                       size_t             blockSize,
-                                                       size_t             minBlocks,
-                                                       size_t             maxBlocks);
+        NonLinearMemoryPool& createNonLinearMemoryPool(const std::string&    name,
+                                                       VkBufferUsageFlags    bufferUsage,
+                                                       VmaMemoryUsage        memoryUsage,
+                                                       VkMemoryPropertyFlags requiredMemoryFlags,
+                                                       VkMemoryPropertyFlags preferredMemoryFlags,
+                                                       size_t                blockSize,
+                                                       size_t                minBlocks,
+                                                       size_t                maxBlocks);
 
         /**
          * \brief Create a new RingBufferMemoryPool.
@@ -160,11 +175,13 @@ namespace sol
          * \param preallocate Preallocate the memory block.
          * \return New RingBufferMemoryPool.
          */
-        RingBufferMemoryPool& createRingBufferMemoryPool(const std::string& name,
-                                                         VkBufferUsageFlags bufferUsage,
-                                                         VmaMemoryUsage     memoryUsage,
-                                                         size_t             blockSize,
-                                                         bool               preallocate);
+        RingBufferMemoryPool& createRingBufferMemoryPool(const std::string&    name,
+                                                         VkBufferUsageFlags    bufferUsage,
+                                                         VmaMemoryUsage        memoryUsage,
+                                                         VkMemoryPropertyFlags requiredMemoryFlags,
+                                                         VkMemoryPropertyFlags preferredMemoryFlags,
+                                                         size_t                blockSize,
+                                                         bool                  preallocate);
 
         /**
          * \brief Create a new StackMemoryPool.
@@ -176,12 +193,14 @@ namespace sol
          * \param maxBlocks Maximum number of memory blocks.
          * \return New StackMemoryPool.
          */
-        StackMemoryPool& createStackMemoryPool(const std::string& name,
-                                               VkBufferUsageFlags bufferUsage,
-                                               VmaMemoryUsage     memoryUsage,
-                                               size_t             blockSize,
-                                               size_t             minBlocks,
-                                               size_t             maxBlocks);
+        StackMemoryPool& createStackMemoryPool(const std::string&    name,
+                                               VkBufferUsageFlags    bufferUsage,
+                                               VmaMemoryUsage        memoryUsage,
+                                               VkMemoryPropertyFlags requiredMemoryFlags,
+                                               VkMemoryPropertyFlags preferredMemoryFlags,
+                                               size_t                blockSize,
+                                               size_t                minBlocks,
+                                               size_t                maxBlocks);
 
     private:
         void createMemoryPoolImpl(const std::string& name, IMemoryPoolPtr pool);

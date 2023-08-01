@@ -27,18 +27,22 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    FreeAtOnceMemoryPool::FreeAtOnceMemoryPool(MemoryManager&           memoryManager,
-                                               std::string              poolName,
-                                               const VkBufferUsageFlags bufferUsage,
-                                               const VmaMemoryUsage     memoryUsage,
-                                               const size_t             blockSize,
-                                               const size_t             minBlocks,
-                                               const size_t             maxBlocks) :
+    FreeAtOnceMemoryPool::FreeAtOnceMemoryPool(MemoryManager&              memoryManager,
+                                               std::string                 poolName,
+                                               const VkBufferUsageFlags    bufferUsage,
+                                               const VmaMemoryUsage        memoryUsage,
+                                               const VkMemoryPropertyFlags requiredMemFlags,
+                                               const VkMemoryPropertyFlags preferredMemFlags,
+                                               const size_t                blockSize,
+                                               const size_t                minBlocks,
+                                               const size_t                maxBlocks) :
         IMemoryPool(memoryManager,
                     std::move(poolName),
                     VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT,
                     bufferUsage,
                     memoryUsage,
+                    requiredMemFlags,
+                    preferredMemFlags,
                     blockSize,
                     minBlocks,
                     maxBlocks)
@@ -79,7 +83,7 @@ namespace sol
     }
 
     std::expected<MemoryPoolBufferPtr, std::unique_ptr<std::latch>>
-      FreeAtOnceMemoryPool::allocateBufferImpl(const size_t size, const bool)
+      FreeAtOnceMemoryPool::allocateMemoryPoolBufferImpl(const size_t size, const bool)
     {
         std::scoped_lock lock(mutex);
 

@@ -25,43 +25,16 @@
 ////////////////////////////////////////////////////////////////
 
 #include "sol-memory/fwd.h"
+#include "sol-memory/i_buffer_allocator.h"
 
 namespace sol
 {
-    class IMemoryPool
+    class IMemoryPool : public IBufferAllocator
     {
     public:
         friend class MemoryPoolBuffer;
 
-        ////////////////////////////////////////////////////////////////
-        // Types.
-        ////////////////////////////////////////////////////////////////
-
-        /**
-         * \brief Additional capabilities that can be supported by memory pool implementations.
-         * Certain methods can only be called if pools advertise support for them. Performing
-         * unsupported operations will result in runtime errors.
-         */
-        enum class Capabilities : uint32_t
-        {
-            None = 0,
-
-            /**
-             * \brief Memory pool supports defragmentation.
-             */
-            Defragmentation = 1,
-
-            /**
-             * \brief Memory pool supports awaiting deallocation of other buffers
-             * when trying to allocate a new buffer for which there is not enough space.
-             */
-            Wait = 2,
-
-            /**
-             * \brief Memory pool supports suballocation of buffers.
-             */
-            SubAllocation = 4
-        };
+        using IBufferAllocator::allocateBuffer;
 
         ////////////////////////////////////////////////////////////////
         // Constructors.
@@ -69,20 +42,22 @@ namespace sol
 
         IMemoryPool() = delete;
 
-        IMemoryPool(MemoryManager&     memoryManager,
-                    std::string        poolName,
-                    VmaPoolCreateFlags createFlags,
-                    VkBufferUsageFlags bufUsage,
-                    VmaMemoryUsage     memUsage,
-                    size_t             blckSize,
-                    size_t             minBlcks,
-                    size_t             maxBlcks);
+        IMemoryPool(MemoryManager&        memoryManager,
+                    std::string           poolName,
+                    VmaPoolCreateFlags    createFlags,
+                    VkBufferUsageFlags    bufUsage,
+                    VmaMemoryUsage        memUsage,
+                    VkMemoryPropertyFlags requiredMemFlags,
+                    VkMemoryPropertyFlags preferredMemFlags,
+                    size_t                blckSize,
+                    size_t                minBlcks,
+                    size_t                maxBlcks);
 
         IMemoryPool(const IMemoryPool&) = delete;
 
         IMemoryPool(IMemoryPool&&) noexcept = delete;
 
-        virtual ~IMemoryPool() noexcept;
+        ~IMemoryPool() noexcept override;
 
         IMemoryPool& operator=(const IMemoryPool&) = delete;
 
@@ -92,27 +67,21 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] VulkanDevice& getDevice() noexcept;
-
-        [[nodiscard]] const VulkanDevice& getDevice() const noexcept;
-
-        [[nodiscard]] MemoryManager& getMemoryManager() noexcept;
-
-        [[nodiscard]] const MemoryManager& getMemoryManager() const noexcept;
-
         [[nodiscard]] VmaPoolCreateFlags getCreateFlags() const noexcept;
 
         [[nodiscard]] VkBufferUsageFlags getBufferUsage() const noexcept;
 
         [[nodiscard]] VmaMemoryUsage getMemoryUsage() const noexcept;
 
+        [[nodiscard]] VkMemoryPropertyFlags getRequiredMemoryFlags() const noexcept;
+
+        [[nodiscard]] VkMemoryPropertyFlags getPreferredMemoryFlags() const noexcept;
+
         [[nodiscard]] size_t getBlockSize() const noexcept;
 
         [[nodiscard]] size_t getMinBlocks() const noexcept;
 
         [[nodiscard]] size_t getMaxBlocks() const noexcept;
-
-        [[nodiscard]] virtual Capabilities getCapabilities() const noexcept = 0;
 
         ////////////////////////////////////////////////////////////////
         // Allocations.
@@ -134,13 +103,27 @@ namespace sol
         [[nodiscard]] MemoryPoolBufferPtr allocateBufferWithWait(size_t size);
 
     protected:
+        [[nodiscard]] IBufferPtr allocateBufferImpl(const Allocation& alloc) override;
+
+        [[nodiscard]] IBufferPtr allocateBufferImpl(const AllocationAligned& alloc) override;
+
+        /**
+         * \brief Allocate a new buffer from this memory pool.
+         * \param size Size of buffer in bytes.
+         * \param waitOnOutOfMemory If waiting is not supported, this value will never be true and can be ignored.
+         * \return Buffer.
+         */
         virtual [[nodiscard]] std::expected<MemoryPoolBufferPtr, std::unique_ptr<std::latch>>
-          allocateBufferImpl(size_t size, bool waitOnOutOfMemory) = 0;
+          allocateMemoryPoolBufferImpl(size_t size, bool waitOnOutOfMemory) = 0;
+
+        /**
+         * \brief Clean up resources associated with specified buffer. Called by MemoryPoolBuffer on destruction.
+         * \param buffer Buffer.
+         */
+        virtual void releaseBuffer(const MemoryPoolBuffer& buffer) = 0;
 
     private:
-        [[nodiscard]] MemoryPoolBufferPtr allocateBuffer(size_t size, bool waitOnOutOfMemory);
-
-        virtual void releaseBuffer(const MemoryPoolBuffer& buffer) = 0;
+        [[nodiscard]] MemoryPoolBufferPtr allocateMemoryPoolBuffer(size_t size, bool waitOnOutOfMemory);
 
         ////////////////////////////////////////////////////////////////
         // Initialization.
@@ -152,8 +135,6 @@ namespace sol
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        MemoryManager* manager = nullptr;
-
         std::string name;
 
         VmaPoolCreateFlags flags = 0;
@@ -161,6 +142,10 @@ namespace sol
         VkBufferUsageFlags bufferUsage;
 
         VmaMemoryUsage memoryUsage;
+
+        VkMemoryPropertyFlags requiredMemoryFlags;
+
+        VkMemoryPropertyFlags preferredMemoryFlags;
 
         size_t blockSize;
 

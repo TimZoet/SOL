@@ -32,7 +32,7 @@ void NonLinearMemoryPool::operator()()
     sol::NonLinearMemoryPool* pool = nullptr;
     expectNoThrow([&] {
         pool = &memoryManager->createNonLinearMemoryPool(
-          "pool", VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO, 1024ull * 1024, 0, 10);
+          "pool", VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO, 0, 0, 1024ull * 1024, 0, 10);
     });
 
     compareEQ(sol::IMemoryPool::Capabilities::None, pool->getCapabilities());

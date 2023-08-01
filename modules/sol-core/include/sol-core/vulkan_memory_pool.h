@@ -47,6 +47,16 @@ namespace sol
             VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_AUTO;
 
             /**
+             * \brief Required memory property flags.
+             */
+            VkMemoryPropertyFlags requiredFlags = 0;
+
+            /**
+             * \brief Preferred memory property flags.
+             */
+            VkMemoryPropertyFlags preferredFlags = 0;
+
+            /**
              * \brief Size of memory blocks (in bytes).
              */
             size_t blockSize = 0;
