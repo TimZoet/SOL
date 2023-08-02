@@ -1,4 +1,4 @@
-#include "sol-memory/stack_memory_pool.h"
+#include "sol-memory/pool/stack_memory_pool.h"
 
 ////////////////////////////////////////////////////////////////
 // External includes.
@@ -19,7 +19,7 @@
 ////////////////////////////////////////////////////////////////
 
 #include "sol-memory/memory_manager.h"
-#include "sol-memory/memory_pool_buffer.h"
+#include "sol-memory/pool/memory_pool_buffer.h"
 
 namespace sol
 {
@@ -27,18 +27,22 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    StackMemoryPool::StackMemoryPool(MemoryManager&           memoryManager,
-                                     std::string              poolName,
-                                     const VkBufferUsageFlags bufferUsage,
-                                     const VmaMemoryUsage     memoryUsage,
-                                     const size_t             blockSize,
-                                     const size_t             minBlocks,
-                                     const size_t             maxBlocks) :
+    StackMemoryPool::StackMemoryPool(MemoryManager&              memoryManager,
+                                     std::string                 poolName,
+                                     const VkBufferUsageFlags    bufferUsage,
+                                     const VmaMemoryUsage        memoryUsage,
+                                     const VkMemoryPropertyFlags requiredMemFlags,
+                                     const VkMemoryPropertyFlags preferredMemFlags,
+                                     const size_t                blockSize,
+                                     const size_t                minBlocks,
+                                     const size_t                maxBlocks) :
         IMemoryPool(memoryManager,
                     std::move(poolName),
                     VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT,
                     bufferUsage,
                     memoryUsage,
+                    requiredMemFlags,
+                    preferredMemFlags,
                     blockSize,
                     minBlocks,
                     maxBlocks)
@@ -91,7 +95,7 @@ namespace sol
     }
 
     std::expected<MemoryPoolBufferPtr, std::unique_ptr<std::latch>>
-      StackMemoryPool::allocateBufferImpl(const size_t size, const bool)
+      StackMemoryPool::allocateMemoryPoolBufferImpl(const size_t size, const bool)
     {
         std::scoped_lock lock(mutex);
 

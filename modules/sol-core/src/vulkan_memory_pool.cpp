@@ -44,6 +44,8 @@ namespace sol
         uint32_t                memIndex = 0;
         VmaAllocationCreateInfo aInfo    = {};
         aInfo.usage                      = settings.memoryUsage;
+        aInfo.requiredFlags              = settings.requiredFlags;
+        aInfo.preferredFlags             = settings.preferredFlags;
         if (settings.bufferUsage)
         {
             VkBufferCreateInfo bInfo{};

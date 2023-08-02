@@ -53,11 +53,11 @@ namespace sol
         // Allocate buffers.
         std::vector<VulkanBufferPtr> buffers(setCount);
         VulkanBuffer::Settings       bufferSettings;
-        bufferSettings.device      = memoryManager->getDevice();
-        bufferSettings.size        = slotCount * bufferSize;
-        bufferSettings.bufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        bufferSettings.allocator   = memoryManager->getAllocator();
-        bufferSettings.memoryUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        bufferSettings.device          = memoryManager->getDevice();
+        bufferSettings.size            = slotCount * bufferSize;
+        bufferSettings.bufferUsage     = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        bufferSettings.allocator       = memoryManager->getAllocator();
+        bufferSettings.vma.memoryUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
         for (size_t i = 0; i < setCount; i++) buffers[i] = VulkanBuffer::create(bufferSettings);
 
         // Create new UniformBuffer.

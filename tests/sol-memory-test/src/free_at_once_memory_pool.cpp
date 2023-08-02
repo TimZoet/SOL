@@ -8,9 +8,9 @@
 #include "sol-core/vulkan_memory_allocator.h"
 #include "sol-core/vulkan_queue.h"
 #include "sol-core/vulkan_queue_family.h"
-#include "sol-memory/free_at_once_memory_pool.h"
 #include "sol-memory/memory_manager.h"
-#include "sol-memory/memory_pool_buffer.h"
+#include "sol-memory/pool/free_at_once_memory_pool.h"
+#include "sol-memory/pool/memory_pool_buffer.h"
 
 void FreeAtOnceMemoryPool::operator()()
 {
@@ -32,7 +32,7 @@ void FreeAtOnceMemoryPool::operator()()
     sol::FreeAtOnceMemoryPool* pool = nullptr;
     expectNoThrow([&] {
         pool = &memoryManager->createFreeAtOnceMemoryPool(
-          "pool", VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO, 1024ull * 1024, 0, 2);
+          "pool", VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO, 0, 0, 1024ull * 1024, 0, 2);
     });
 
     compareEQ(sol::IMemoryPool::Capabilities::None, pool->getCapabilities());

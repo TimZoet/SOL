@@ -15,8 +15,8 @@
 #include "sol-core/vulkan_queue.h"
 #include "sol-core/vulkan_queue_family.h"
 #include "sol-memory/memory_manager.h"
-#include "sol-memory/memory_pool_buffer.h"
-#include "sol-memory/ring_buffer_memory_pool.h"
+#include "sol-memory/pool/memory_pool_buffer.h"
+#include "sol-memory/pool/ring_buffer_memory_pool.h"
 
 void RingBufferMemoryPool::operator()()
 {
@@ -38,7 +38,7 @@ void RingBufferMemoryPool::operator()()
     sol::RingBufferMemoryPool* pool = nullptr;
     expectNoThrow([&] {
         pool = &memoryManager->createRingBufferMemoryPool(
-          "pool", VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO, 1024ull * 1024, false);
+          "pool", VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO, 0, 0, 1024ull * 1024, false);
     });
 
     compareEQ(sol::IMemoryPool::Capabilities::Wait, pool->getCapabilities());

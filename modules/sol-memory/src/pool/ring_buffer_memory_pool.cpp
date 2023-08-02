@@ -1,4 +1,4 @@
-#include "sol-memory/ring_buffer_memory_pool.h"
+#include "sol-memory/pool/ring_buffer_memory_pool.h"
 
 ////////////////////////////////////////////////////////////////
 // External includes.
@@ -18,7 +18,7 @@
 ////////////////////////////////////////////////////////////////
 
 #include "sol-memory/memory_manager.h"
-#include "sol-memory/memory_pool_buffer.h"
+#include "sol-memory/pool/memory_pool_buffer.h"
 
 namespace sol
 {
@@ -26,17 +26,21 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    RingBufferMemoryPool::RingBufferMemoryPool(MemoryManager&           memoryManager,
-                                               std::string              poolName,
-                                               const VkBufferUsageFlags bufferUsage,
-                                               const VmaMemoryUsage     memoryUsage,
-                                               const size_t             blockSize,
-                                               const bool               preallocate) :
+    RingBufferMemoryPool::RingBufferMemoryPool(MemoryManager&              memoryManager,
+                                               std::string                 poolName,
+                                               const VkBufferUsageFlags    bufferUsage,
+                                               const VmaMemoryUsage        memoryUsage,
+                                               const VkMemoryPropertyFlags requiredMemFlags,
+                                               const VkMemoryPropertyFlags preferredMemFlags,
+                                               const size_t                blockSize,
+                                               const bool                  preallocate) :
         IMemoryPool(memoryManager,
                     std::move(poolName),
                     VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT,
                     bufferUsage,
                     memoryUsage,
+                    requiredMemFlags,
+                    preferredMemFlags,
                     blockSize,
                     preallocate ? 1 : 0,
                     1)
@@ -71,7 +75,7 @@ namespace sol
     }
 
     std::expected<MemoryPoolBufferPtr, std::unique_ptr<std::latch>>
-      RingBufferMemoryPool::allocateBufferImpl(const size_t size, const bool waitOnOutOfMemory)
+      RingBufferMemoryPool::allocateMemoryPoolBufferImpl(const size_t size, const bool waitOnOutOfMemory)
     {
         std::scoped_lock lock(mutex);
 

@@ -1,28 +1,21 @@
 #pragma once
 
 ////////////////////////////////////////////////////////////////
-// Standard includes.
-////////////////////////////////////////////////////////////////
-
-#include <cstdint>
-#include <string>
-
-////////////////////////////////////////////////////////////////
-// External includes.
-////////////////////////////////////////////////////////////////
-
-#include <vma/vk_mem_alloc.h>
-
-////////////////////////////////////////////////////////////////
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
 #include "sol-core/fwd.h"
+
+////////////////////////////////////////////////////////////////
+// Current target includes.
+////////////////////////////////////////////////////////////////
+
 #include "sol-memory/fwd.h"
+#include "sol-memory/i_buffer.h"
 
 namespace sol
 {
-    class MemoryPoolBuffer
+    class MemoryPoolBuffer : public IBuffer
     {
     public:
         ////////////////////////////////////////////////////////////////
@@ -38,7 +31,7 @@ namespace sol
 
         MemoryPoolBuffer(MemoryPoolBuffer&&) noexcept;
 
-        ~MemoryPoolBuffer() noexcept;
+        ~MemoryPoolBuffer() noexcept override;
 
         MemoryPoolBuffer& operator=(const MemoryPoolBuffer&) = delete;
 
@@ -48,25 +41,21 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] VulkanDevice& getDevice() noexcept;
-
-        [[nodiscard]] const VulkanDevice& getDevice() const noexcept;
-
         [[nodiscard]] IMemoryPool& getMemoryPool() noexcept;
 
         [[nodiscard]] const IMemoryPool& getMemoryPool() const noexcept;
 
         [[nodiscard]] size_t getId() const noexcept;
 
-        [[nodiscard]] VulkanBuffer& getBuffer() noexcept;
+        [[nodiscard]] VulkanBuffer& getBuffer() noexcept override;
 
-        [[nodiscard]] const VulkanBuffer& getBuffer() const noexcept;
+        [[nodiscard]] const VulkanBuffer& getBuffer() const noexcept override;
 
-        [[nodiscard]] size_t getBufferSize() const noexcept;
+        [[nodiscard]] size_t getBufferSize() const noexcept override;
 
-        [[nodiscard]] size_t getBufferOffset() const noexcept;
+        [[nodiscard]] size_t getBufferOffset() const noexcept override;
 
-        [[nodiscard]] bool isSubAllocation() const noexcept;
+        [[nodiscard]] bool isSubAllocation() const noexcept override;
 
     private:
         ////////////////////////////////////////////////////////////////

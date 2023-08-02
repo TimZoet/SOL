@@ -1,10 +1,10 @@
-#include "sol-memory/memory_pool_buffer.h"
+#include "sol-memory/pool/memory_pool_buffer.h"
 
 ////////////////////////////////////////////////////////////////
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-memory/i_memory_pool.h"
+#include "sol-memory/pool/i_memory_pool.h"
 
 namespace sol
 {
@@ -17,7 +17,12 @@ namespace sol
                                        VulkanBuffer& buffer,
                                        const size_t  bufferSize,
                                        const size_t  bufferOffset) :
-        pool(&memoryPool), identifier(id), buffer(&buffer), size(bufferSize), offset(bufferOffset)
+        IBuffer(memoryPool.getMemoryManager()),
+        pool(&memoryPool),
+        identifier(id),
+        buffer(&buffer),
+        size(bufferSize),
+        offset(bufferOffset)
     {
     }
 
@@ -30,10 +35,6 @@ namespace sol
     ////////////////////////////////////////////////////////////////
     // Getters.
     ////////////////////////////////////////////////////////////////
-
-    VulkanDevice& MemoryPoolBuffer::getDevice() noexcept { return getMemoryPool().getDevice(); }
-
-    const VulkanDevice& MemoryPoolBuffer::getDevice() const noexcept { return getMemoryPool().getDevice(); }
 
     IMemoryPool& MemoryPoolBuffer::getMemoryPool() noexcept { return *pool; }
 
@@ -50,4 +51,5 @@ namespace sol
     size_t MemoryPoolBuffer::getBufferOffset() const noexcept { return offset; }
 
     bool MemoryPoolBuffer::isSubAllocation() const noexcept { return offset > 0; }
+
 }  // namespace sol

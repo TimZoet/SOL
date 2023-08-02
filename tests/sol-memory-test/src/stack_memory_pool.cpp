@@ -9,8 +9,8 @@
 #include "sol-core/vulkan_queue.h"
 #include "sol-core/vulkan_queue_family.h"
 #include "sol-memory/memory_manager.h"
-#include "sol-memory/memory_pool_buffer.h"
-#include "sol-memory/stack_memory_pool.h"
+#include "sol-memory/pool/memory_pool_buffer.h"
+#include "sol-memory/pool/stack_memory_pool.h"
 
 void StackMemoryPool::operator()()
 {
@@ -32,7 +32,7 @@ void StackMemoryPool::operator()()
     sol::StackMemoryPool* pool = nullptr;
     expectNoThrow([&] {
         pool = &memoryManager->createStackMemoryPool(
-          "pool", VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO, 1024ull * 1024, 0, 2);
+          "pool", VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO, 0, 0, 1024ull * 1024, 0, 2);
     });
 
     compareEQ(sol::IMemoryPool::Capabilities::None, pool->getCapabilities());
