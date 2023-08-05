@@ -26,25 +26,11 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    NonLinearMemoryPool::NonLinearMemoryPool(MemoryManager&              memoryManager,
-                                             std::string                 poolName,
-                                             const VkBufferUsageFlags    bufferUsage,
-                                             const VmaMemoryUsage        memoryUsage,
-                                             const VkMemoryPropertyFlags requiredMemFlags,
-                                             const VkMemoryPropertyFlags preferredMemFlags,
-                                             const size_t                blockSize,
-                                             const size_t                minBlocks,
-                                             const size_t                maxBlocks) :
-        IMemoryPool(memoryManager,
-                    std::move(poolName),
-                    0,
-                    bufferUsage,
-                    memoryUsage,
-                    requiredMemFlags,
-                    preferredMemFlags,
-                    blockSize,
-                    minBlocks,
-                    maxBlocks)
+    NonLinearMemoryPool::NonLinearMemoryPool(MemoryManager&      memoryManager,
+                                             std::string         poolName,
+                                             const CreateInfo&   createInfo,
+                                             VulkanMemoryPoolPtr memoryPool) :
+        IMemoryPool(memoryManager, std::move(poolName), createInfo, std::move(memoryPool))
     {
     }
 

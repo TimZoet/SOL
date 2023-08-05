@@ -37,8 +37,16 @@ void RingBufferMemoryPool::operator()()
     // Create a memory pool with 1MiB.
     sol::RingBufferMemoryPool* pool = nullptr;
     expectNoThrow([&] {
-        pool = &memoryManager->createRingBufferMemoryPool(
-          "pool", VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO, 0, 0, 1024ull * 1024, false);
+        constexpr sol::IMemoryPool::CreateInfo info{.createFlags          = 0,
+                                                    .bufferUsage          = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                    .memoryUsage          = VMA_MEMORY_USAGE_AUTO,
+                                                    .requiredMemoryFlags  = 0,
+                                                    .preferredMemoryFlags = 0,
+                                                    .allocationFlags      = 0,
+                                                    .blockSize            = 1024ull * 1024ull,
+                                                    .minBlocks            = 0,
+                                                    .maxBlocks            = 1};
+        pool = &memoryManager->createRingBufferMemoryPool("pool", info);
     });
 
     compareEQ(sol::IMemoryPool::Capabilities::Wait, pool->getCapabilities());

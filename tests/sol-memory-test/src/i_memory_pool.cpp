@@ -33,14 +33,16 @@ void IMemoryPool::operator()()
     // Create a memory pool with 1 block of 1MiB.
     sol::FreeAtOnceMemoryPool* pool = nullptr;
     expectNoThrow([&] {
-        pool = &memoryManager->createFreeAtOnceMemoryPool("pool",
-                                                          VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                          VMA_MEMORY_USAGE_AUTO,
-                                                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                                          0,
-                                                          1024ull * 1024,
-                                                          0,
-                                                          1);
+        constexpr sol::IMemoryPool::CreateInfo info{.createFlags          = 0,
+                                                    .bufferUsage          = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                    .memoryUsage          = VMA_MEMORY_USAGE_AUTO,
+                                                    .requiredMemoryFlags  = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                                    .preferredMemoryFlags = 0,
+                                                    .allocationFlags      = 0,
+                                                    .blockSize            = 1024ull * 1024ull,
+                                                    .minBlocks            = 0,
+                                                    .maxBlocks            = 1};
+        pool = &memoryManager->createFreeAtOnceMemoryPool("pool", info);
     });
 
     compareEQ(sol::IMemoryPool::Capabilities::None, pool->getCapabilities());

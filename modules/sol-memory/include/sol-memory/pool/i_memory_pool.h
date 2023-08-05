@@ -37,21 +37,64 @@ namespace sol
         using IBufferAllocator::allocateBuffer;
 
         ////////////////////////////////////////////////////////////////
+        // Types.
+        ////////////////////////////////////////////////////////////////
+
+        struct CreateInfo
+        {
+            /**
+             * \brief Pool create flags.
+             */
+            VmaPoolCreateFlags createFlags = 0;
+
+            /**
+             * \brief Buffer usage flags.
+             */
+            VkBufferUsageFlags bufferUsage = 0;
+
+            /**
+             * \brief Memory usage flags.
+             */
+            VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_AUTO;
+
+            /**
+             * \brief Required memory property flags.
+             */
+            VkMemoryPropertyFlags requiredMemoryFlags = 0;
+
+            /**
+             * \brief Preferred memory property flags.
+             */
+            VkMemoryPropertyFlags preferredMemoryFlags = 0;
+
+            /**
+             * \brief Allocation create flags.
+             */
+            VmaAllocationCreateFlags allocationFlags = 0;
+
+            /**
+             * \brief Size of memory blocks in bytes.
+             */
+            size_t blockSize = 0;
+
+            /**
+             * \brief Minimum number of memory blocks.If > 0, these blocks are preallocated.
+             */
+            size_t minBlocks = 0;
+
+            /**
+             * \brief Maximum number of memory blocks.
+             */
+            size_t maxBlocks = 0;
+        };
+
+        ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         IMemoryPool() = delete;
 
-        IMemoryPool(MemoryManager&        memoryManager,
-                    std::string           poolName,
-                    VmaPoolCreateFlags    createFlags,
-                    VkBufferUsageFlags    bufUsage,
-                    VmaMemoryUsage        memUsage,
-                    VkMemoryPropertyFlags requiredMemFlags,
-                    VkMemoryPropertyFlags preferredMemFlags,
-                    size_t                blckSize,
-                    size_t                minBlcks,
-                    size_t                maxBlcks);
+        IMemoryPool(MemoryManager& memoryManager, std::string poolName, CreateInfo createInfo, VulkanMemoryPoolPtr memoryPool);
 
         IMemoryPool(const IMemoryPool&) = delete;
 
@@ -62,6 +105,8 @@ namespace sol
         IMemoryPool& operator=(const IMemoryPool&) = delete;
 
         IMemoryPool& operator=(IMemoryPool&&) noexcept = delete;
+
+        [[nodiscard]] static VulkanMemoryPoolPtr create(VulkanMemoryAllocator& allocator, const CreateInfo& info);
 
         ////////////////////////////////////////////////////////////////
         // Getters.
@@ -76,6 +121,8 @@ namespace sol
         [[nodiscard]] VkMemoryPropertyFlags getRequiredMemoryFlags() const noexcept;
 
         [[nodiscard]] VkMemoryPropertyFlags getPreferredMemoryFlags() const noexcept;
+
+        [[nodiscard]] VmaAllocationCreateFlags getAllocationFlags() const noexcept;
 
         [[nodiscard]] size_t getBlockSize() const noexcept;
 
@@ -126,32 +173,12 @@ namespace sol
         [[nodiscard]] MemoryPoolBufferPtr allocateMemoryPoolBuffer(size_t size, bool waitOnOutOfMemory);
 
         ////////////////////////////////////////////////////////////////
-        // Initialization.
-        ////////////////////////////////////////////////////////////////
-
-        void initialize();
-
-        ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
         std::string name;
 
-        VmaPoolCreateFlags flags = 0;
-
-        VkBufferUsageFlags bufferUsage;
-
-        VmaMemoryUsage memoryUsage;
-
-        VkMemoryPropertyFlags requiredMemoryFlags;
-
-        VkMemoryPropertyFlags preferredMemoryFlags;
-
-        size_t blockSize;
-
-        size_t minBlocks;
-
-        size_t maxBlocks;
+        CreateInfo info;
 
     protected:
         VulkanMemoryPoolPtr pool;

@@ -9,21 +9,18 @@
 #include <vector>
 
 ////////////////////////////////////////////////////////////////
-// External includes.
-////////////////////////////////////////////////////////////////
-
-#include <vma/vk_mem_alloc.h>
-
-////////////////////////////////////////////////////////////////
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
 #include "sol-core/fwd.h"
+#include "sol-core/vulkan_memory_pool.h"
+#include "sol-error/sol_error.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
+#include "pool/i_memory_pool.h"
 #include "sol-memory/fwd.h"
 #include "sol-memory/i_buffer_allocator.h"
 
@@ -88,6 +85,8 @@ namespace sol
 
         [[nodiscard]] Capabilities getCapabilities() const noexcept override;
 
+        [[nodiscard]] IMemoryPool& getMemoryPool(const std::string& name);
+
         ////////////////////////////////////////////////////////////////
         // Setters.
         ////////////////////////////////////////////////////////////////
@@ -115,97 +114,61 @@ namespace sol
          * \tparam Pool Pool type. Must derive from IMemoryPool.
          * \tparam Args Additional parameter types passed to the constructor.
          * \param name Unique pool name.
+         * \param info Creation parameters.
          * \param args Additional parameter values passed to the constructor.
          * \return New memory pool.
          */
         template<std::derived_from<IMemoryPool> Pool, typename... Args>
-            requires std::constructible_from<Pool, MemoryManager&, std::string, Args...>
-        Pool& createMemoryPool(const std::string& name, Args&&... args)
+            requires std::constructible_from<Pool,
+                                             MemoryManager&,
+                                             std::string,
+                                             const IMemoryPool::CreateInfo&,
+                                             VulkanMemoryPoolPtr,
+                                             Args...>
+        Pool& createMemoryPool(const std::string& name, const IMemoryPool::CreateInfo& info, Args&&... args)
         {
-            auto  pool    = std::make_unique<Pool>(*this, name, std::forward<Args>(args)...);
+            auto vkPool = IMemoryPool::create(*allocator, info);
+            auto pool =
+              std::make_unique<Pool>(*this, name, info, std::move(vkPool), std::forward<Args>(args)...);
             auto& poolRef = *pool;
-            createMemoryPoolImpl(name, std::move(pool));
+            if (const auto [_, inserted] = memoryPools.try_emplace(name, std::move(pool)); !inserted)
+                throw SolError(std::format("Cannot create new memory pool. Name {} is already in use.", name));
+
             return poolRef;
         }
 
         /**
          * \brief Create a new FreeAtOnceMemoryPool.
          * \param name Unique pool name.
-         * \param bufferUsage Buffer usage flags.
-         * \param memoryUsage Memory usage flags.
-         * \param blockSize Size of memory blocks in bytes.
-         * \param minBlocks Minimum number of memory blocks. If > 0, these blocks are preallocated.
-         * \param maxBlocks Maximum number of memory blocks.
+         * \param createInfo Creation parameters.
          * \return New FreeAtOnceMemoryPool.
          */
-        FreeAtOnceMemoryPool& createFreeAtOnceMemoryPool(const std::string&    name,
-                                                         VkBufferUsageFlags    bufferUsage,
-                                                         VmaMemoryUsage        memoryUsage,
-                                                         VkMemoryPropertyFlags requiredMemoryFlags,
-                                                         VkMemoryPropertyFlags preferredMemoryFlags,
-                                                         size_t                blockSize,
-                                                         size_t                minBlocks,
-                                                         size_t                maxBlocks);
+        FreeAtOnceMemoryPool& createFreeAtOnceMemoryPool(const std::string& name, IMemoryPool::CreateInfo createInfo);
 
         /**
          * \brief Create a new NonLinearMemoryPool.
          * \param name Unique pool name.
-         * \param bufferUsage Buffer usage flags.
-         * \param memoryUsage Memory usage flags.
-         * \param blockSize Size of memory blocks in bytes.
-         * \param minBlocks Minimum number of memory blocks. If > 0, these blocks are preallocated.
-         * \param maxBlocks Maximum number of memory blocks.
+         * \param createInfo Creation parameters.
          * \return New NonLinearMemoryPool.
          */
-        NonLinearMemoryPool& createNonLinearMemoryPool(const std::string&    name,
-                                                       VkBufferUsageFlags    bufferUsage,
-                                                       VmaMemoryUsage        memoryUsage,
-                                                       VkMemoryPropertyFlags requiredMemoryFlags,
-                                                       VkMemoryPropertyFlags preferredMemoryFlags,
-                                                       size_t                blockSize,
-                                                       size_t                minBlocks,
-                                                       size_t                maxBlocks);
+        NonLinearMemoryPool& createNonLinearMemoryPool(const std::string& name, IMemoryPool::CreateInfo createInfo);
 
         /**
          * \brief Create a new RingBufferMemoryPool.
          * \param name Unique pool name.
-         * \param bufferUsage Buffer usage flags.
-         * \param memoryUsage Memory usage flags.
-         * \param blockSize Size of memory block in bytes.
-         * \param preallocate Preallocate the memory block.
+         * \param createInfo Creation parameters.
          * \return New RingBufferMemoryPool.
          */
-        RingBufferMemoryPool& createRingBufferMemoryPool(const std::string&    name,
-                                                         VkBufferUsageFlags    bufferUsage,
-                                                         VmaMemoryUsage        memoryUsage,
-                                                         VkMemoryPropertyFlags requiredMemoryFlags,
-                                                         VkMemoryPropertyFlags preferredMemoryFlags,
-                                                         size_t                blockSize,
-                                                         bool                  preallocate);
+        RingBufferMemoryPool& createRingBufferMemoryPool(const std::string& name, IMemoryPool::CreateInfo createInfo);
 
         /**
          * \brief Create a new StackMemoryPool.
          * \param name Unique pool name.
-         * \param bufferUsage Buffer usage flags.
-         * \param memoryUsage Memory usage flags.
-         * \param blockSize Size of memory blocks in bytes.
-         * \param minBlocks Minimum number of memory blocks. If > 0, these blocks are preallocated.
-         * \param maxBlocks Maximum number of memory blocks.
+         * \param createInfo Creation parameters.
          * \return New StackMemoryPool.
          */
-        StackMemoryPool& createStackMemoryPool(const std::string&    name,
-                                               VkBufferUsageFlags    bufferUsage,
-                                               VmaMemoryUsage        memoryUsage,
-                                               VkMemoryPropertyFlags requiredMemoryFlags,
-                                               VkMemoryPropertyFlags preferredMemoryFlags,
-                                               size_t                blockSize,
-                                               size_t                minBlocks,
-                                               size_t                maxBlocks);
+        StackMemoryPool& createStackMemoryPool(const std::string& name, IMemoryPool::CreateInfo createInfo);
 
-    private:
-        void createMemoryPoolImpl(const std::string& name, IMemoryPoolPtr pool);
-
-    public:
         ////////////////////////////////////////////////////////////////
         // Stats.
         ////////////////////////////////////////////////////////////////

@@ -26,24 +26,11 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    RingBufferMemoryPool::RingBufferMemoryPool(MemoryManager&              memoryManager,
-                                               std::string                 poolName,
-                                               const VkBufferUsageFlags    bufferUsage,
-                                               const VmaMemoryUsage        memoryUsage,
-                                               const VkMemoryPropertyFlags requiredMemFlags,
-                                               const VkMemoryPropertyFlags preferredMemFlags,
-                                               const size_t                blockSize,
-                                               const bool                  preallocate) :
-        IMemoryPool(memoryManager,
-                    std::move(poolName),
-                    VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT,
-                    bufferUsage,
-                    memoryUsage,
-                    requiredMemFlags,
-                    preferredMemFlags,
-                    blockSize,
-                    preallocate ? 1 : 0,
-                    1)
+    RingBufferMemoryPool::RingBufferMemoryPool(MemoryManager&      memoryManager,
+                                               std::string         poolName,
+                                               const CreateInfo&   createInfo,
+                                               VulkanMemoryPoolPtr memoryPool) :
+        IMemoryPool(memoryManager, std::move(poolName), createInfo, std::move(memoryPool))
     {
     }
 

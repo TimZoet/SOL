@@ -57,6 +57,11 @@ namespace sol
             VkMemoryPropertyFlags preferredFlags = 0;
 
             /**
+             * \brief Allocation creation flags.
+             */
+            VmaAllocationCreateFlags allocationFlags = 0;
+
+            /**
              * \brief Size of memory blocks (in bytes).
              */
             size_t blockSize = 0;

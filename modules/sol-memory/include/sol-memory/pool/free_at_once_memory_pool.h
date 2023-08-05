@@ -37,15 +37,10 @@ namespace sol
 
         FreeAtOnceMemoryPool() = delete;
 
-        FreeAtOnceMemoryPool(MemoryManager&        memoryManager,
-                             std::string           poolName,
-                             VkBufferUsageFlags    bufferUsage,
-                             VmaMemoryUsage        memoryUsage,
-                             VkMemoryPropertyFlags requiredMemFlags,
-                             VkMemoryPropertyFlags preferredMemFlags,
-                             size_t                blockSize,
-                             size_t                minBlocks,
-                             size_t                maxBlocks);
+        FreeAtOnceMemoryPool(MemoryManager&      memoryManager,
+                             std::string         poolName,
+                             const CreateInfo&   createInfo,
+                             VulkanMemoryPoolPtr memoryPool);
 
         FreeAtOnceMemoryPool(const FreeAtOnceMemoryPool&) = delete;
 

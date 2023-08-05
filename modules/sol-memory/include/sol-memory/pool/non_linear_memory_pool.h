@@ -37,15 +37,10 @@ namespace sol
 
         NonLinearMemoryPool() = delete;
 
-        NonLinearMemoryPool(MemoryManager&        memoryManager,
-                            std::string           poolName,
-                            VkBufferUsageFlags    bufferUsage,
-                            VmaMemoryUsage        memoryUsage,
-                            VkMemoryPropertyFlags requiredMemFlags,
-                            VkMemoryPropertyFlags preferredMemFlags,
-                            size_t                blockSize,
-                            size_t                minBlocks,
-                            size_t                maxBlocks);
+        NonLinearMemoryPool(MemoryManager&      memoryManager,
+                            std::string         poolName,
+                            const CreateInfo&   createInfo,
+                            VulkanMemoryPoolPtr memoryPool);
 
         NonLinearMemoryPool(const NonLinearMemoryPool&) = delete;
 

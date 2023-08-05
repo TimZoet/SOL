@@ -38,14 +38,10 @@ namespace sol
 
         RingBufferMemoryPool() = delete;
 
-        RingBufferMemoryPool(MemoryManager&        memoryManager,
-                             std::string           poolName,
-                             VkBufferUsageFlags    bufferUsage,
-                             VmaMemoryUsage        memoryUsage,
-                             VkMemoryPropertyFlags requiredMemFlags,
-                             VkMemoryPropertyFlags preferredMemFlags,
-                             size_t                blockSize,
-                             bool                  preallocate);
+        RingBufferMemoryPool(MemoryManager&      memoryManager,
+                             std::string         poolName,
+                             const CreateInfo&   createInfo,
+                             VulkanMemoryPoolPtr memoryPool);
 
         RingBufferMemoryPool(const RingBufferMemoryPool&) = delete;
 

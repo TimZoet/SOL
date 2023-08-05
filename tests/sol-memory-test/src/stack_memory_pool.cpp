@@ -31,8 +31,16 @@ void StackMemoryPool::operator()()
     // Create a memory pool with 2 blocks of 1MiB.
     sol::StackMemoryPool* pool = nullptr;
     expectNoThrow([&] {
-        pool = &memoryManager->createStackMemoryPool(
-          "pool", VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO, 0, 0, 1024ull * 1024, 0, 2);
+        constexpr sol::IMemoryPool::CreateInfo info{.createFlags          = 0,
+                                                    .bufferUsage          = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                    .memoryUsage          = VMA_MEMORY_USAGE_AUTO,
+                                                    .requiredMemoryFlags  = 0,
+                                                    .preferredMemoryFlags = 0,
+                                                    .allocationFlags      = 0,
+                                                    .blockSize            = 1024ull * 1024ull,
+                                                    .minBlocks            = 0,
+                                                    .maxBlocks            = 2};
+        pool = &memoryManager->createStackMemoryPool("pool", info);
     });
 
     compareEQ(sol::IMemoryPool::Capabilities::None, pool->getCapabilities());

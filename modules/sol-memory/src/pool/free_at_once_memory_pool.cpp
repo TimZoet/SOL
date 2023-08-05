@@ -27,25 +27,11 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    FreeAtOnceMemoryPool::FreeAtOnceMemoryPool(MemoryManager&              memoryManager,
-                                               std::string                 poolName,
-                                               const VkBufferUsageFlags    bufferUsage,
-                                               const VmaMemoryUsage        memoryUsage,
-                                               const VkMemoryPropertyFlags requiredMemFlags,
-                                               const VkMemoryPropertyFlags preferredMemFlags,
-                                               const size_t                blockSize,
-                                               const size_t                minBlocks,
-                                               const size_t                maxBlocks) :
-        IMemoryPool(memoryManager,
-                    std::move(poolName),
-                    VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT,
-                    bufferUsage,
-                    memoryUsage,
-                    requiredMemFlags,
-                    preferredMemFlags,
-                    blockSize,
-                    minBlocks,
-                    maxBlocks)
+    FreeAtOnceMemoryPool::FreeAtOnceMemoryPool(MemoryManager&      memoryManager,
+                                               std::string         poolName,
+                                               const CreateInfo&   createInfo,
+                                               VulkanMemoryPoolPtr memoryPool) :
+        IMemoryPool(memoryManager, std::move(poolName), createInfo, std::move(memoryPool))
     {
     }
 
