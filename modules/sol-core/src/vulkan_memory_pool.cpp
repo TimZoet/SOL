@@ -43,9 +43,11 @@ namespace sol
         // Query for appropriate memory type.
         uint32_t                memIndex = 0;
         VmaAllocationCreateInfo aInfo    = {};
+        aInfo.flags                      = settings.allocationFlags;
         aInfo.usage                      = settings.memoryUsage;
         aInfo.requiredFlags              = settings.requiredFlags;
         aInfo.preferredFlags             = settings.preferredFlags;
+
         if (settings.bufferUsage)
         {
             VkBufferCreateInfo bInfo{};

@@ -40,12 +40,12 @@ namespace sol
     // Allocations.
     ////////////////////////////////////////////////////////////////
 
-    IBufferPtr IBufferAllocator::allocateBuffer(const Allocation& alloc) { return allocateBufferImpl(alloc); }
-
-    IBufferPtr IBufferAllocator::allocateBuffer(const AllocationAligned& alloc)
+    IBufferPtr IBufferAllocator::allocateBuffer(const AllocationInfo& alloc)
     {
-        if (none(getCapabilities() & Capabilities::Alignment))
-            throw SolError("This buffer allocator does not support aligned allocation.");
+        if (alloc.alignment > 0 && none(getCapabilities() & Capabilities::Alignment))
+            throw SolError(
+              std::format("Requested alignment is {}, but this buffer allocator does not support aligned allocation.",
+                          alloc.alignment));
         return allocateBufferImpl(alloc);
     }
 }  // namespace sol

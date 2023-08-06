@@ -37,15 +37,10 @@ namespace sol
 
         NonLinearMemoryPool() = delete;
 
-        NonLinearMemoryPool(MemoryManager&        memoryManager,
-                            std::string           poolName,
-                            VkBufferUsageFlags    bufferUsage,
-                            VmaMemoryUsage        memoryUsage,
-                            VkMemoryPropertyFlags requiredMemFlags,
-                            VkMemoryPropertyFlags preferredMemFlags,
-                            size_t                blockSize,
-                            size_t                minBlocks,
-                            size_t                maxBlocks);
+        NonLinearMemoryPool(MemoryManager&      memoryManager,
+                            std::string         poolName,
+                            const CreateInfo&   createInfo,
+                            VulkanMemoryPoolPtr memoryPool);
 
         NonLinearMemoryPool(const NonLinearMemoryPool&) = delete;
 
@@ -69,7 +64,7 @@ namespace sol
 
     protected:
         [[nodiscard]] std::expected<MemoryPoolBufferPtr, std::unique_ptr<std::latch>>
-          allocateMemoryPoolBufferImpl(size_t size, bool waitOnOutOfMemory) override;
+          allocateMemoryPoolBufferImpl(const AllocationInfo& alloc, bool waitOnOutOfMemory) override;
 
     private:
         void releaseBuffer(const MemoryPoolBuffer& buffer) override;

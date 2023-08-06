@@ -59,27 +59,16 @@ namespace sol
             SubAllocation = 8,
         };
 
-        struct Allocation
+        struct AllocationInfo
         {
-            VkDeviceSize             size                 = 0;
+            size_t                   size                 = 0;
             VkBufferUsageFlags       bufferUsage          = 0;
             VkSharingMode            sharingMode          = VK_SHARING_MODE_EXCLUSIVE;
             VmaMemoryUsage           memoryUsage          = VMA_MEMORY_USAGE_AUTO;
             VkMemoryPropertyFlags    requiredMemoryFlags  = 0;
             VkMemoryPropertyFlags    preferredMemoryFlags = 0;
             VmaAllocationCreateFlags allocationFlags      = 0;
-        };
-
-        struct AllocationAligned
-        {
-            VkDeviceSize             size                 = 0;
-            VkBufferUsageFlags       bufferUsage          = 0;
-            VkSharingMode            sharingMode          = VK_SHARING_MODE_EXCLUSIVE;
-            VmaMemoryUsage           memoryUsage          = VMA_MEMORY_USAGE_AUTO;
-            VkMemoryPropertyFlags    requiredMemoryFlags  = 0;
-            VkMemoryPropertyFlags    preferredMemoryFlags = 0;
-            VmaAllocationCreateFlags allocationFlags      = 0;
-            VkDeviceSize             alignment            = 0;
+            size_t                   alignment            = 0;
         };
 
         ////////////////////////////////////////////////////////////////
@@ -118,14 +107,10 @@ namespace sol
         // Allocations.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] IBufferPtr allocateBuffer(const Allocation& alloc);
-
-        [[nodiscard]] IBufferPtr allocateBuffer(const AllocationAligned& alloc);
+        [[nodiscard]] IBufferPtr allocateBuffer(const AllocationInfo& alloc);
 
     protected:
-        [[nodiscard]] virtual IBufferPtr allocateBufferImpl(const Allocation& alloc) = 0;
-
-        [[nodiscard]] virtual IBufferPtr allocateBufferImpl(const AllocationAligned& alloc) = 0;
+        [[nodiscard]] virtual IBufferPtr allocateBufferImpl(const AllocationInfo& alloc) = 0;
 
     private:
         ////////////////////////////////////////////////////////////////

@@ -20,9 +20,6 @@
 
 void RingBufferMemoryPool::operator()()
 {
-    // NOTE: Always allocating just a little bit below what's indicated. Memory requirements for a buffer
-    // tend to be higher since the driver adds some of its own data for bookkeeping.
-
     sol::VulkanMemoryAllocator::Settings settings;
     settings.device          = getDevice();
     settings.flags           = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
@@ -37,45 +34,82 @@ void RingBufferMemoryPool::operator()()
     // Create a memory pool with 1MiB.
     sol::RingBufferMemoryPool* pool = nullptr;
     expectNoThrow([&] {
-        pool = &memoryManager->createRingBufferMemoryPool(
-          "pool", VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO, 0, 0, 1024ull * 1024, false);
+        constexpr sol::IMemoryPool::CreateInfo info{.createFlags          = 0,
+                                                    .bufferUsage          = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                    .memoryUsage          = VMA_MEMORY_USAGE_AUTO,
+                                                    .requiredMemoryFlags  = 0,
+                                                    .preferredMemoryFlags = 0,
+                                                    .allocationFlags      = 0,
+                                                    .blockSize            = 1024ull * 1024ull,
+                                                    .minBlocks            = 0,
+                                                    .maxBlocks            = 1};
+        pool = &memoryManager->createRingBufferMemoryPool("pool", info);
     });
 
     compareEQ(sol::IMemoryPool::Capabilities::Wait, pool->getCapabilities());
 
     // Two allocations of quarter block size.
     std::vector<sol::MemoryPoolBufferPtr> buffers;
-    expectNoThrow([&] { buffers.emplace_back(pool->allocateBuffer(1024ull * 250)); });
-    expectNoThrow([&] { buffers.emplace_back(pool->allocateBuffer(1024ull * 250)); });
-    compareEQ(1024ull * 250, buffers[0]->getBufferSize());
-    compareEQ(1024ull * 250, buffers[1]->getBufferSize());
+    expectNoThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 256ull, .bufferUsage = 0, .alignment = 0};
+        buffers.emplace_back(pool->allocateBuffer(alloc));
+    });
+    expectNoThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 256ull, .bufferUsage = 0, .alignment = 0};
+        buffers.emplace_back(pool->allocateBuffer(alloc));
+    });
+    compareEQ(1024ull * 256, buffers[0]->getBufferSize());
+    compareEQ(1024ull * 256, buffers[1]->getBufferSize());
 
     // Allocation larger than block size.
-    expectThrow([&] { static_cast<void>(pool->allocateBuffer(1024ull * 2048)); });
+    expectThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 2048ull, .bufferUsage = 0, .alignment = 0};
+        static_cast<void>(pool->allocateBuffer(alloc));
+    });
 
     // Fill up remaining blocks.
-    expectNoThrow([&] { buffers.emplace_back(pool->allocateBuffer(1024ull * 250)); });
-    expectNoThrow([&] { buffers.emplace_back(pool->allocateBuffer(1024ull * 250)); });
+    expectNoThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 256ull, .bufferUsage = 0, .alignment = 0};
+        buffers.emplace_back(pool->allocateBuffer(alloc));
+    });
+    expectNoThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 256ull, .bufferUsage = 0, .alignment = 0};
+        buffers.emplace_back(pool->allocateBuffer(alloc));
+    });
 
     // Clearing the first buffer should open up space again.
     expectNoThrow([&] { buffers[0].reset(); });
-    expectNoThrow([&] { buffers[0] = pool->allocateBuffer(1024ull * 250); });
+    expectNoThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 256ull, .bufferUsage = 0, .alignment = 0};
+        buffers[0] = pool->allocateBuffer(alloc);
+    });
 
     // Clearing the third buffer opens up space, but in the wrong place.
     expectNoThrow([&] { buffers[2].reset(); });
-    expectThrow([&] { buffers[2] = pool->allocateBuffer(1024ull * 250); });
+    expectThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 256ull, .bufferUsage = 0, .alignment = 0};
+        buffers[2] = pool->allocateBuffer(alloc);
+    });
 
     // Clearing the second buffer should open up contiguous space at the correct offset again.
     expectNoThrow([&] { buffers[1].reset(); });
-    expectNoThrow([&] { buffers[1] = pool->allocateBuffer(1024ull * 250); });
-    expectNoThrow([&] { buffers[2] = pool->allocateBuffer(1024ull * 250); });
+    expectNoThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 256ull, .bufferUsage = 0, .alignment = 0};
+        buffers[1] = pool->allocateBuffer(alloc);
+    });
+    expectNoThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 256ull, .bufferUsage = 0, .alignment = 0};
+        buffers[2] = pool->allocateBuffer(alloc);
+    });
 
     // Clear all memory.
     expectNoThrow([&] { buffers.clear(); });
 
     // Fill up memory.
     expectNoThrow([&] {
-        for (size_t i = 0; i < 8; i++) buffers.emplace_back(pool->allocateBuffer(1024ull * 120));
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 128ull, .bufferUsage = 0, .alignment = 0};
+
+        for (size_t i = 0; i < 8; i++) buffers.emplace_back(pool->allocateBuffer(alloc));
     });
 
     // Running a bunch of threads in parallel with std::async. They will release and allocate
@@ -89,8 +123,10 @@ void RingBufferMemoryPool::operator()()
             futures.emplace_back(std::async(
               std::launch::async,
               [&](const size_t index) {
+                  constexpr sol::IMemoryPool::AllocationInfo alloc{
+                    .size = 1024ull * 128ull, .bufferUsage = 0, .alignment = 0};
                   buffers[index].reset();
-                  buffers[index] = pool->allocateBufferWithWait(1024ull * 120);
+                  buffers[index] = pool->allocateBufferWithWait(alloc);
               },
               7 - i));
 

@@ -115,6 +115,14 @@ namespace sol
 
     IBufferAllocator::Capabilities MemoryManager::getCapabilities() const noexcept { return Capabilities::Alignment; }
 
+    IMemoryPool& MemoryManager::getMemoryPool(const std::string& name)
+    {
+        const auto it = memoryPools.find(name);
+        if (it == memoryPools.end())
+            throw SolError(std::format("A memory pool with this name ({}) does not exist.", name));
+        return *it->second;
+    }
+
     ////////////////////////////////////////////////////////////////
     // Initialization.
     ////////////////////////////////////////////////////////////////
@@ -179,22 +187,7 @@ namespace sol
     // Allocations.
     ////////////////////////////////////////////////////////////////
 
-    IBufferPtr MemoryManager::allocateBufferImpl(const Allocation& alloc)
-    {
-        VulkanBuffer::Settings settings;
-        settings.device             = getDevice();
-        settings.size               = alloc.size;
-        settings.bufferUsage        = alloc.bufferUsage;
-        settings.sharingMode        = alloc.sharingMode;
-        settings.allocator          = getAllocator();
-        settings.vma.memoryUsage    = alloc.memoryUsage;
-        settings.vma.requiredFlags  = alloc.requiredMemoryFlags;
-        settings.vma.preferredFlags = alloc.preferredMemoryFlags;
-        settings.vma.flags          = alloc.allocationFlags;
-        return std::make_unique<Buffer>(*this, VulkanBuffer::create(settings));
-    }
-
-    IBufferPtr MemoryManager::allocateBufferImpl(const AllocationAligned& alloc)
+    IBufferPtr MemoryManager::allocateBufferImpl(const AllocationInfo& alloc)
     {
         VulkanBuffer::Settings settings;
         settings.device             = getDevice();
@@ -214,64 +207,38 @@ namespace sol
     // Memory pools.
     ////////////////////////////////////////////////////////////////
 
-    FreeAtOnceMemoryPool& MemoryManager::createFreeAtOnceMemoryPool(const std::string&          name,
-                                                                    const VkBufferUsageFlags    bufferUsage,
-                                                                    const VmaMemoryUsage        memoryUsage,
-                                                                    const VkMemoryPropertyFlags requiredMemoryFlags,
-                                                                    const VkMemoryPropertyFlags preferredMemoryFlags,
-                                                                    const size_t                blockSize,
-                                                                    const size_t                minBlocks,
-                                                                    const size_t                maxBlocks)
+    FreeAtOnceMemoryPool& MemoryManager::createFreeAtOnceMemoryPool(const std::string&      name,
+                                                                    IMemoryPool::CreateInfo createInfo)
     {
-        assert(minBlocks <= maxBlocks);
-        return createMemoryPool<FreeAtOnceMemoryPool>(
-          name, bufferUsage, memoryUsage, requiredMemoryFlags, preferredMemoryFlags, blockSize, minBlocks, maxBlocks);
+        assert(createInfo.minBlocks <= createInfo.maxBlocks);
+        assert(createInfo.maxBlocks > 0);
+        createInfo.createFlags |= VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT;
+        return createMemoryPool<FreeAtOnceMemoryPool>(name, createInfo);
     }
 
-    NonLinearMemoryPool& MemoryManager::createNonLinearMemoryPool(const std::string&          name,
-                                                                  const VkBufferUsageFlags    bufferUsage,
-                                                                  const VmaMemoryUsage        memoryUsage,
-                                                                  const VkMemoryPropertyFlags requiredMemoryFlags,
-                                                                  const VkMemoryPropertyFlags preferredMemoryFlags,
-                                                                  const size_t                blockSize,
-                                                                  const size_t                minBlocks,
-                                                                  const size_t                maxBlocks)
+    NonLinearMemoryPool& MemoryManager::createNonLinearMemoryPool(const std::string&      name,
+                                                                  IMemoryPool::CreateInfo createInfo)
     {
-        assert(minBlocks <= maxBlocks);
-        return createMemoryPool<NonLinearMemoryPool>(
-          name, bufferUsage, memoryUsage, requiredMemoryFlags, preferredMemoryFlags, blockSize, minBlocks, maxBlocks);
+        assert(createInfo.minBlocks <= createInfo.maxBlocks);
+        assert(createInfo.maxBlocks > 0);
+        return createMemoryPool<NonLinearMemoryPool>(name, createInfo);
     }
 
-    RingBufferMemoryPool& MemoryManager::createRingBufferMemoryPool(const std::string&          name,
-                                                                    const VkBufferUsageFlags    bufferUsage,
-                                                                    const VmaMemoryUsage        memoryUsage,
-                                                                    const VkMemoryPropertyFlags requiredMemoryFlags,
-                                                                    const VkMemoryPropertyFlags preferredMemoryFlags,
-                                                                    const size_t                blockSize,
-                                                                    const bool                  preallocate)
+    RingBufferMemoryPool& MemoryManager::createRingBufferMemoryPool(const std::string&      name,
+                                                                    IMemoryPool::CreateInfo createInfo)
     {
-        return createMemoryPool<RingBufferMemoryPool>(
-          name, bufferUsage, memoryUsage, requiredMemoryFlags, preferredMemoryFlags, blockSize, preallocate);
+        assert(createInfo.minBlocks <= 1);
+        assert(createInfo.maxBlocks == 1);
+        createInfo.createFlags |= VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT;
+        return createMemoryPool<RingBufferMemoryPool>(name, createInfo);
     }
 
-    StackMemoryPool& MemoryManager::createStackMemoryPool(const std::string&          name,
-                                                          const VkBufferUsageFlags    bufferUsage,
-                                                          const VmaMemoryUsage        memoryUsage,
-                                                          const VkMemoryPropertyFlags requiredMemoryFlags,
-                                                          const VkMemoryPropertyFlags preferredMemoryFlags,
-                                                          const size_t                blockSize,
-                                                          const size_t                minBlocks,
-                                                          const size_t                maxBlocks)
+    StackMemoryPool& MemoryManager::createStackMemoryPool(const std::string& name, IMemoryPool::CreateInfo createInfo)
     {
-        assert(minBlocks <= maxBlocks);
-        return createMemoryPool<StackMemoryPool>(
-          name, bufferUsage, memoryUsage, requiredMemoryFlags, preferredMemoryFlags, blockSize, minBlocks, maxBlocks);
-    }
-
-    void MemoryManager::createMemoryPoolImpl(const std::string& name, IMemoryPoolPtr pool)
-    {
-        if (const auto [_, inserted] = memoryPools.try_emplace(name, std::move(pool)); !inserted)
-            throw SolError(std::format("Cannot create new memory pool. Name {} is already in use.", name));
+        assert(createInfo.minBlocks <= createInfo.maxBlocks);
+        assert(createInfo.maxBlocks > 0);
+        createInfo.createFlags |= VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT;
+        return createMemoryPool<StackMemoryPool>(name, createInfo);
     }
 
     ////////////////////////////////////////////////////////////////

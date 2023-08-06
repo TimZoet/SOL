@@ -14,9 +14,6 @@
 
 void IMemoryPool::operator()()
 {
-    // NOTE: Always allocating just a little bit below what's indicated. Memory requirements for a buffer
-    // tend to be higher since the driver adds some of its own data for bookkeeping.
-
     // NOTE: IMemoryPool is abstract, so using FreeAtOnceMemoryPool instead to test it.
 
     sol::VulkanMemoryAllocator::Settings settings;
@@ -33,66 +30,70 @@ void IMemoryPool::operator()()
     // Create a memory pool with 1 block of 1MiB.
     sol::FreeAtOnceMemoryPool* pool = nullptr;
     expectNoThrow([&] {
-        pool = &memoryManager->createFreeAtOnceMemoryPool("pool",
-                                                          VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                          VMA_MEMORY_USAGE_AUTO,
-                                                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                                          0,
-                                                          1024ull * 1024,
-                                                          0,
-                                                          1);
+        constexpr sol::IMemoryPool::CreateInfo info{.createFlags          = 0,
+                                                    .bufferUsage          = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                    .memoryUsage          = VMA_MEMORY_USAGE_AUTO,
+                                                    .requiredMemoryFlags  = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                                    .preferredMemoryFlags = 0,
+                                                    .allocationFlags      = 0,
+                                                    .blockSize            = 1024ull * 1024ull,
+                                                    .minBlocks            = 0,
+                                                    .maxBlocks            = 1};
+        pool = &memoryManager->createFreeAtOnceMemoryPool("pool", info);
     });
 
     compareEQ(sol::IMemoryPool::Capabilities::None, pool->getCapabilities());
 
     // Try base allocation method.
     expectNoThrow([&] {
-        constexpr sol::IBufferAllocator::Allocation alloc{.size                 = 1024ull,
-                                                          .bufferUsage          = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                          .sharingMode          = VK_SHARING_MODE_EXCLUSIVE,
-                                                          .memoryUsage          = VMA_MEMORY_USAGE_AUTO,
-                                                          .requiredMemoryFlags  = 0,
-                                                          .preferredMemoryFlags = 0,
-                                                          .allocationFlags      = 0};
+        constexpr sol::IBufferAllocator::AllocationInfo alloc{.size                = 1024ull,
+                                                              .bufferUsage         = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                              .sharingMode         = VK_SHARING_MODE_EXCLUSIVE,
+                                                              .memoryUsage         = VMA_MEMORY_USAGE_AUTO,
+                                                              .requiredMemoryFlags = 0,
+                                                              .preferredMemoryFlags = 0,
+                                                              .allocationFlags      = 0,
+                                                              .alignment            = 0};
         static_cast<void>(pool->allocateBuffer(alloc));
     });
 
     // Allocate with invalid buffer usage.
     expectThrow([&] {
-        constexpr sol::IBufferAllocator::Allocation alloc{.size        = 1024ull,
-                                                          .bufferUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
-                                                                         VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                                                          .sharingMode          = VK_SHARING_MODE_EXCLUSIVE,
-                                                          .memoryUsage          = VMA_MEMORY_USAGE_AUTO,
-                                                          .requiredMemoryFlags  = 0,
-                                                          .preferredMemoryFlags = 0,
-                                                          .allocationFlags      = 0};
+        constexpr sol::IBufferAllocator::AllocationInfo alloc{.size        = 1024ull,
+                                                              .bufferUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                                                             VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                                                              .sharingMode          = VK_SHARING_MODE_EXCLUSIVE,
+                                                              .memoryUsage          = VMA_MEMORY_USAGE_AUTO,
+                                                              .requiredMemoryFlags  = 0,
+                                                              .preferredMemoryFlags = 0,
+                                                              .allocationFlags      = 0,
+                                                              .alignment            = 0};
         static_cast<void>(pool->allocateBuffer(alloc));
     });
 
     // Allocate with invalid memory flags.
     expectThrow([&] {
-        constexpr sol::IBufferAllocator::Allocation alloc{.size                 = 1024ull,
-                                                          .bufferUsage          = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                          .sharingMode          = VK_SHARING_MODE_EXCLUSIVE,
-                                                          .memoryUsage          = VMA_MEMORY_USAGE_AUTO,
-                                                          .requiredMemoryFlags  = VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-                                                          .preferredMemoryFlags = 0,
-                                                          .allocationFlags      = 0};
+        constexpr sol::IBufferAllocator::AllocationInfo alloc{.size                = 1024ull,
+                                                              .bufferUsage         = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                              .sharingMode         = VK_SHARING_MODE_EXCLUSIVE,
+                                                              .memoryUsage         = VMA_MEMORY_USAGE_AUTO,
+                                                              .requiredMemoryFlags = VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+                                                              .preferredMemoryFlags = 0,
+                                                              .allocationFlags      = 0,
+                                                              .alignment            = 0};
         static_cast<void>(pool->allocateBuffer(alloc));
     });
 
     // Aligned allocation is not supported yet.
     expectThrow([&] {
-        constexpr sol::IBufferAllocator::AllocationAligned alloc{.size        = 1024ull,
-                                                                 .bufferUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                                 .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-                                                                 .memoryUsage = VMA_MEMORY_USAGE_AUTO,
-                                                                 .requiredMemoryFlags =
-                                                                   VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-                                                                 .preferredMemoryFlags = 0,
-                                                                 .allocationFlags      = 0,
-                                                                 .alignment            = 128};
+        constexpr sol::IBufferAllocator::AllocationInfo alloc{.size                = 1024ull,
+                                                              .bufferUsage         = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                              .sharingMode         = VK_SHARING_MODE_EXCLUSIVE,
+                                                              .memoryUsage         = VMA_MEMORY_USAGE_AUTO,
+                                                              .requiredMemoryFlags = VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+                                                              .preferredMemoryFlags = 0,
+                                                              .allocationFlags      = 0,
+                                                              .alignment            = 128};
         static_cast<void>(pool->allocateBuffer(alloc));
     });
 }

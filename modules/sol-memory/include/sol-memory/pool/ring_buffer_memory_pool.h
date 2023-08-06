@@ -38,14 +38,10 @@ namespace sol
 
         RingBufferMemoryPool() = delete;
 
-        RingBufferMemoryPool(MemoryManager&        memoryManager,
-                             std::string           poolName,
-                             VkBufferUsageFlags    bufferUsage,
-                             VmaMemoryUsage        memoryUsage,
-                             VkMemoryPropertyFlags requiredMemFlags,
-                             VkMemoryPropertyFlags preferredMemFlags,
-                             size_t                blockSize,
-                             bool                  preallocate);
+        RingBufferMemoryPool(MemoryManager&      memoryManager,
+                             std::string         poolName,
+                             const CreateInfo&   createInfo,
+                             VulkanMemoryPoolPtr memoryPool);
 
         RingBufferMemoryPool(const RingBufferMemoryPool&) = delete;
 
@@ -69,7 +65,7 @@ namespace sol
 
     protected:
         [[nodiscard]] std::expected<MemoryPoolBufferPtr, std::unique_ptr<std::latch>>
-          allocateMemoryPoolBufferImpl(size_t size, bool waitOnOutOfMemory) override;
+          allocateMemoryPoolBufferImpl(const AllocationInfo& alloc, bool waitOnOutOfMemory) override;
 
     private:
         void releaseBuffer(const MemoryPoolBuffer& buffer) override;

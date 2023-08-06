@@ -14,9 +14,6 @@
 
 void FreeAtOnceMemoryPool::operator()()
 {
-    // NOTE: Always allocating just a little bit below what's indicated. Memory requirements for a buffer
-    // tend to be higher since the driver adds some of its own data for bookkeeping.
-
     sol::VulkanMemoryAllocator::Settings settings;
     settings.device          = getDevice();
     settings.flags           = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
@@ -31,33 +28,68 @@ void FreeAtOnceMemoryPool::operator()()
     // Create a memory pool with 2 blocks of 1MiB.
     sol::FreeAtOnceMemoryPool* pool = nullptr;
     expectNoThrow([&] {
-        pool = &memoryManager->createFreeAtOnceMemoryPool(
-          "pool", VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO, 0, 0, 1024ull * 1024, 0, 2);
+        constexpr sol::IMemoryPool::CreateInfo info{.createFlags          = 0,
+                                                    .bufferUsage          = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                    .memoryUsage          = VMA_MEMORY_USAGE_AUTO,
+                                                    .requiredMemoryFlags  = 0,
+                                                    .preferredMemoryFlags = 0,
+                                                    .allocationFlags      = 0,
+                                                    .blockSize            = 1024ull * 1024ull,
+                                                    .minBlocks            = 0,
+                                                    .maxBlocks            = 2};
+        pool = &memoryManager->createFreeAtOnceMemoryPool("pool", info);
     });
 
     compareEQ(sol::IMemoryPool::Capabilities::None, pool->getCapabilities());
 
     // Two allocations of half block size.
     std::vector<sol::MemoryPoolBufferPtr> buffers;
-    expectNoThrow([&] { buffers.emplace_back(pool->allocateBuffer(1024ull * 500)); });
-    expectNoThrow([&] { buffers.emplace_back(pool->allocateBuffer(1024ull * 500)); });
-    compareEQ(1024ull * 500, buffers[0]->getBufferSize());
-    compareEQ(1024ull * 500, buffers[1]->getBufferSize());
+    expectNoThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
+        buffers.emplace_back(pool->allocateBuffer(alloc));
+    });
+    expectNoThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
+        buffers.emplace_back(pool->allocateBuffer(alloc));
+    });
+    compareEQ(1024ull * 512, buffers[0]->getBufferSize());
+    compareEQ(1024ull * 512, buffers[1]->getBufferSize());
 
     // Allocation larger than block size.
-    expectThrow([&] { static_cast<void>(pool->allocateBuffer(1024ull * 2048)); });
+    expectThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 2048ull, .bufferUsage = 0, .alignment = 0};
+        static_cast<void>(pool->allocateBuffer(alloc));
+    });
 
     // Fill up remaining blocks.
-    expectNoThrow([&] { buffers.emplace_back(pool->allocateBuffer(1024ull * 500)); });
-    expectNoThrow([&] { buffers.emplace_back(pool->allocateBuffer(1024ull * 500)); });
+    expectNoThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
+        buffers.emplace_back(pool->allocateBuffer(alloc));
+    });
+    expectNoThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
+        buffers.emplace_back(pool->allocateBuffer(alloc));
+    });
 
     // Any new allocation should fail as long as previous allocations were not cleared.
     expectNoThrow([&] { buffers[0].reset(); });
-    expectThrow([&] { static_cast<void>(pool->allocateBuffer(1024ull * 500)); });
+    expectThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
+        static_cast<void>(pool->allocateBuffer(alloc));
+    });
     expectNoThrow([&] { buffers[1].reset(); });
-    expectThrow([&] { static_cast<void>(pool->allocateBuffer(1024ull * 500)); });
+    expectThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
+        static_cast<void>(pool->allocateBuffer(alloc));
+    });
     expectNoThrow([&] { buffers[2].reset(); });
-    expectThrow([&] { static_cast<void>(pool->allocateBuffer(1024ull * 500)); });
+    expectThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
+        static_cast<void>(pool->allocateBuffer(alloc));
+    });
     expectNoThrow([&] { buffers[3].reset(); });
-    expectNoThrow([&] { static_cast<void>(pool->allocateBuffer(1024ull * 500)); });
+    expectNoThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
+        static_cast<void>(pool->allocateBuffer(alloc));
+    });
 }

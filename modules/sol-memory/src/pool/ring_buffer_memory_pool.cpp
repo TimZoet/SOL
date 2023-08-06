@@ -26,24 +26,11 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    RingBufferMemoryPool::RingBufferMemoryPool(MemoryManager&              memoryManager,
-                                               std::string                 poolName,
-                                               const VkBufferUsageFlags    bufferUsage,
-                                               const VmaMemoryUsage        memoryUsage,
-                                               const VkMemoryPropertyFlags requiredMemFlags,
-                                               const VkMemoryPropertyFlags preferredMemFlags,
-                                               const size_t                blockSize,
-                                               const bool                  preallocate) :
-        IMemoryPool(memoryManager,
-                    std::move(poolName),
-                    VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT,
-                    bufferUsage,
-                    memoryUsage,
-                    requiredMemFlags,
-                    preferredMemFlags,
-                    blockSize,
-                    preallocate ? 1 : 0,
-                    1)
+    RingBufferMemoryPool::RingBufferMemoryPool(MemoryManager&      memoryManager,
+                                               std::string         poolName,
+                                               const CreateInfo&   createInfo,
+                                               VulkanMemoryPoolPtr memoryPool) :
+        IMemoryPool(memoryManager, std::move(poolName), createInfo, std::move(memoryPool))
     {
     }
 
@@ -75,15 +62,17 @@ namespace sol
     }
 
     std::expected<MemoryPoolBufferPtr, std::unique_ptr<std::latch>>
-      RingBufferMemoryPool::allocateMemoryPoolBufferImpl(const size_t size, const bool waitOnOutOfMemory)
+      RingBufferMemoryPool::allocateMemoryPoolBufferImpl(const AllocationInfo& alloc, const bool waitOnOutOfMemory)
     {
         std::scoped_lock lock(mutex);
 
         VulkanBuffer::Settings settings;
-        settings.device    = getDevice();
-        settings.size      = size;
-        settings.allocator = getMemoryManager().getAllocator();
-        settings.vma.pool  = pool;
+        settings.device        = getDevice();
+        settings.size          = alloc.size;
+        settings.bufferUsage   = alloc.bufferUsage;
+        settings.allocator     = getMemoryManager().getAllocator();
+        settings.vma.pool      = pool;
+        settings.vma.alignment = alloc.alignment;
 
         // Look for empty spot.
         size_t id = 0;
@@ -107,6 +96,6 @@ namespace sol
         }
 
         buffers[id] = std::move(buffer);
-        return std::make_unique<MemoryPoolBuffer>(*this, id, *buffers[id], size, 0);
+        return std::make_unique<MemoryPoolBuffer>(*this, id, *buffers[id], alloc.size, 0);
     }
 }  // namespace sol
