@@ -89,22 +89,50 @@ namespace sol
     // Allocations.
     ////////////////////////////////////////////////////////////////
 
-    MemoryPoolBufferPtr IMemoryPool::allocateBuffer(const size_t size) { return allocateMemoryPoolBuffer(size, false); }
+    MemoryPoolBufferPtr IMemoryPool::allocateBuffer(AllocationInfo alloc)
+    {
+        if (alloc.bufferUsage == 0) alloc.bufferUsage = getBufferUsage();
+        if ((alloc.bufferUsage & getBufferUsage()) != alloc.bufferUsage)
+            throw SolError(
+              std::format("Cannot allocate buffer from memory pool. Requested buffer usage flags {} do not match "
+                          "supported flags {}.",
+                          alloc.bufferUsage,
+                          getBufferUsage()));
+
+        return allocateMemoryPoolBuffer(alloc, false);
+    }
+
+    MemoryPoolBufferPtr IMemoryPool::allocateBuffer(const size_t size)
+    {
+        return allocateBuffer(AllocationInfo{.size = size});
+    }
+
+    MemoryPoolBufferPtr IMemoryPool::allocateBufferWithWait(AllocationInfo alloc)
+    {
+        if (none(getCapabilities() & Capabilities::Wait)) throw SolError("This memory pool does not support waiting.");
+        if (alloc.bufferUsage == 0) alloc.bufferUsage = getBufferUsage();
+        if ((alloc.bufferUsage & getBufferUsage()) != alloc.bufferUsage)
+            throw SolError(
+              std::format("Cannot allocate buffer from memory pool. Requested buffer usage flags {} do not match "
+                          "supported flags {}.",
+                          alloc.bufferUsage,
+                          getBufferUsage()));
+        return allocateMemoryPoolBuffer(alloc, true);
+    }
 
     MemoryPoolBufferPtr IMemoryPool::allocateBufferWithWait(const size_t size)
     {
-        if (none(getCapabilities() & Capabilities::Wait)) throw SolError("This memory pool does not support waiting.");
-        return allocateMemoryPoolBuffer(size, true);
+        return allocateBufferWithWait(AllocationInfo{.size = size});
     }
 
-    IBufferPtr IMemoryPool::allocateBufferImpl(const Allocation& alloc)
+    IBufferPtr IMemoryPool::allocateBufferImpl(const IBufferAllocator::AllocationInfo& alloc)
     {
         if ((alloc.bufferUsage & getBufferUsage()) != alloc.bufferUsage)
             throw SolError(
               std::format("Cannot allocate buffer from memory pool. Requested buffer usage flags {} do not match "
                           "supported flags {}.",
-                          static_cast<uint32_t>(alloc.bufferUsage),
-                          static_cast<uint32_t>(getBufferUsage())));
+                          alloc.bufferUsage,
+                          getBufferUsage()));
         if ((alloc.memoryUsage & getMemoryUsage()) != alloc.memoryUsage)
             throw SolError(
               std::format("Cannot allocate buffer from memory pool. Requested memory usage flags {} do not match "
@@ -116,25 +144,24 @@ namespace sol
             throw SolError(
               std::format("Cannot allocate buffer from memory pool. Requested required memory flags {} do not match "
                           "supported flags {}.",
-                          static_cast<uint32_t>(alloc.requiredMemoryFlags),
-                          static_cast<uint32_t>(getRequiredMemoryFlags())));
+                          alloc.requiredMemoryFlags,
+                          getRequiredMemoryFlags()));
 
         if ((alloc.allocationFlags & getAllocationFlags()) != alloc.allocationFlags)
             throw SolError(std::format(
               "Cannot allocate buffer from memory pool. Requested required allocation flags {} do not match "
               "supported flags {}.",
-              static_cast<uint32_t>(alloc.allocationFlags),
-              static_cast<uint32_t>(getAllocationFlags())));
+              alloc.allocationFlags,
+              getAllocationFlags()));
 
-        return allocateMemoryPoolBuffer(alloc.size, false);
+        const AllocationInfo alloc2{.size = alloc.size, .bufferUsage = alloc.bufferUsage, .alignment = alloc.alignment};
+        return allocateMemoryPoolBuffer(alloc2, false);
     }
 
-    IBufferPtr IMemoryPool::allocateBufferImpl(const AllocationAligned&) { throw SolError("Not supported."); }
-
-    MemoryPoolBufferPtr IMemoryPool::allocateMemoryPoolBuffer(const size_t size, const bool waitOnOutOfMemory)
+    MemoryPoolBufferPtr IMemoryPool::allocateMemoryPoolBuffer(const AllocationInfo& alloc, const bool waitOnOutOfMemory)
     {
         do {
-            auto buffer = allocateMemoryPoolBufferImpl(size, waitOnOutOfMemory);
+            auto buffer = allocateMemoryPoolBufferImpl(alloc, waitOnOutOfMemory);
             if (buffer.has_value()) return std::move(*buffer);
 
             // Pool will count down at latch as well, signaling we can try allocating again.

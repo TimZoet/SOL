@@ -14,9 +14,6 @@
 
 void NonLinearMemoryPool::operator()()
 {
-    // NOTE: Always allocating just a little bit below what's indicated. Memory requirements for a buffer
-    // tend to be higher since the driver adds some of its own data for bookkeeping.
-
     sol::VulkanMemoryAllocator::Settings settings;
     settings.device          = getDevice();
     settings.flags           = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
@@ -47,37 +44,60 @@ void NonLinearMemoryPool::operator()()
 
     // Two allocations of half block size.
     std::vector<sol::MemoryPoolBufferPtr> buffers;
-    expectNoThrow([&] { buffers.emplace_back(pool->allocateBuffer(1024ull * 500)); });
-    expectNoThrow([&] { buffers.emplace_back(pool->allocateBuffer(1024ull * 500)); });
-    compareEQ(1024ull * 500, buffers[0]->getBufferSize());
-    compareEQ(1024ull * 500, buffers[1]->getBufferSize());
+    expectNoThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
+        buffers.emplace_back(pool->allocateBuffer(alloc));
+    });
+    expectNoThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
+        buffers.emplace_back(pool->allocateBuffer(alloc));
+    });
+    compareEQ(1024ull * 512, buffers[0]->getBufferSize());
+    compareEQ(1024ull * 512, buffers[1]->getBufferSize());
 
     // Allocation larger than block size.
-    expectThrow([&] { static_cast<void>(pool->allocateBuffer(1024ull * 2048)); });
+    expectThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 2048ull, .bufferUsage = 0, .alignment = 0};
+        static_cast<void>(pool->allocateBuffer(alloc));
+    });
 
     // Fill up remaining blocks.
     expectNoThrow([&] {
-        for (size_t i = 0; i < 9; i++) buffers.emplace_back(pool->allocateBuffer(1024ull * 1000));
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 1024ull, .bufferUsage = 0, .alignment = 0};
+        for (size_t i = 0; i < 9; i++) buffers.emplace_back(pool->allocateBuffer(alloc));
     });
 
     // Out of memory.
-    expectThrow([&] { static_cast<void>(pool->allocateBuffer(1024ull * 128)); });
+    expectThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 128ull, .bufferUsage = 0, .alignment = 0};
+        static_cast<void>(pool->allocateBuffer(alloc));
+    });
 
     // This pool type does not support waiting.
-    expectThrow([&] { static_cast<void>(pool->allocateBufferWithWait(1024ull * 500)); });
+    expectThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
+        static_cast<void>(pool->allocateBufferWithWait(alloc));
+    });
 
     // Clear up some space.
     expectNoThrow([&] { buffers[0].reset(); });
 
     // Still out of memory because buffer[0] used only half a block.
-    expectThrow([&] { static_cast<void>(pool->allocateBuffer(1024ull * 1000)); });
+    expectThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 1024ull, .bufferUsage = 0, .alignment = 0};
+        static_cast<void>(pool->allocateBuffer(alloc));
+    });
 
     // But this should work again.
-    expectNoThrow([&] { static_cast<void>(pool->allocateBuffer(1024ull * 500)); });
+    expectNoThrow([&] {
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
+        static_cast<void>(pool->allocateBuffer(alloc));
+    });
 
     // Clear out everything and then fill the whole thing again with a bunch of small allocations.
     expectNoThrow([&] { buffers.clear(); });
     expectNoThrow([&] {
-        for (size_t i = 0; i < 320; i++) buffers.emplace_back(pool->allocateBuffer(1024ull * 30));
+        constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 32ull, .bufferUsage = 0, .alignment = 0};
+        for (size_t i = 0; i < 320; i++) buffers.emplace_back(pool->allocateBuffer(alloc));
     });
 }

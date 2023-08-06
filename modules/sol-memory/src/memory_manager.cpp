@@ -187,22 +187,7 @@ namespace sol
     // Allocations.
     ////////////////////////////////////////////////////////////////
 
-    IBufferPtr MemoryManager::allocateBufferImpl(const Allocation& alloc)
-    {
-        VulkanBuffer::Settings settings;
-        settings.device             = getDevice();
-        settings.size               = alloc.size;
-        settings.bufferUsage        = alloc.bufferUsage;
-        settings.sharingMode        = alloc.sharingMode;
-        settings.allocator          = getAllocator();
-        settings.vma.memoryUsage    = alloc.memoryUsage;
-        settings.vma.requiredFlags  = alloc.requiredMemoryFlags;
-        settings.vma.preferredFlags = alloc.preferredMemoryFlags;
-        settings.vma.flags          = alloc.allocationFlags;
-        return std::make_unique<Buffer>(*this, VulkanBuffer::create(settings));
-    }
-
-    IBufferPtr MemoryManager::allocateBufferImpl(const AllocationAligned& alloc)
+    IBufferPtr MemoryManager::allocateBufferImpl(const AllocationInfo& alloc)
     {
         VulkanBuffer::Settings settings;
         settings.device             = getDevice();

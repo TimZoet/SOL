@@ -64,7 +64,7 @@ namespace sol
 
     protected:
         [[nodiscard]] std::expected<MemoryPoolBufferPtr, std::unique_ptr<std::latch>>
-          allocateMemoryPoolBufferImpl(size_t size, bool waitOnOutOfMemory) override;
+          allocateMemoryPoolBufferImpl(const AllocationInfo& alloc, bool waitOnOutOfMemory) override;
 
     private:
         void releaseBuffer(const MemoryPoolBuffer& buffer) override;
