@@ -12,12 +12,13 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    MemoryPoolBuffer::MemoryPoolBuffer(IMemoryPool&  memoryPool,
-                                       const size_t  id,
-                                       VulkanBuffer& buffer,
-                                       const size_t  bufferSize,
-                                       const size_t  bufferOffset) :
-        IBuffer(memoryPool.getMemoryManager()),
+    MemoryPoolBuffer::MemoryPoolBuffer(IMemoryPool&       memoryPool,
+                                       VulkanQueueFamily& queueFamily,
+                                       const size_t       id,
+                                       VulkanBuffer&      buffer,
+                                       const size_t       bufferSize,
+                                       const size_t       bufferOffset) :
+        IBuffer(memoryPool.getMemoryManager(), queueFamily),
         pool(&memoryPool),
         identifier(id),
         buffer(&buffer),

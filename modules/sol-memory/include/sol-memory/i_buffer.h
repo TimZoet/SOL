@@ -1,6 +1,12 @@
 #pragma once
 
 ////////////////////////////////////////////////////////////////
+// External includes.
+////////////////////////////////////////////////////////////////
+
+#include <vulkan/vulkan.hpp>
+
+////////////////////////////////////////////////////////////////
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
@@ -23,7 +29,7 @@ namespace sol
 
         IBuffer() = delete;
 
-        explicit IBuffer(MemoryManager& memoryManager);
+        IBuffer(MemoryManager& memoryManager, const VulkanQueueFamily& family);
 
         IBuffer(const IBuffer&) = delete;
 
@@ -47,6 +53,12 @@ namespace sol
 
         [[nodiscard]] const MemoryManager& getMemoryManager() const noexcept;
 
+        /**
+         * \brief Get the queue family that currently owns this resource.
+         * \return VulkanQueueFamily.
+         */
+        [[nodiscard]] const VulkanQueueFamily& getQueueFamily() const noexcept;
+
         [[nodiscard]] virtual VulkanBuffer& getBuffer() = 0;
 
         [[nodiscard]] virtual const VulkanBuffer& getBuffer() const = 0;
@@ -57,11 +69,22 @@ namespace sol
 
         [[nodiscard]] virtual bool isSubAllocation() const noexcept = 0;
 
+        ////////////////////////////////////////////////////////////////
+        // Setters.
+        ////////////////////////////////////////////////////////////////
+
+        void setQueueFamily(const VulkanQueueFamily& family) noexcept;
+
     private:
         ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
         MemoryManager* manager = nullptr;
+
+        /**
+         * \brief Queue family that currently owns this buffer.
+         */
+        const VulkanQueueFamily* queueFamily = nullptr;
     };
 }  // namespace sol

@@ -15,6 +15,7 @@
 #include "sol-memory-test/non_linear_memory_pool.h"
 #include "sol-memory-test/ring_buffer_memory_pool.h"
 #include "sol-memory-test/stack_memory_pool.h"
+#include "sol-memory-test/transfer_manager/buffer_barriers.h"
 
 #ifdef WIN32
 #include "Windows.h"
@@ -33,6 +34,10 @@ int main(int argc, char** argv)
     }
 #endif
     // TODO: Parallel tests are not supported. BetterTest needs an option to always disable them and perhaps even give an error when trying run in parallel.
-    return bt::run<FreeAtOnceMemoryPool, IMemoryPool, NonLinearMemoryPool, RingBufferMemoryPool, StackMemoryPool>(
-      argc, argv, "sol-memory");
+    return bt::run<FreeAtOnceMemoryPool,
+                   IMemoryPool,
+                   NonLinearMemoryPool,
+                   RingBufferMemoryPool,
+                   StackMemoryPool,
+                   BufferBarriers>(argc, argv, "sol-memory");
 }

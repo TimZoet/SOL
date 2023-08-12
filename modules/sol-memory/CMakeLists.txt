@@ -8,9 +8,11 @@ set(SRC_DIR "src")
 set(HEADERS
     ${INCLUDE_DIR}/fwd.h
     ${INCLUDE_DIR}/buffer.h
+    ${INCLUDE_DIR}/buffer_transaction.h
     ${INCLUDE_DIR}/i_buffer.h
     ${INCLUDE_DIR}/i_buffer_allocator.h
     ${INCLUDE_DIR}/memory_manager.h
+    ${INCLUDE_DIR}/transfer_manager.h
 
     ${INCLUDE_DIR}/pool/free_at_once_memory_pool.h
     ${INCLUDE_DIR}/pool/i_memory_pool.h
@@ -22,9 +24,11 @@ set(HEADERS
 
 set(SOURCES
     ${SRC_DIR}/buffer.cpp
+    ${SRC_DIR}/buffer_transaction.cpp
     ${SRC_DIR}/i_buffer.cpp
     ${SRC_DIR}/i_buffer_allocator.cpp
     ${SRC_DIR}/memory_manager.cpp
+    ${SRC_DIR}/transfer_manager.cpp
 
     ${SRC_DIR}/pool/free_at_once_memory_pool.cpp
     ${SRC_DIR}/pool/i_memory_pool.cpp

@@ -11,6 +11,8 @@ set(HEADERS
     ${INCLUDE_DIR}/non_linear_memory_pool.h
     ${INCLUDE_DIR}/ring_buffer_memory_pool.h
     ${INCLUDE_DIR}/stack_memory_pool.h
+
+    ${INCLUDE_DIR}/transfer_manager/buffer_barriers.h
 )
 
 set(SOURCES
@@ -20,6 +22,8 @@ set(SOURCES
     ${SRC_DIR}/non_linear_memory_pool.cpp
     ${SRC_DIR}/ring_buffer_memory_pool.cpp
     ${SRC_DIR}/stack_memory_pool.cpp
+
+    ${SRC_DIR}/transfer_manager/buffer_barriers.cpp
 )
 
 set(DEPS_PRIVATE

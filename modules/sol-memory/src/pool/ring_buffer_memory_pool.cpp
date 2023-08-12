@@ -62,7 +62,8 @@ namespace sol
     }
 
     std::expected<MemoryPoolBufferPtr, std::unique_ptr<std::latch>>
-      RingBufferMemoryPool::allocateMemoryPoolBufferImpl(const AllocationInfo& alloc, const bool waitOnOutOfMemory)
+      RingBufferMemoryPool::allocateMemoryPoolBufferImpl(const AllocationInfo&     alloc,
+                                                         const OnAllocationFailure onFailure)
     {
         std::scoped_lock lock(mutex);
 
@@ -72,6 +73,7 @@ namespace sol
         settings.bufferUsage   = alloc.bufferUsage;
         settings.allocator     = getMemoryManager().getAllocator();
         settings.vma.pool      = pool;
+        settings.vma.flags     = getAllocationFlags();
         settings.vma.alignment = alloc.alignment;
 
         // Look for empty spot.
@@ -85,17 +87,19 @@ namespace sol
         if (id == buffers.size()) buffers.resize(id + 1);
 
         // Try to allocate buffer. If allocation fails and waitOnOutOfMemory is false, this will automatically throw.
-        auto buffer = VulkanBuffer::create(settings, !waitOnOutOfMemory);
+        auto buffer = VulkanBuffer::create(settings, onFailure == OnAllocationFailure::Throw);
 
-        // Allocation failed because pool is out of memory. Return a std::latch that is signalled when a buffer is released.
+        // Allocation failed because pool is out of memory. Return nullptr or a std::latch that is signalled when a buffer is released.
         if (!buffer)
         {
+            if (onFailure == OnAllocationFailure::Empty) return nullptr;
+
             auto latch = std::make_unique<std::latch>(2);
             latches.emplace_back(latch.get());
             return std::unexpected(std::move(latch));
         }
 
         buffers[id] = std::move(buffer);
-        return std::make_unique<MemoryPoolBuffer>(*this, id, *buffers[id], alloc.size, 0);
+        return std::make_unique<MemoryPoolBuffer>(*this, getDefaultQueueFamily(), id, *buffers[id], alloc.size, 0);
     }
 }  // namespace sol

@@ -46,11 +46,11 @@ void StackMemoryPool::operator()()
     std::vector<sol::MemoryPoolBufferPtr> buffers;
     expectNoThrow([&] {
         constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
-        buffers.emplace_back(pool->allocateBuffer(alloc));
+        buffers.emplace_back(pool->allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Throw));
     });
     expectNoThrow([&] {
         constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
-        buffers.emplace_back(pool->allocateBuffer(alloc));
+        buffers.emplace_back(pool->allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Throw));
     });
     compareEQ(1024ull * 512, buffers[0]->getBufferSize());
     compareEQ(1024ull * 512, buffers[1]->getBufferSize());
@@ -58,42 +58,42 @@ void StackMemoryPool::operator()()
     // Allocation larger than block size.
     expectThrow([&] {
         constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 2048ull, .bufferUsage = 0, .alignment = 0};
-        static_cast<void>(pool->allocateBuffer(alloc));
+        static_cast<void>(pool->allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Throw));
     });
 
     // Fill up remaining blocks.
     expectNoThrow([&] {
         constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
-        buffers.emplace_back(pool->allocateBuffer(alloc));
+        buffers.emplace_back(pool->allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Throw));
     });
     expectNoThrow([&] {
         constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
-        buffers.emplace_back(pool->allocateBuffer(alloc));
+        buffers.emplace_back(pool->allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Throw));
     });
 
     // Clearing the last buffer should open up space again.
     expectNoThrow([&] { buffers[3].reset(); });
     expectNoThrow([&] {
         constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
-        buffers[3] = pool->allocateBuffer(alloc);
+        buffers[3] = pool->allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Throw);
     });
 
     // Clearing the third buffer opens up space, but in the wrong place.
     expectNoThrow([&] { buffers[2].reset(); });
     expectThrow([&] {
         constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
-        buffers[2] = pool->allocateBuffer(alloc);
+        buffers[2] = pool->allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Throw);
     });
 
     // Clearing the fourth buffer opens up contiguous space at the correct offset again.
     expectNoThrow([&] { buffers[3].reset(); });
     expectNoThrow([&] {
         constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
-        buffers[2] = pool->allocateBuffer(alloc);
+        buffers[2] = pool->allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Throw);
     });
     expectNoThrow([&] {
         constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
-        buffers[3] = pool->allocateBuffer(alloc);
+        buffers[3] = pool->allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Throw);
     });
 
     // Clear all memory.
@@ -102,6 +102,7 @@ void StackMemoryPool::operator()()
     // Fill up memory.
     expectNoThrow([&] {
         constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 256ull, .bufferUsage = 0, .alignment = 0};
-        for (size_t i = 0; i < 8; i++) buffers.emplace_back(pool->allocateBuffer(alloc));
+        for (size_t i = 0; i < 8; i++)
+            buffers.emplace_back(pool->allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Throw));
     });
 }

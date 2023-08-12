@@ -24,7 +24,7 @@ namespace sol
 
         Buffer() = delete;
 
-        Buffer(MemoryManager& memoryManager,VulkanBufferPtr b);
+        Buffer(MemoryManager& memoryManager, VulkanQueueFamily& queueFamily, VulkanBufferPtr b);
 
         Buffer(const Buffer&) = delete;
 

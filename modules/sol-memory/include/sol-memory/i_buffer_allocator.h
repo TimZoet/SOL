@@ -59,6 +59,27 @@ namespace sol
             SubAllocation = 8,
         };
 
+        /**
+         * \brief Action to take when an allocation fails due to an out of memory error.
+         */
+        enum class OnAllocationFailure : uint32_t
+        {
+            /**
+             * \brief Throw an exception.
+             */
+            Throw = 0,
+
+            /**
+             * \brief Wait for space to become available. Requires the Wait capability.
+             */
+            Wait = 1,
+
+            /**
+             * \brief Return a nullptr.
+             */
+            Empty = 2
+        };
+
         struct AllocationInfo
         {
             size_t                   size                 = 0;
@@ -101,16 +122,29 @@ namespace sol
 
         [[nodiscard]] const MemoryManager& getMemoryManager() const noexcept;
 
+        /**
+         * \brief Get the default queue family newly allocated buffers are assigned to.
+         * \return Queue family.
+         */
+        [[nodiscard]] VulkanQueueFamily& getDefaultQueueFamily() noexcept;
+
         [[nodiscard]] virtual Capabilities getCapabilities() const noexcept = 0;
+
+        ////////////////////////////////////////////////////////////////
+        // Setters.
+        ////////////////////////////////////////////////////////////////
+
+        void setDefaultQueueFamily(VulkanQueueFamily& queueFamily) noexcept;
 
         ////////////////////////////////////////////////////////////////
         // Allocations.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] IBufferPtr allocateBuffer(const AllocationInfo& alloc);
+        [[nodiscard]] IBufferPtr allocateBuffer(const AllocationInfo& alloc, OnAllocationFailure onFailure);
 
     protected:
-        [[nodiscard]] virtual IBufferPtr allocateBufferImpl(const AllocationInfo& alloc) = 0;
+        [[nodiscard]] virtual IBufferPtr allocateBufferImpl(const AllocationInfo& alloc,
+                                                            OnAllocationFailure   onFailure) = 0;
 
     private:
         ////////////////////////////////////////////////////////////////
@@ -118,5 +152,7 @@ namespace sol
         ////////////////////////////////////////////////////////////////
 
         MemoryManager* manager = nullptr;
+
+        VulkanQueueFamily* defaultFamily = nullptr;
     };
 }  // namespace sol

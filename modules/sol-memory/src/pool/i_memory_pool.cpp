@@ -89,9 +89,11 @@ namespace sol
     // Allocations.
     ////////////////////////////////////////////////////////////////
 
-    MemoryPoolBufferPtr IMemoryPool::allocateBuffer(AllocationInfo alloc)
+    MemoryPoolBufferPtr IMemoryPool::allocateBuffer(AllocationInfo alloc, const OnAllocationFailure onFailure)
     {
+        // If no explicit buffer usage was requested, take all buffer usage flags that this memory pool supports.
         if (alloc.bufferUsage == 0) alloc.bufferUsage = getBufferUsage();
+
         if ((alloc.bufferUsage & getBufferUsage()) != alloc.bufferUsage)
             throw SolError(
               std::format("Cannot allocate buffer from memory pool. Requested buffer usage flags {} do not match "
@@ -99,33 +101,16 @@ namespace sol
                           alloc.bufferUsage,
                           getBufferUsage()));
 
-        return allocateMemoryPoolBuffer(alloc, false);
+        return allocateMemoryPoolBuffer(alloc, onFailure);
     }
 
-    MemoryPoolBufferPtr IMemoryPool::allocateBuffer(const size_t size)
+    MemoryPoolBufferPtr IMemoryPool::allocateBuffer(const size_t size, const OnAllocationFailure onFailure)
     {
-        return allocateBuffer(AllocationInfo{.size = size});
+        return allocateBuffer(AllocationInfo{.size = size}, onFailure);
     }
 
-    MemoryPoolBufferPtr IMemoryPool::allocateBufferWithWait(AllocationInfo alloc)
-    {
-        if (none(getCapabilities() & Capabilities::Wait)) throw SolError("This memory pool does not support waiting.");
-        if (alloc.bufferUsage == 0) alloc.bufferUsage = getBufferUsage();
-        if ((alloc.bufferUsage & getBufferUsage()) != alloc.bufferUsage)
-            throw SolError(
-              std::format("Cannot allocate buffer from memory pool. Requested buffer usage flags {} do not match "
-                          "supported flags {}.",
-                          alloc.bufferUsage,
-                          getBufferUsage()));
-        return allocateMemoryPoolBuffer(alloc, true);
-    }
-
-    MemoryPoolBufferPtr IMemoryPool::allocateBufferWithWait(const size_t size)
-    {
-        return allocateBufferWithWait(AllocationInfo{.size = size});
-    }
-
-    IBufferPtr IMemoryPool::allocateBufferImpl(const IBufferAllocator::AllocationInfo& alloc)
+    IBufferPtr IMemoryPool::allocateBufferImpl(const IBufferAllocator::AllocationInfo& alloc,
+                                               const OnAllocationFailure               onFailure)
     {
         if ((alloc.bufferUsage & getBufferUsage()) != alloc.bufferUsage)
             throw SolError(
@@ -155,20 +140,28 @@ namespace sol
               getAllocationFlags()));
 
         const AllocationInfo alloc2{.size = alloc.size, .bufferUsage = alloc.bufferUsage, .alignment = alloc.alignment};
-        return allocateMemoryPoolBuffer(alloc2, false);
+        return allocateMemoryPoolBuffer(alloc2, onFailure);
     }
 
-    MemoryPoolBufferPtr IMemoryPool::allocateMemoryPoolBuffer(const AllocationInfo& alloc, const bool waitOnOutOfMemory)
+    MemoryPoolBufferPtr IMemoryPool::allocateMemoryPoolBuffer(const AllocationInfo&     alloc,
+                                                              const OnAllocationFailure onFailure)
     {
+        if (onFailure == OnAllocationFailure::Wait && none(getCapabilities() & Capabilities::Wait))
+            throw SolError("This memory pool does not support waiting.");
+
         do {
-            auto buffer = allocateMemoryPoolBufferImpl(alloc, waitOnOutOfMemory);
+            auto buffer = allocateMemoryPoolBufferImpl(alloc, onFailure);
             if (buffer.has_value()) return std::move(*buffer);
 
             // Pool will count down at latch as well, signaling we can try allocating again.
-            if (waitOnOutOfMemory)
+            if (onFailure == OnAllocationFailure::Wait)
             {
                 buffer.error()->arrive_and_wait();
                 continue;
+            }
+            if (onFailure == OnAllocationFailure::Empty)
+            {
+                return nullptr;
             }
 
             throw SolError("Failed to allocate buffer from memory pool.");

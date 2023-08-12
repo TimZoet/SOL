@@ -18,7 +18,10 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    Buffer::Buffer(MemoryManager& memoryManager, VulkanBufferPtr b) : IBuffer(memoryManager), buffer(std::move(b)) {}
+    Buffer::Buffer(MemoryManager& memoryManager, VulkanQueueFamily& queueFamily, VulkanBufferPtr b) :
+        IBuffer(memoryManager, queueFamily), buffer(std::move(b))
+    {
+    }
 
     Buffer::~Buffer() noexcept = default;
 

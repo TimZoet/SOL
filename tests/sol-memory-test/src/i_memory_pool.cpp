@@ -54,7 +54,7 @@ void IMemoryPool::operator()()
                                                               .preferredMemoryFlags = 0,
                                                               .allocationFlags      = 0,
                                                               .alignment            = 0};
-        static_cast<void>(pool->allocateBuffer(alloc));
+        static_cast<void>(pool->allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Throw));
     });
 
     // Allocate with invalid buffer usage.
@@ -68,7 +68,7 @@ void IMemoryPool::operator()()
                                                               .preferredMemoryFlags = 0,
                                                               .allocationFlags      = 0,
                                                               .alignment            = 0};
-        static_cast<void>(pool->allocateBuffer(alloc));
+        static_cast<void>(pool->allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Throw));
     });
 
     // Allocate with invalid memory flags.
@@ -81,7 +81,7 @@ void IMemoryPool::operator()()
                                                               .preferredMemoryFlags = 0,
                                                               .allocationFlags      = 0,
                                                               .alignment            = 0};
-        static_cast<void>(pool->allocateBuffer(alloc));
+        static_cast<void>(pool->allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Throw));
     });
 
     // Aligned allocation is not supported yet.
@@ -94,6 +94,6 @@ void IMemoryPool::operator()()
                                                               .preferredMemoryFlags = 0,
                                                               .allocationFlags      = 0,
                                                               .alignment            = 128};
-        static_cast<void>(pool->allocateBuffer(alloc));
+        static_cast<void>(pool->allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Throw));
     });
 }

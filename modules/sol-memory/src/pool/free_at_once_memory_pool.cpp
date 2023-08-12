@@ -69,7 +69,8 @@ namespace sol
     }
 
     std::expected<MemoryPoolBufferPtr, std::unique_ptr<std::latch>>
-      FreeAtOnceMemoryPool::allocateMemoryPoolBufferImpl(const AllocationInfo& alloc, const bool)
+      FreeAtOnceMemoryPool::allocateMemoryPoolBufferImpl(const AllocationInfo&     alloc,
+                                                         const OnAllocationFailure onFailure)
     {
         std::scoped_lock lock(mutex);
 
@@ -83,9 +84,12 @@ namespace sol
         settings.bufferUsage   = alloc.bufferUsage;
         settings.allocator     = getMemoryManager().getAllocator();
         settings.vma.pool      = pool;
+        settings.vma.flags     = getAllocationFlags();
         settings.vma.alignment = alloc.alignment;
 
-        auto& buffer = *buffers.emplace_back(VulkanBuffer::create(settings));
-        return std::make_unique<MemoryPoolBuffer>(*this, buffers.size() - 1, buffer, alloc.size, 0);
+        auto buffer = VulkanBuffer::create(settings, onFailure != OnAllocationFailure::Empty);
+        if (!buffer) return nullptr;
+        auto& b = *buffers.emplace_back(std::move(buffer));
+        return std::make_unique<MemoryPoolBuffer>(*this, getDefaultQueueFamily(), buffers.size() - 1, b, alloc.size, 0);
     }
 }  // namespace sol
