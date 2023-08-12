@@ -42,6 +42,7 @@ namespace sol
     class VulkanSurface;
     class VulkanSwapchain;
     class VulkanSwapchainSupportDetails;
+    class VulkanTimelineSemaphore;
     class VulkanTopLevelAccelerationStructure;
 
     using VulkanAttachmentPtr                             = std::unique_ptr<VulkanAttachment>;
@@ -104,6 +105,8 @@ namespace sol
     using VulkanSurfaceSharedPtr                          = std::shared_ptr<VulkanSurface>;
     using VulkanSwapchainPtr                              = std::unique_ptr<VulkanSwapchain>;
     using VulkanSwapchainSharedPtr                        = std::shared_ptr<VulkanSwapchain>;
+    using VulkanTimelineSemaphorePtr                      = std::unique_ptr<VulkanTimelineSemaphore>;
+    using VulkanTimelineSemaphoreSharedPtr                = std::shared_ptr<VulkanTimelineSemaphore>;
     using VulkanTopLevelAccelerationStructurePtr          = std::unique_ptr<VulkanTopLevelAccelerationStructure>;
     using VulkanTopLevelAccelerationStructureSharedPtr    = std::shared_ptr<VulkanTopLevelAccelerationStructure>;
 }  // namespace sol
