@@ -94,11 +94,14 @@ namespace sol
 
             VmaAllocationInfo       vmaAllocationInfo;
             VmaAllocationCreateInfo allocInfo = {};
-            allocInfo.usage                   = settings.vma.memoryUsage;
-            allocInfo.requiredFlags           = settings.vma.requiredFlags;
-            allocInfo.preferredFlags          = settings.vma.preferredFlags;
             allocInfo.flags                   = settings.vma.flags;
-            allocInfo.pool                    = settings.vma.pool ? settings.vma.pool().get() : VK_NULL_HANDLE;
+            if (settings.vma.pool) { allocInfo.pool = settings.vma.pool().get(); }
+            else
+            {
+                allocInfo.usage          = settings.vma.memoryUsage;
+                allocInfo.requiredFlags  = settings.vma.requiredFlags;
+                allocInfo.preferredFlags = settings.vma.preferredFlags;
+            }
 
             VkResult result;
             if (settings.vma.alignment == 0 || settings.vma.pool.valid())

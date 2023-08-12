@@ -193,6 +193,12 @@ namespace sol
 
         [[nodiscard]] bool isMapped() const noexcept;
 
+        template<typename T>
+        [[nodiscard]] T* getMappedData() const noexcept
+        {
+            return static_cast<T*>(mappedData);
+        }
+
         ////////////////////////////////////////////////////////////////
         // ...
         ////////////////////////////////////////////////////////////////
