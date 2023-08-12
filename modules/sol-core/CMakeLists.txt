@@ -48,6 +48,7 @@ set(HEADERS
     ${INCLUDE_DIR}/vulkan_surface.h
     ${INCLUDE_DIR}/vulkan_swapchain.h
     ${INCLUDE_DIR}/vulkan_swapchain_support_details.h
+    ${INCLUDE_DIR}/vulkan_timeline_semaphore.h
     ${INCLUDE_DIR}/vulkan_top_level_acceleration_structure.h
 )
 
@@ -89,6 +90,7 @@ set(SOURCES
     ${SRC_DIR}/vulkan_surface.cpp
     ${SRC_DIR}/vulkan_swapchain.cpp
     ${SRC_DIR}/vulkan_swapchain_support_details.cpp
+    ${SRC_DIR}/vulkan_timeline_semaphore.cpp
     ${SRC_DIR}/vulkan_top_level_acceleration_structure.cpp
 )
 
