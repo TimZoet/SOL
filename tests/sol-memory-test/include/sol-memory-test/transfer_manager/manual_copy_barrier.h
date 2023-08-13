@@ -14,7 +14,8 @@
 
 #include "testutils/utils.h"
 
-class BufferBarriers final : public bt::UnitTest<BufferBarriers, bt::CompareMixin, bt::ExceptionMixin>, MemoryManagerFixture
+class ManualCopyBarrier final : public bt::UnitTest<ManualCopyBarrier, bt::CompareMixin, bt::ExceptionMixin>,
+                                MemoryManagerFixture
 {
 public:
     void operator()() override;

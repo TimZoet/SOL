@@ -81,16 +81,6 @@ namespace sol
              * \brief Destination access.
              */
             VkAccessFlags2 dstAccess = VK_ACCESS_2_NONE;
-
-            /**
-             * \brief Size of the memory range the barrier is applied to. If set to VK_WHOLE_SIZE, buffer.getBufferSize() is used.
-             */
-            size_t size = VK_WHOLE_SIZE;
-
-            /**
-             * \brief Offset into buffer. Is added to buffer.getBufferOffset() if it is a suballocation.
-             */
-            size_t offset = 0;
         };
 
         /**
@@ -262,9 +252,9 @@ namespace sol
          *
          * With an explicit barrier, the supplied parameters are used to place two barriers around the copy command.
          * The before barrier takes the barrier.src values for the first scope and the transfer stage as the second
-         * scope. The after barrier takes the transfer stage as the first scape and the barrier.dst values for the
-         * second scope. Note that for both barriers the buffer, size and offset values are taken from the copy
-         * parameter.
+         * scope. The after barrier takes the transfer stage as the first scope and the barrier.dst values for the
+         * second scope. Note that if the copy is only for part of the buffer, both barriers still apply to the whole
+         * buffer.
          *
          * \param copy Copy info.
          * \param barrier Optional barrier placed around the copy command. 
@@ -286,9 +276,10 @@ namespace sol
          *
          * With explicit barriers, the supplied parameters are used to place two barriers around the copy command for
          * the source and/or destination buffer. The before barrier takes the barrier.src values for the first scope
-         * and the transfer stage as the second scope. The after barrier takes the transfer stage as the first scape
-         * and the barrier.dst values for the second scope. Note that for both barriers the buffer, size and offset
-         * values are taken from the copy parameter. 
+         * and the transfer stage as the second scope. The after barrier takes the transfer stage as the first scope
+         * and the barrier.dst values for the second scope. Note that if the copy is only for part of the buffer, both
+         * barriers still apply to the
+         * whole buffer.
          * \param copy Copy.
          * \param srcBarrier Optional memory barrier for the source buffer.
          * \param dstBarrier Optional memory barrier for the destination buffer.

@@ -16,6 +16,10 @@
 #include "sol-memory-test/ring_buffer_memory_pool.h"
 #include "sol-memory-test/stack_memory_pool.h"
 #include "sol-memory-test/transfer_manager/buffer_barriers.h"
+#include "sol-memory-test/transfer_manager/concurrent_buffer_transactions.h"
+#include "sol-memory-test/transfer_manager/manual_copy_barrier.h"
+#include "sol-memory-test/transfer_manager/multiple_copies.h"
+#include "sol-memory-test/transfer_manager/partial_copy.h"
 
 #ifdef WIN32
 #include "Windows.h"
@@ -39,5 +43,9 @@ int main(int argc, char** argv)
                    NonLinearMemoryPool,
                    RingBufferMemoryPool,
                    StackMemoryPool,
-                   BufferBarriers>(argc, argv, "sol-memory");
+                   BufferBarriers,
+                   ConcurrentBufferTransactions,
+                   ManualCopyBarrier,
+                   MultipleCopies,
+                   PartialCopy>(argc, argv, "sol-memory");
 }
