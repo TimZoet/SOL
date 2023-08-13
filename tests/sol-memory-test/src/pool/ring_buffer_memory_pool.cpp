@@ -1,4 +1,4 @@
-#include "sol-memory-test/ring_buffer_memory_pool.h"
+#include "sol-memory-test/pool/ring_buffer_memory_pool.h"
 
 ////////////////////////////////////////////////////////////////
 // Standard includes.

@@ -1,4 +1,4 @@
-#include "sol-memory-test/free_at_once_memory_pool.h"
+#include "sol-memory-test/pool/free_at_once_memory_pool.h"
 
 ////////////////////////////////////////////////////////////////
 // Module includes.

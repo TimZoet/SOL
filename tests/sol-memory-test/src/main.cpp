@@ -10,12 +10,11 @@
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-memory-test/free_at_once_memory_pool.h"
-#include "sol-memory-test/i_memory_pool.h"
-#include "sol-memory-test/non_linear_memory_pool.h"
-#include "sol-memory-test/ring_buffer_memory_pool.h"
-#include "sol-memory-test/stack_memory_pool.h"
-#include "sol-memory-test/transfer_manager/buffer_barriers.h"
+#include "sol-memory-test/pool/free_at_once_memory_pool.h"
+#include "sol-memory-test/pool/i_memory_pool.h"
+#include "sol-memory-test/pool/non_linear_memory_pool.h"
+#include "sol-memory-test/pool/ring_buffer_memory_pool.h"
+#include "sol-memory-test/pool/stack_memory_pool.h"
 #include "sol-memory-test/transfer_manager/concurrent_buffer_transactions.h"
 #include "sol-memory-test/transfer_manager/manual_copy_barrier.h"
 #include "sol-memory-test/transfer_manager/multiple_copies.h"
@@ -43,7 +42,7 @@ int main(int argc, char** argv)
                    NonLinearMemoryPool,
                    RingBufferMemoryPool,
                    StackMemoryPool,
-                   BufferBarriers,
+
                    ConcurrentBufferTransactions,
                    ManualCopyBarrier,
                    MultipleCopies,

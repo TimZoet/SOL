@@ -1,4 +1,4 @@
-#include "sol-memory-test/non_linear_memory_pool.h"
+#include "sol-memory-test/pool/non_linear_memory_pool.h"
 
 ////////////////////////////////////////////////////////////////
 // Module includes.

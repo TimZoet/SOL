@@ -1,4 +1,4 @@
-#include "sol-memory-test/i_memory_pool.h"
+#include "sol-memory-test/pool/i_memory_pool.h"
 
 ////////////////////////////////////////////////////////////////
 // Module includes.
