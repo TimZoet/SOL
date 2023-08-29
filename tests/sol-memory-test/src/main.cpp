@@ -16,6 +16,7 @@
 #include "sol-memory-test/pool/ring_buffer_memory_pool.h"
 #include "sol-memory-test/pool/stack_memory_pool.h"
 #include "sol-memory-test/transfer_manager/concurrent_buffer_transactions.h"
+#include "sol-memory-test/transfer_manager/large_copy.h"
 #include "sol-memory-test/transfer_manager/manual_copy_barrier.h"
 #include "sol-memory-test/transfer_manager/multiple_copies.h"
 #include "sol-memory-test/transfer_manager/partial_copy.h"
@@ -44,6 +45,7 @@ int main(int argc, char** argv)
                    StackMemoryPool,
 
                    ConcurrentBufferTransactions,
+                   LargeCopy,
                    ManualCopyBarrier,
                    MultipleCopies,
                    PartialCopy>(argc, argv, "sol-memory");

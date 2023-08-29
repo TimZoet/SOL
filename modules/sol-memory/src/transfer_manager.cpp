@@ -1,6 +1,12 @@
 #include "sol-memory/transfer_manager.h"
 
 ////////////////////////////////////////////////////////////////
+// Standard includes.
+////////////////////////////////////////////////////////////////
+
+#include <ranges>
+
+////////////////////////////////////////////////////////////////
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
@@ -16,6 +22,7 @@
 ////////////////////////////////////////////////////////////////
 
 #include "sol-memory/buffer_transaction.h"
+#include "sol-memory/i_buffer.h"
 #include "sol-memory/memory_manager.h"
 
 namespace sol
@@ -53,7 +60,27 @@ namespace sol
     TransferManager::~TransferManager() noexcept
     {
         // TODO: If there is a deadlock somewhere, this will get stuck. Wait with a timeout instead?
-        static_cast<void>(waitAndLock());
+        static_cast<void>(lockAndWait());
+    }
+
+    ////////////////////////////////////////////////////////////////
+    // Create.
+    ////////////////////////////////////////////////////////////////
+
+    TransferManagerPtr TransferManager::create(MemoryManager& memoryManager, const size_t memoryPoolSize)
+    {
+        const IMemoryPool::CreateInfo info{
+          .createFlags          = 0,
+          .bufferUsage          = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+          .memoryUsage          = VMA_MEMORY_USAGE_AUTO,
+          .requiredMemoryFlags  = 0,
+          .preferredMemoryFlags = 0,
+          .allocationFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+          .blockSize       = memoryPoolSize,
+          .minBlocks       = 1,
+          .maxBlocks       = 1};
+        auto& pool = memoryManager.createRingBufferMemoryPool("transfer", info);
+        return std::make_unique<TransferManager>(memoryManager, pool);
     }
 
     ////////////////////////////////////////////////////////////////
@@ -70,13 +97,18 @@ namespace sol
 
     RingBufferMemoryPool& TransferManager::getMemoryPool() const noexcept { return *pool; }
 
+    const std::vector<VulkanTimelineSemaphorePtr>& TransferManager::getSemaphores() const noexcept
+    {
+        return semaphores;
+    }
+
     ////////////////////////////////////////////////////////////////
     // Transactions.
     ////////////////////////////////////////////////////////////////
 
     BufferTransactionPtr TransferManager::beginTransaction() { return std::make_unique<BufferTransaction>(*this); }
 
-    std::unique_ptr<std::scoped_lock<std::mutex>> TransferManager::waitAndLock()
+    std::unique_ptr<std::scoped_lock<std::mutex>> TransferManager::lockAndWait()
     {
         auto l = lock();
         wait();
@@ -96,6 +128,7 @@ namespace sol
                                        .pValues        = semaphoreValues.data()};
 
         handleVulkanError(vkWaitSemaphores(getDevice().get(), &info, UINT64_MAX));
+        pendingStagingBuffers.clear();
     }
 
     std::unique_ptr<std::scoped_lock<std::mutex>> TransferManager::lock()

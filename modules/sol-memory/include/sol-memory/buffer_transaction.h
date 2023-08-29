@@ -224,6 +224,17 @@ namespace sol
 
         [[nodiscard]] const MemoryManager& getMemoryManager() const noexcept;
 
+        [[nodiscard]] TransferManager& getTransferManager() noexcept;
+
+        [[nodiscard]] const TransferManager& getTransferManager() const noexcept;
+
+        /**
+         * \brief Get the final semaphore value for each queue family that is set when the submitted command buffer completes.
+         * Can be supplied to other submits that need to wait on this transaction to complete.
+         * \return List of semaphore values. Can be indexed using queue family index.
+         */
+        [[nodiscard]] const std::vector<uint64_t>& getSemaphoreValues() const;
+
         ////////////////////////////////////////////////////////////////
         // Staging.
         ////////////////////////////////////////////////////////////////
@@ -257,13 +268,15 @@ namespace sol
          * buffer.
          *
          * \param copy Copy info.
-         * \param barrier Optional barrier placed around the copy command. 
+         * \param barrier Optional barrier placed around the copy command.
+         * \param waitOnAllocFailure If true and staging buffer allocation fails, wait on previous transaction(s)
+         * to complete so that they release their staging buffers, and try allocating again.
          * \return Staging buffer allocation success. If allocation fails, false is returned and this transaction must
          * be committed before doing any additional copies. Note that more memory barriers and buffer-to-buffer
          * copies can still be added regardless of the outcome of this call, since they do not require any staging
          * buffer allocations.
          */
-        [[nodiscard]] bool stage(const StagingBufferCopy& copy, const std::optional<MemoryBarrier>& barrier = {});
+        [[nodiscard]] bool stage(const StagingBufferCopy& copy, const std::optional<MemoryBarrier>& barrier = {}, bool waitOnAllocFailure = false);
 
         /**
          * \brief Stage a copy from a source buffer to a destination buffer. Optionally places barriers around the
@@ -278,8 +291,7 @@ namespace sol
          * the source and/or destination buffer. The before barrier takes the barrier.src values for the first scope
          * and the transfer stage as the second scope. The after barrier takes the transfer stage as the first scope
          * and the barrier.dst values for the second scope. Note that if the copy is only for part of the buffer, both
-         * barriers still apply to the
-         * whole buffer.
+         * barriers still apply to the whole buffer.
          * \param copy Copy.
          * \param srcBarrier Optional memory barrier for the source buffer.
          * \param dstBarrier Optional memory barrier for the destination buffer.
@@ -292,8 +304,16 @@ namespace sol
         // Commit.
         ////////////////////////////////////////////////////////////////
 
+        /**
+         * \brief Commit this transaction. Will wait for previously committed transactions to complete
+         * and then record and submit command buffers.
+         */
         void commit();
 
+        /**
+         * \brief Do a CPU-side wait on the semaphores. Can only be called after committing.
+         * For GPU-side waiting, you can directly retrieve the final state of the semaphores using getSemaphoreValues().
+         */
         void wait();
 
     private:
@@ -310,5 +330,7 @@ namespace sol
         bool committed = false;
 
         bool done = false;
+
+        std::vector<uint64_t> semaphoreValues;
     };
 }  // namespace sol

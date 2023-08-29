@@ -78,7 +78,7 @@ namespace sol
             size_t blockSize = 0;
 
             /**
-             * \brief Minimum number of memory blocks.If > 0, these blocks are preallocated.
+             * \brief Minimum number of memory blocks. If > 0, these blocks are preallocated.
              */
             size_t minBlocks = 0;
 

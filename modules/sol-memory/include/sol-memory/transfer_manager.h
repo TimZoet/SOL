@@ -6,13 +6,6 @@
 
 #include <memory>
 #include <mutex>
-#include <queue>
-
-////////////////////////////////////////////////////////////////
-// External includes.
-////////////////////////////////////////////////////////////////
-
-#include <vulkan/vulkan.hpp>
 
 ////////////////////////////////////////////////////////////////
 // Module includes.
@@ -53,6 +46,12 @@ namespace sol
         TransferManager& operator=(TransferManager&&) noexcept = delete;
 
         ////////////////////////////////////////////////////////////////
+        // Create.
+        ////////////////////////////////////////////////////////////////
+
+        [[nodiscard]] static TransferManagerPtr create(MemoryManager& memoryManager, size_t memoryPoolSize);
+
+        ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
@@ -66,6 +65,8 @@ namespace sol
 
         [[nodiscard]] RingBufferMemoryPool& getMemoryPool() const noexcept;
 
+        [[nodiscard]] const std::vector<VulkanTimelineSemaphorePtr>& getSemaphores() const noexcept;
+
         ////////////////////////////////////////////////////////////////
         // Transactions.
         ////////////////////////////////////////////////////////////////
@@ -78,13 +79,11 @@ namespace sol
          * While holding the lock, the command buffers and semaphores can be used.
          * \return Lock.
          */
-        [[nodiscard]] std::unique_ptr<std::scoped_lock<std::mutex>> waitAndLock();
+        [[nodiscard]] std::unique_ptr<std::scoped_lock<std::mutex>> lockAndWait();
 
         [[nodiscard]] std::unique_ptr<std::scoped_lock<std::mutex>> lock();
 
         void wait();
-
-
 
         ////////////////////////////////////////////////////////////////
         // Member variables.
@@ -104,5 +103,6 @@ namespace sol
         std::vector<VulkanTimelineSemaphorePtr> semaphores;
         std::vector<uint64_t>                   semaphoreValues;
         size_t                                  transactionIndex = 0;
+        std::vector<IBufferPtr>                 pendingStagingBuffers;
     };
 }  // namespace sol

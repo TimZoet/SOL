@@ -53,7 +53,26 @@ namespace sol
 
     BufferTransaction::BufferTransaction(TransferManager& transferManager) : manager(&transferManager) {}
 
-    BufferTransaction::~BufferTransaction() noexcept = default;
+    BufferTransaction::~BufferTransaction() noexcept
+    {
+        /*
+         * If necessary, collect pending staging buffers. They will be destroyed in the next wait of the manager.
+         */
+
+        if (!committed || staged.empty()) return;
+
+        std::vector<IBufferPtr> stagingBuffers;
+        for (auto& [preBarrier, postBarrier, s2bCopy, b2bCopy, stagingBuffer] : staged)
+        {
+            if (stagingBuffer) stagingBuffers.push_back(std::move(stagingBuffer));
+        }
+
+        if (stagingBuffers.empty()) return;
+
+        auto lock = manager->lock();
+        manager->pendingStagingBuffers.reserve(manager->pendingStagingBuffers.size() + stagingBuffers.size());
+        for (auto& b : stagingBuffers) manager->pendingStagingBuffers.push_back(std::move(b));
+    }
 
     ////////////////////////////////////////////////////////////////
     // Getters.
@@ -66,6 +85,16 @@ namespace sol
     MemoryManager& BufferTransaction::getMemoryManager() noexcept { return manager->getMemoryManager(); }
 
     const MemoryManager& BufferTransaction::getMemoryManager() const noexcept { return manager->getMemoryManager(); }
+
+    TransferManager& BufferTransaction::getTransferManager() noexcept { return *manager; }
+
+    const TransferManager& BufferTransaction::getTransferManager() const noexcept { return *manager; }
+
+    const std::vector<uint64_t>& BufferTransaction::getSemaphoreValues() const
+    {
+        if (!committed) throw SolError("Cannot get semaphore values of BufferTransaction before it is committed.");
+        return semaphoreValues;
+    }
 
     ////////////////////////////////////////////////////////////////
     // Staging.
@@ -87,10 +116,20 @@ namespace sol
                                         .stagingBuffer = nullptr});
     }
 
-    bool BufferTransaction::stage(const StagingBufferCopy& copy, const std::optional<MemoryBarrier>& barrier)
+    bool BufferTransaction::stage(const StagingBufferCopy& copy, const std::optional<MemoryBarrier>& barrier, bool wait)
     {
         auto stagingBuffer = tryAllocate(*manager, copy);
-        if (!stagingBuffer) return false;
+        if (!stagingBuffer)
+        {
+            if (wait)
+            {
+                static_cast<void>(manager->lockAndWait());
+                stagingBuffer = tryAllocate(*manager, copy);
+                if (!stagingBuffer) return false;
+            }
+            else
+                return false;
+        }
 
         // Memory barrier that will get the destination buffer from its current state to the transfer state.
         if (barrier)
@@ -391,9 +430,9 @@ namespace sol
             }
         }
 
-        auto lock = manager->lock();
-        manager->wait();
-        index = ++manager->transactionIndex;
+        // Lock manager and wait on previous commits.
+        auto lock = manager->lockAndWait();
+        index     = ++manager->transactionIndex;
 
         // Submit pre-copy release barriers.
         for (uint32_t i = 0; i < familyCount; i++)
@@ -669,6 +708,8 @@ namespace sol
             handleVulkanError(vkQueueSubmit2(memoryManager.getQueue(i).get(), 1, &submit, VK_NULL_HANDLE));
         }
 
+        // Copy final state of semaphore values.
+        semaphoreValues = manager->semaphoreValues;
 
         committed = true;
     }
@@ -676,10 +717,16 @@ namespace sol
     void BufferTransaction::wait()
     {
         if (done) return;
-        if (!committed) throw SolError("Cannot wait an a BufferTransaction that was not yet committed.");
+        if (!committed) throw SolError("Cannot wait on a BufferTransaction that was not yet committed.");
 
         auto lock = manager->lock();
+
+        // We only need to wait if this is still the active transaction.
+        // Otherwise, another transaction was already submitted, which had to perform the wait.
         if (manager->transactionIndex == index) manager->wait();
+
+        // Clear out all staging buffers.
+        staged.clear();
 
         done = true;
     }
