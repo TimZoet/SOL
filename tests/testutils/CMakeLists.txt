@@ -15,6 +15,7 @@ set(SOURCES
 
 set(DEPS_PUBLIC
     sol-core
+    sol-memory
 )
 
 make_target(

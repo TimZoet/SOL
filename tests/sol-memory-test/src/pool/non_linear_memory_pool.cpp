@@ -1,4 +1,4 @@
-#include "sol-memory-test/non_linear_memory_pool.h"
+#include "sol-memory-test/pool/non_linear_memory_pool.h"
 
 ////////////////////////////////////////////////////////////////
 // Module includes.
@@ -46,11 +46,11 @@ void NonLinearMemoryPool::operator()()
     std::vector<sol::MemoryPoolBufferPtr> buffers;
     expectNoThrow([&] {
         constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
-        buffers.emplace_back(pool->allocateBuffer(alloc));
+        buffers.emplace_back(pool->allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Throw));
     });
     expectNoThrow([&] {
         constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
-        buffers.emplace_back(pool->allocateBuffer(alloc));
+        buffers.emplace_back(pool->allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Throw));
     });
     compareEQ(1024ull * 512, buffers[0]->getBufferSize());
     compareEQ(1024ull * 512, buffers[1]->getBufferSize());
@@ -58,25 +58,25 @@ void NonLinearMemoryPool::operator()()
     // Allocation larger than block size.
     expectThrow([&] {
         constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 2048ull, .bufferUsage = 0, .alignment = 0};
-        static_cast<void>(pool->allocateBuffer(alloc));
+        static_cast<void>(pool->allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Throw));
     });
 
     // Fill up remaining blocks.
     expectNoThrow([&] {
         constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 1024ull, .bufferUsage = 0, .alignment = 0};
-        for (size_t i = 0; i < 9; i++) buffers.emplace_back(pool->allocateBuffer(alloc));
+        for (size_t i = 0; i < 9; i++) buffers.emplace_back(pool->allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Throw));
     });
 
     // Out of memory.
     expectThrow([&] {
         constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 128ull, .bufferUsage = 0, .alignment = 0};
-        static_cast<void>(pool->allocateBuffer(alloc));
+        static_cast<void>(pool->allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Throw));
     });
 
     // This pool type does not support waiting.
     expectThrow([&] {
         constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
-        static_cast<void>(pool->allocateBufferWithWait(alloc));
+        static_cast<void>(pool->allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Wait));
     });
 
     // Clear up some space.
@@ -85,19 +85,19 @@ void NonLinearMemoryPool::operator()()
     // Still out of memory because buffer[0] used only half a block.
     expectThrow([&] {
         constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 1024ull, .bufferUsage = 0, .alignment = 0};
-        static_cast<void>(pool->allocateBuffer(alloc));
+        static_cast<void>(pool->allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Throw));
     });
 
     // But this should work again.
     expectNoThrow([&] {
         constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 512ull, .bufferUsage = 0, .alignment = 0};
-        static_cast<void>(pool->allocateBuffer(alloc));
+        static_cast<void>(pool->allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Throw));
     });
 
     // Clear out everything and then fill the whole thing again with a bunch of small allocations.
     expectNoThrow([&] { buffers.clear(); });
     expectNoThrow([&] {
         constexpr sol::IMemoryPool::AllocationInfo alloc{.size = 1024ull * 32ull, .bufferUsage = 0, .alignment = 0};
-        for (size_t i = 0; i < 320; i++) buffers.emplace_back(pool->allocateBuffer(alloc));
+        for (size_t i = 0; i < 320; i++) buffers.emplace_back(pool->allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Throw));
     });
 }

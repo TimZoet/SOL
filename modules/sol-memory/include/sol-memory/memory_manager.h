@@ -101,7 +101,7 @@ namespace sol
         // Allocations.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] IBufferPtr allocateBufferImpl(const AllocationInfo& alloc) override;
+        [[nodiscard]] IBufferPtr allocateBufferImpl(const AllocationInfo& alloc, OnAllocationFailure onFailure) override;
 
         ////////////////////////////////////////////////////////////////
         // Memory pools.

@@ -187,7 +187,7 @@ namespace sol
     // Allocations.
     ////////////////////////////////////////////////////////////////
 
-    IBufferPtr MemoryManager::allocateBufferImpl(const AllocationInfo& alloc)
+    IBufferPtr MemoryManager::allocateBufferImpl(const AllocationInfo& alloc, const OnAllocationFailure onFailure)
     {
         VulkanBuffer::Settings settings;
         settings.device             = getDevice();
@@ -200,7 +200,10 @@ namespace sol
         settings.vma.preferredFlags = alloc.preferredMemoryFlags;
         settings.vma.flags          = alloc.allocationFlags;
         settings.vma.alignment      = alloc.alignment;
-        return std::make_unique<Buffer>(*this, VulkanBuffer::create(settings));
+
+        auto buffer = VulkanBuffer::create(settings, onFailure != OnAllocationFailure::Empty);
+        if (!buffer) return nullptr;
+        return std::make_unique<Buffer>(*this, getDefaultQueueFamily(), std::move(buffer));
     }
 
     ////////////////////////////////////////////////////////////////

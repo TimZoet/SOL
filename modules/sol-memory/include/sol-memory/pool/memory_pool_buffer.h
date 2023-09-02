@@ -24,8 +24,12 @@ namespace sol
 
         MemoryPoolBuffer() = delete;
 
-        MemoryPoolBuffer(
-          IMemoryPool& memoryPool, size_t id, VulkanBuffer& buffer, size_t bufferSize, size_t bufferOffset);
+        MemoryPoolBuffer(IMemoryPool&       memoryPool,
+                         VulkanQueueFamily& queueFamily,
+                         size_t             id,
+                         VulkanBuffer&      buffer,
+                         size_t             bufferSize,
+                         size_t             bufferOffset);
 
         MemoryPoolBuffer(const MemoryPoolBuffer&) = delete;
 

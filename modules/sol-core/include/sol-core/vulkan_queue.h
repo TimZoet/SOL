@@ -62,6 +62,12 @@ namespace sol
          * \brief Get the queue family.
          * \return Queue family.
          */
+        [[nodiscard]] VulkanQueueFamily& getFamily() noexcept;
+
+        /**
+         * \brief Get the queue family.
+         * \return Queue family.
+         */
         [[nodiscard]] const VulkanQueueFamily& getFamily() const noexcept;
 
         /**

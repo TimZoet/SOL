@@ -12,7 +12,10 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    IBuffer::IBuffer(MemoryManager& memoryManager) : manager(&memoryManager) {}
+    IBuffer::IBuffer(MemoryManager& memoryManager, const VulkanQueueFamily& family) :
+        manager(&memoryManager), queueFamily(&family)
+    {
+    }
 
     IBuffer::~IBuffer() noexcept = default;
 
@@ -27,4 +30,13 @@ namespace sol
     MemoryManager& IBuffer::getMemoryManager() noexcept { return *manager; }
 
     const MemoryManager& IBuffer::getMemoryManager() const noexcept { return *manager; }
+
+    const VulkanQueueFamily& IBuffer::getQueueFamily() const noexcept { return *queueFamily; }
+
+    ////////////////////////////////////////////////////////////////
+    // Setters.
+    ////////////////////////////////////////////////////////////////
+
+    void IBuffer::setQueueFamily(const VulkanQueueFamily& family) noexcept { queueFamily = &family; }
+
 }  // namespace sol

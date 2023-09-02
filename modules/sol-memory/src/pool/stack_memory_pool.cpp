@@ -81,7 +81,7 @@ namespace sol
     }
 
     std::expected<MemoryPoolBufferPtr, std::unique_ptr<std::latch>>
-      StackMemoryPool::allocateMemoryPoolBufferImpl(const AllocationInfo& alloc, const bool)
+      StackMemoryPool::allocateMemoryPoolBufferImpl(const AllocationInfo& alloc, const OnAllocationFailure onFailure)
     {
         std::scoped_lock lock(mutex);
 
@@ -98,19 +98,24 @@ namespace sol
         settings.bufferUsage   = alloc.bufferUsage;
         settings.allocator     = getMemoryManager().getAllocator();
         settings.vma.pool      = pool;
+        settings.vma.flags     = getAllocationFlags();
         settings.vma.alignment = alloc.alignment;
 
         // Look for empty spot.
         if (currentIndex < buffers.size())
         {
-            buffers[currentIndex++] = VulkanBuffer::create(settings);
+            auto buffer = VulkanBuffer::create(settings, onFailure != OnAllocationFailure::Empty);
+            if (!buffer) return nullptr;
+            buffers[currentIndex++] = std::move(buffer);
             return std::make_unique<MemoryPoolBuffer>(
-              *this, currentIndex - 1, *buffers[currentIndex - 1], alloc.size, 0);
+              *this, getDefaultQueueFamily(), currentIndex - 1, *buffers[currentIndex - 1], alloc.size, 0);
         }
 
         // No empty spot found, construct at end.
-        auto& buffer = *buffers.emplace_back(VulkanBuffer::create(settings));
+        auto buffer = VulkanBuffer::create(settings, onFailure != OnAllocationFailure::Empty);
+        if (!buffer) return nullptr;
+        auto& b      = *buffers.emplace_back(std::move(buffer));
         currentIndex = buffers.size();
-        return std::make_unique<MemoryPoolBuffer>(*this, currentIndex - 1, buffer, alloc.size, 0);
+        return std::make_unique<MemoryPoolBuffer>(*this, getDefaultQueueFamily(), currentIndex - 1, b, alloc.size, 0);
     }
 }  // namespace sol

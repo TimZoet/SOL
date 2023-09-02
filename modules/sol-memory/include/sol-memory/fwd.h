@@ -9,6 +9,7 @@
 namespace sol
 {
     class Buffer;
+    class BufferTransaction;
     class DoubleStackMemoryPool;
     class FreeAtOnceMemoryPool;
     class IBuffer;
@@ -19,9 +20,12 @@ namespace sol
     class NonLinearMemoryPool;
     class RingBufferMemoryPool;
     class StackMemoryPool;
+    class TransferManager;
 
     using BufferPtr                      = std::unique_ptr<Buffer>;
     using BufferSharedPtr                = std::shared_ptr<Buffer>;
+    using BufferTransactionPtr           = std::unique_ptr<BufferTransaction>;
+    using BufferTransactionSharedPtr     = std::shared_ptr<BufferTransaction>;
     using DoubleStackMemoryPoolPtr       = std::unique_ptr<DoubleStackMemoryPool>;
     using DoubleStackMemoryPoolSharedPtr = std::shared_ptr<DoubleStackMemoryPool>;
     using FreeAtOnceMemoryPoolPtr        = std::unique_ptr<FreeAtOnceMemoryPool>;
@@ -42,4 +46,6 @@ namespace sol
     using RingBufferMemoryPoolSharedPtr  = std::shared_ptr<RingBufferMemoryPool>;
     using StackMemoryPoolPtr             = std::unique_ptr<StackMemoryPool>;
     using StackMemoryPoolSharedPtr       = std::shared_ptr<StackMemoryPool>;
+    using TransferManagerPtr             = std::unique_ptr<TransferManager>;
+    using TransferManagerSharedPtr       = std::shared_ptr<TransferManager>;
 }  // namespace sol

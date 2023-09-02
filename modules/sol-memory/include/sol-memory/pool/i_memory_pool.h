@@ -78,7 +78,7 @@ namespace sol
             size_t blockSize = 0;
 
             /**
-             * \brief Minimum number of memory blocks.If > 0, these blocks are preallocated.
+             * \brief Minimum number of memory blocks. If > 0, these blocks are preallocated.
              */
             size_t minBlocks = 0;
 
@@ -158,43 +158,31 @@ namespace sol
         /**
          * \brief Allocate a new buffer from this memory pool.
          * \param alloc Allocation info.
+         * \param onFailure Action to take when allocation fails.
          * \return Buffer.
          */
-        [[nodiscard]] MemoryPoolBufferPtr allocateBuffer(AllocationInfo alloc);
+        [[nodiscard]] MemoryPoolBufferPtr allocateBuffer(AllocationInfo alloc, OnAllocationFailure onFailure);
 
         /**
          * \brief Allocate a new buffer from this memory pool. Calls allocateBuffer(AllocationInfo) with all parameters except size left at default.
          * \param size Buffer size in bytes.
+         * \param onFailure Action to take when allocation fails.
          * \return Buffer.
          */
-        [[nodiscard]] MemoryPoolBufferPtr allocateBuffer(size_t size);
-
-        /**
-         * \brief Allocate a new buffer from this memory pool. If pool is full, wait for deallocations that free up space.
-         * Note that a wrong (de)allocation order, or not enough memory being available ever, can result in deadlocks.
-         * \param alloc Allocation info.
-         * \return Buffer.
-         */
-        [[nodiscard]] MemoryPoolBufferPtr allocateBufferWithWait(AllocationInfo alloc);
-
-        /**
-         * \brief Allocate a new buffer from this memory pool. Calls allocateBufferWithWait(AllocationInfo) with all parameters except size left at default.
-         * \param size Buffer size in bytes.
-         * \return Buffer.
-         */
-        [[nodiscard]] MemoryPoolBufferPtr allocateBufferWithWait(size_t size);
+        [[nodiscard]] MemoryPoolBufferPtr allocateBuffer(size_t size, OnAllocationFailure onFailure);
 
     protected:
-        [[nodiscard]] IBufferPtr allocateBufferImpl(const IBufferAllocator::AllocationInfo& alloc) override;
+        [[nodiscard]] IBufferPtr allocateBufferImpl(const IBufferAllocator::AllocationInfo& alloc,
+                                                    OnAllocationFailure                     onFailure) override;
 
         /**
          * \brief Allocate a new buffer from this memory pool.
          * \param alloc Allocation info.
-         * \param waitOnOutOfMemory If waiting is not supported, this value will never be true and can be ignored.
+         * \param onFailure Action to take when allocation fails.
          * \return Buffer.
          */
         virtual [[nodiscard]] std::expected<MemoryPoolBufferPtr, std::unique_ptr<std::latch>>
-          allocateMemoryPoolBufferImpl(const AllocationInfo& alloc, bool waitOnOutOfMemory) = 0;
+          allocateMemoryPoolBufferImpl(const AllocationInfo& alloc, OnAllocationFailure onFailure) = 0;
 
         /**
          * \brief Clean up resources associated with specified buffer. Called by MemoryPoolBuffer on destruction.
@@ -203,7 +191,8 @@ namespace sol
         virtual void releaseBuffer(const MemoryPoolBuffer& buffer) = 0;
 
     private:
-        [[nodiscard]] MemoryPoolBufferPtr allocateMemoryPoolBuffer(const AllocationInfo& alloc, bool waitOnOutOfMemory);
+        [[nodiscard]] MemoryPoolBufferPtr allocateMemoryPoolBuffer(const AllocationInfo& alloc,
+                                                                   OnAllocationFailure   onFailure);
 
         ////////////////////////////////////////////////////////////////
         // Member variables.
