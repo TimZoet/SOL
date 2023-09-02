@@ -118,6 +118,8 @@ namespace sol
 
     bool BufferTransaction::stage(const StagingBufferCopy& copy, const std::optional<MemoryBarrier>& barrier, bool wait)
     {
+        // TODO: Here and in the other stage method we could test for bufferUsage being transfer_dst/src.
+
         auto stagingBuffer = tryAllocate(*manager, copy);
         if (!stagingBuffer)
         {

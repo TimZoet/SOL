@@ -268,7 +268,7 @@ namespace sol
          * buffer.
          *
          * \param copy Copy info.
-         * \param barrier Optional barrier placed around the copy command.
+         * \param barrier Optional explicit barrier placed around the copy command.
          * \param waitOnAllocFailure If true and staging buffer allocation fails, wait on previous transaction(s)
          * to complete so that they release their staging buffers, and try allocating again.
          * \return Staging buffer allocation success. If allocation fails, false is returned and this transaction must
@@ -293,8 +293,8 @@ namespace sol
          * and the barrier.dst values for the second scope. Note that if the copy is only for part of the buffer, both
          * barriers still apply to the whole buffer.
          * \param copy Copy.
-         * \param srcBarrier Optional memory barrier for the source buffer.
-         * \param dstBarrier Optional memory barrier for the destination buffer.
+         * \param srcBarrier Optional explicit memory barrier for the source buffer.
+         * \param dstBarrier Optional explicit memory barrier for the destination buffer.
          */
         void stage(const BufferToBufferCopy&           copy,
                    const std::optional<MemoryBarrier>& srcBarrier = {},
