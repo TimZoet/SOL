@@ -11,6 +11,7 @@ set(HEADERS
     ${INCLUDE_DIR}/buffer_transaction.h
     ${INCLUDE_DIR}/i_buffer.h
     ${INCLUDE_DIR}/i_buffer_allocator.h
+    ${INCLUDE_DIR}/i_image.h
     ${INCLUDE_DIR}/memory_manager.h
     ${INCLUDE_DIR}/transfer_manager.h
 
@@ -27,6 +28,7 @@ set(SOURCES
     ${SRC_DIR}/buffer_transaction.cpp
     ${SRC_DIR}/i_buffer.cpp
     ${SRC_DIR}/i_buffer_allocator.cpp
+    ${SRC_DIR}/i_image.cpp
     ${SRC_DIR}/memory_manager.cpp
     ${SRC_DIR}/transfer_manager.cpp
 

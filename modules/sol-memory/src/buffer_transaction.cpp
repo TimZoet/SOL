@@ -1,12 +1,19 @@
 #include "sol-memory/buffer_transaction.h"
 
 ////////////////////////////////////////////////////////////////
+// Standard includes.
+////////////////////////////////////////////////////////////////
+
+#include <ranges>
+
+////////////////////////////////////////////////////////////////
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
 #include "sol-core/vulkan_buffer.h"
 #include "sol-core/vulkan_command_buffer.h"
 #include "sol-core/vulkan_device.h"
+#include "sol-core/vulkan_image.h"
 #include "sol-core/vulkan_physical_device.h"
 #include "sol-core/vulkan_queue.h"
 #include "sol-core/vulkan_timeline_semaphore.h"
@@ -18,6 +25,7 @@
 ////////////////////////////////////////////////////////////////
 
 #include "sol-memory/i_buffer.h"
+#include "sol-memory/i_image.h"
 #include "sol-memory/memory_manager.h"
 #include "sol-memory/transfer_manager.h"
 
@@ -28,6 +36,27 @@ namespace
     {
         const sol::IBufferAllocator::AllocationInfo alloc{
           .size                 = copy.size == VK_WHOLE_SIZE ? copy.dstBuffer.getBufferSize() : copy.size,
+          .bufferUsage          = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+          .sharingMode          = VK_SHARING_MODE_EXCLUSIVE,
+          .memoryUsage          = VMA_MEMORY_USAGE_AUTO,
+          .requiredMemoryFlags  = 0,
+          .preferredMemoryFlags = 0,
+          .allocationFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+          .alignment       = 0};
+        auto stagingBuffer =
+          manager.getMemoryPool().allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Empty);
+
+        if (!stagingBuffer) return nullptr;
+
+        stagingBuffer->getBuffer().setData(copy.data, stagingBuffer->getBufferSize());
+        return stagingBuffer;
+    }
+
+    [[nodiscard]] sol::IBufferPtr tryAllocate(const sol::TransferManager&                     manager,
+                                              const sol::BufferTransaction::StagingImageCopy& copy)
+    {
+        const sol::IBufferAllocator::AllocationInfo alloc{
+          .size                 = copy.dataSize,
           .bufferUsage          = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
           .sharingMode          = VK_SHARING_MODE_EXCLUSIVE,
           .memoryUsage          = VMA_MEMORY_USAGE_AUTO,
@@ -59,15 +88,11 @@ namespace sol
          * If necessary, collect pending staging buffers. They will be destroyed in the next wait of the manager.
          */
 
-        if (!committed || staged.empty()) return;
+        if (!committed || (s2bCopies.empty() && s2iCopies.empty())) return;
 
         std::vector<IBufferPtr> stagingBuffers;
-        for (auto& [preBarrier, postBarrier, s2bCopy, b2bCopy, stagingBuffer] : staged)
-        {
-            if (stagingBuffer) stagingBuffers.push_back(std::move(stagingBuffer));
-        }
-
-        if (stagingBuffers.empty()) return;
+        for (auto& buffer : s2bCopies | std::views::values) stagingBuffers.push_back(std::move(buffer));
+        for (auto& buffer : s2iCopies | std::views::values) stagingBuffers.push_back(std::move(buffer));
 
         auto lock = manager->lock();
         manager->pendingStagingBuffers.reserve(manager->pendingStagingBuffers.size() + stagingBuffers.size());
@@ -102,30 +127,34 @@ namespace sol
 
     void BufferTransaction::stage(MemoryBarrier barrier, const BarrierLocation location)
     {
+        // TODO: All stage methods should check transaction was not yet committed.
+
         if (location == BarrierLocation::BeforeCopy)
-            staged.emplace_back(Element{.preBarrier    = barrier,
-                                        .postBarrier   = std::nullopt,
-                                        .s2bCopy       = std::nullopt,
-                                        .b2bCopy       = std::nullopt,
-                                        .stagingBuffer = nullptr});
+            preBufferBarriers.emplace_back(barrier);
         else
-            staged.emplace_back(Element{.preBarrier    = std::nullopt,
-                                        .postBarrier   = barrier,
-                                        .s2bCopy       = std::nullopt,
-                                        .b2bCopy       = std::nullopt,
-                                        .stagingBuffer = nullptr});
+            postBufferBarriers.emplace_back(barrier);
     }
 
-    bool BufferTransaction::stage(const StagingBufferCopy& copy, const std::optional<MemoryBarrier>& barrier, bool wait)
+    void BufferTransaction::stage(ImageBarrier barrier, BarrierLocation location)
     {
-        // TODO: Here and in the other stage method we could test for bufferUsage being transfer_dst/src.
+        if (location == BarrierLocation::BeforeCopy)
+            preImageBarriers.emplace_back(barrier);
+        else
+            postImageBarriers.emplace_back(barrier);
+    }
+
+    bool BufferTransaction::stage(const StagingBufferCopy&            copy,
+                                  const std::optional<MemoryBarrier>& barrier,
+                                  const bool                          waitOnAllocFailure)
+    {
+        // TODO: Here and in the other stage method we could test for image/bufferUsage being transfer_dst/src.
 
         auto stagingBuffer = tryAllocate(*manager, copy);
         if (!stagingBuffer)
         {
-            if (wait)
+            if (waitOnAllocFailure)
             {
-                static_cast<void>(manager->lockAndWait());
+                auto lock     = manager->lockAndWait();
                 stagingBuffer = tryAllocate(*manager, copy);
                 if (!stagingBuffer) return false;
             }
@@ -148,11 +177,7 @@ namespace sol
         }
 
         // The actual copy.
-        staged.emplace_back(Element{.preBarrier    = std::nullopt,
-                                    .postBarrier   = std::nullopt,
-                                    .s2bCopy       = copy,
-                                    .b2bCopy       = std::nullopt,
-                                    .stagingBuffer = std::move(stagingBuffer)});
+        s2bCopies.emplace_back(copy, std::move(stagingBuffer));
 
         // Memory barrier that will get the destination buffer from the transfer state to its final state.
         if (barrier)
@@ -166,6 +191,77 @@ namespace sol
                                 .dstStage  = barrier->dstStage,
                                 .srcAccess = VK_ACCESS_2_TRANSFER_WRITE_BIT,
                                 .dstAccess = barrier->dstStage},
+                  BarrierLocation::AfterCopy);
+        }
+
+        return true;
+    }
+
+    bool BufferTransaction::stage(const StagingImageCopy&            copy,
+                                  const std::optional<ImageBarrier>& barrier,
+                                  const bool                         waitOnAllocFailure)
+    {
+        // TODO: If there is a barrier, it is currently assumed that the levels and layers it describes match the regions in the copy.
+
+        auto stagingBuffer = tryAllocate(*manager, copy);
+        if (!stagingBuffer)
+        {
+            if (waitOnAllocFailure)
+            {
+                auto lock     = manager->lockAndWait();
+                stagingBuffer = tryAllocate(*manager, copy);
+                if (!stagingBuffer) return false;
+            }
+            else
+                return false;
+        }
+
+        // Image barrier that will get the destination image from its current state to the transfer state.
+        if (barrier)
+        {
+            stage(ImageBarrier{.image          = copy.dstImage,
+                               .dstFamily      = copy.dstOnDedicatedTransfer ?
+                                                   &getMemoryManager().getTransferQueue().getFamily() :
+                                                   nullptr,
+                               .srcStage       = barrier->srcStage,
+                               .dstStage       = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                               .srcAccess      = barrier->srcAccess,
+                               .dstAccess      = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                               .srcLayout      = barrier->srcLayout,
+                               .dstLayout      = barrier->dstLayout,
+                               .aspectMask     = barrier->aspectMask,
+                               .baseMipLevel   = barrier->baseMipLevel,
+                               .levelCount     = barrier->levelCount,
+                               .baseArrayLayer = barrier->baseArrayLayer,
+                               .layerCount     = barrier->layerCount},
+                  BarrierLocation::BeforeCopy);
+        }
+
+        // The actual copy.
+        s2iCopies.emplace_back(copy, std::move(stagingBuffer));
+
+        // Memory barrier that will get the destination buffer from the transfer state to its final state.
+        if (barrier)
+        {
+            const auto* dstFamily = barrier->dstFamily;
+            // TODO: This assumes that all levels and layers are owned by the same queue (also done during the commit).
+            // Make a note of that in the docs.
+            if (copy.dstOnDedicatedTransfer && !dstFamily)
+                dstFamily = &copy.dstImage.getQueueFamily(barrier->baseMipLevel, barrier->baseArrayLayer);
+
+            stage(ImageBarrier{.image          = copy.dstImage,
+                               .dstFamily      = dstFamily,
+                               .srcStage       = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                               .dstStage       = barrier->dstStage,
+                               .srcAccess      = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                               .dstAccess      = barrier->dstStage,
+                               .srcLayout      = barrier->srcLayout,
+                               .dstLayout      = barrier->dstLayout,
+                               .aspectMask     = barrier->aspectMask,
+                               .baseMipLevel   = barrier->baseMipLevel,
+                               .levelCount     = barrier->levelCount,
+                               .baseArrayLayer = barrier->baseArrayLayer,
+                               .layerCount     = barrier->layerCount},
                   BarrierLocation::AfterCopy);
         }
 
@@ -205,11 +301,7 @@ namespace sol
         }
 
         // The actual copy.
-        staged.emplace_back(Element{.preBarrier    = std::nullopt,
-                                    .postBarrier   = std::nullopt,
-                                    .s2bCopy       = std::nullopt,
-                                    .b2bCopy       = copy,
-                                    .stagingBuffer = nullptr});
+        b2bCopies.emplace_back(copy);
 
         // Memory barrier that will get the source buffer from the transfer read state to its final state.
         if (srcBarrier)
@@ -256,180 +348,353 @@ namespace sol
         const auto familyCount    = static_cast<uint32_t>(physicalDevice.getQueueFamilies().size());
 
         // Barriers releasing ownership from current queue, submitted before copies.
-        std::vector<std::vector<VkBufferMemoryBarrier2>> preCopyReleaseBarriers(familyCount);
+        std::vector<std::vector<VkBufferMemoryBarrier2>> preCopyReleaseBufferBarriers(familyCount);
+        std::vector<std::vector<VkImageMemoryBarrier2>>  preCopyReleaseImageBarriers(familyCount);
         // Barriers acquiring ownership on destination queue, submitted before copies.
         // Queue can also be the transfer queue as an intermediate before the final
         // release-acquire is done post copy.
-        std::vector<std::vector<VkBufferMemoryBarrier2>> preCopyAcquireBarriers(familyCount);
+        std::vector<std::vector<VkBufferMemoryBarrier2>> preCopyAcquireBufferBarriers(familyCount);
+        std::vector<std::vector<VkImageMemoryBarrier2>>  preCopyAcquireImageBarriers(familyCount);
         // Barriers releasing ownership, submitted after copies.
         // Queue can also be the transfer queue that was used as an intermediate.
-        std::vector<std::vector<VkBufferMemoryBarrier2>> postCopyReleaseBarriers(familyCount);
+        std::vector<std::vector<VkBufferMemoryBarrier2>> postCopyReleaseBufferBarriers(familyCount);
+        std::vector<std::vector<VkImageMemoryBarrier2>>  postCopyReleaseImageBarriers(familyCount);
         // Barriers acquiring ownership on destination queue, submitted after copies.
-        std::vector<std::vector<VkBufferMemoryBarrier2>> postCopyAcquireBarriers(familyCount);
+        std::vector<std::vector<VkBufferMemoryBarrier2>> postCopyAcquireBufferBarriers(familyCount);
+        std::vector<std::vector<VkImageMemoryBarrier2>>  postCopyAcquireImageBarriers(familyCount);
 
-        std::vector<VkBufferCopy2>     bufferCopies;
-        std::vector<VkCopyBufferInfo2> copies;
+        std::vector<VkBufferCopy2>            s2bRegions;
+        std::vector<VkBufferImageCopy2>       s2iRegions;
+        std::vector<VkCopyBufferInfo2>        s2bInfos;
+        std::vector<VkCopyBufferToImageInfo2> s2iInfos;
 
-        // Collect all barriers and copies.
-        for (const auto& [preBarrier, postBarrier, s2bCopy, b2bCopy, stagingBuffer] : staged)
+        for (const auto& barrier : preBufferBarriers)
         {
-            // Barrier before copy.
-            if (preBarrier)
+            const auto& srcFamily = barrier.buffer.getQueueFamily();
+            const auto& dstFamily = barrier.dstFamily ? *barrier.dstFamily : srcFamily;
+
+            // Source and destionation family are the same. Only an acquire on the destination queue is needed.
+            if (&srcFamily == &dstFamily)
             {
-                const auto& srcFamily = preBarrier->buffer.getQueueFamily();
-                const auto& dstFamily = preBarrier->dstFamily ? *preBarrier->dstFamily : srcFamily;
-
-                // Source and destionation family are the same. Only an acquire on the destination queue is needed.
-                if (&srcFamily == &dstFamily)
-                {
-                    preCopyAcquireBarriers[dstFamily.getIndex()].emplace_back(
-                      VkBufferMemoryBarrier2{.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
-                                             .pNext               = nullptr,
-                                             .srcStageMask        = preBarrier->srcStage,
-                                             .srcAccessMask       = preBarrier->srcAccess,
-                                             .dstStageMask        = preBarrier->dstStage,
-                                             .dstAccessMask       = preBarrier->dstAccess,
-                                             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                                             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                                             .buffer              = preBarrier->buffer.getBuffer().get(),
-                                             .offset              = preBarrier->buffer.getBufferOffset(),
-                                             .size                = preBarrier->buffer.getBufferSize()});
-                }
-                // Source and destination family are different. Release and acquire are needed.
-                else
-                {
-                    preCopyReleaseBarriers[srcFamily.getIndex()].emplace_back(
-                      VkBufferMemoryBarrier2{.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
-                                             .pNext               = nullptr,
-                                             .srcStageMask        = preBarrier->srcStage,
-                                             .srcAccessMask       = preBarrier->srcAccess,
-                                             .dstStageMask        = VK_PIPELINE_STAGE_2_NONE,
-                                             .dstAccessMask       = VK_ACCESS_2_NONE,
-                                             .srcQueueFamilyIndex = srcFamily.getIndex(),
-                                             .dstQueueFamilyIndex = dstFamily.getIndex(),
-                                             .buffer              = preBarrier->buffer.getBuffer().get(),
-                                             .offset              = preBarrier->buffer.getBufferOffset(),
-                                             .size                = preBarrier->buffer.getBufferSize()});
-
-                    preCopyAcquireBarriers[dstFamily.getIndex()].emplace_back(
-                      VkBufferMemoryBarrier2{.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
-                                             .pNext               = nullptr,
-                                             .srcStageMask        = VK_PIPELINE_STAGE_2_NONE,
-                                             .srcAccessMask       = VK_ACCESS_2_NONE,
-                                             .dstStageMask        = preBarrier->dstStage,
-                                             .dstAccessMask       = preBarrier->dstAccess,
-                                             .srcQueueFamilyIndex = srcFamily.getIndex(),
-                                             .dstQueueFamilyIndex = dstFamily.getIndex(),
-                                             .buffer              = preBarrier->buffer.getBuffer().get(),
-                                             .offset              = preBarrier->buffer.getBufferOffset(),
-                                             .size                = preBarrier->buffer.getBufferSize()});
-
-                    // Update queue family.
-                    preBarrier->buffer.setQueueFamily(dstFamily);
-                }
+                preCopyAcquireBufferBarriers[dstFamily.getIndex()].emplace_back(
+                  VkBufferMemoryBarrier2{.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+                                         .pNext               = nullptr,
+                                         .srcStageMask        = barrier.srcStage,
+                                         .srcAccessMask       = barrier.srcAccess,
+                                         .dstStageMask        = barrier.dstStage,
+                                         .dstAccessMask       = barrier.dstAccess,
+                                         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                                         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                                         .buffer              = barrier.buffer.getBuffer().get(),
+                                         .offset              = barrier.buffer.getBufferOffset(),
+                                         .size                = barrier.buffer.getBufferSize()});
             }
-            //  Barrier after copy.
-            else if (postBarrier)
-            {
-                const auto& srcFamily = postBarrier->buffer.getQueueFamily();
-                const auto& dstFamily = postBarrier->dstFamily ? *postBarrier->dstFamily : srcFamily;
-
-                // Source and destionation family are the same. Only an acquire on the destination queue is needed.
-                if (&srcFamily == &dstFamily)
-                {
-                    postCopyAcquireBarriers[dstFamily.getIndex()].emplace_back(
-                      VkBufferMemoryBarrier2{.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
-                                             .pNext               = nullptr,
-                                             .srcStageMask        = postBarrier->srcStage,
-                                             .srcAccessMask       = postBarrier->srcAccess,
-                                             .dstStageMask        = postBarrier->dstStage,
-                                             .dstAccessMask       = postBarrier->dstAccess,
-                                             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                                             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                                             .buffer              = postBarrier->buffer.getBuffer().get(),
-                                             .offset              = postBarrier->buffer.getBufferOffset(),
-                                             .size                = postBarrier->buffer.getBufferSize()});
-                }
-                // Source and destination family are different. Release and acquire are needed.
-                else
-                {
-                    postCopyReleaseBarriers[srcFamily.getIndex()].emplace_back(
-                      VkBufferMemoryBarrier2{.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
-                                             .pNext               = nullptr,
-                                             .srcStageMask        = postBarrier->srcStage,
-                                             .srcAccessMask       = postBarrier->srcAccess,
-                                             .dstStageMask        = VK_PIPELINE_STAGE_2_NONE,
-                                             .dstAccessMask       = VK_ACCESS_2_NONE,
-                                             .srcQueueFamilyIndex = srcFamily.getIndex(),
-                                             .dstQueueFamilyIndex = dstFamily.getIndex(),
-                                             .buffer              = postBarrier->buffer.getBuffer().get(),
-                                             .offset              = postBarrier->buffer.getBufferOffset(),
-                                             .size                = postBarrier->buffer.getBufferSize()});
-
-                    postCopyAcquireBarriers[dstFamily.getIndex()].emplace_back(
-                      VkBufferMemoryBarrier2{.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
-                                             .pNext               = nullptr,
-                                             .srcStageMask        = VK_PIPELINE_STAGE_2_NONE,
-                                             .srcAccessMask       = VK_ACCESS_2_NONE,
-                                             .dstStageMask        = postBarrier->dstStage,
-                                             .dstAccessMask       = postBarrier->dstAccess,
-                                             .srcQueueFamilyIndex = srcFamily.getIndex(),
-                                             .dstQueueFamilyIndex = dstFamily.getIndex(),
-                                             .buffer              = postBarrier->buffer.getBuffer().get(),
-                                             .offset              = postBarrier->buffer.getBufferOffset(),
-                                             .size                = postBarrier->buffer.getBufferSize()});
-
-                    // Update queue family.
-                    postBarrier->buffer.setQueueFamily(dstFamily);
-                }
-            }
-            // Staging buffer copy.
-            else if (s2bCopy)
-            {
-                bufferCopies.emplace_back(VkBufferCopy2{
-                  .sType     = VK_STRUCTURE_TYPE_BUFFER_COPY_2,
-                  .pNext     = nullptr,
-                  .srcOffset = stagingBuffer->getBufferOffset(),
-                  .dstOffset = s2bCopy->offset + s2bCopy->dstBuffer.getBufferOffset(),
-                  .size      = s2bCopy->size == VK_WHOLE_SIZE ? s2bCopy->dstBuffer.getBufferSize() : s2bCopy->size});
-            }
-            // Buffer to buffer copy.
-            else if (b2bCopy)
-            {
-                bufferCopies.emplace_back(VkBufferCopy2{
-                  .sType     = VK_STRUCTURE_TYPE_BUFFER_COPY_2,
-                  .pNext     = nullptr,
-                  .srcOffset = b2bCopy->srcOffset + b2bCopy->srcBuffer.getBufferOffset(),
-                  .dstOffset = b2bCopy->dstOffset + b2bCopy->dstBuffer.getBufferOffset(),
-                  .size      = b2bCopy->size == VK_WHOLE_SIZE ? b2bCopy->srcBuffer.getBufferSize() : b2bCopy->size});
-            }
+            // Source and destination family are different. Release and acquire are needed.
             else
-                assert(false);
+            {
+                preCopyReleaseBufferBarriers[srcFamily.getIndex()].emplace_back(
+                  VkBufferMemoryBarrier2{.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+                                         .pNext               = nullptr,
+                                         .srcStageMask        = barrier.srcStage,
+                                         .srcAccessMask       = barrier.srcAccess,
+                                         .dstStageMask        = VK_PIPELINE_STAGE_2_NONE,
+                                         .dstAccessMask       = VK_ACCESS_2_NONE,
+                                         .srcQueueFamilyIndex = srcFamily.getIndex(),
+                                         .dstQueueFamilyIndex = dstFamily.getIndex(),
+                                         .buffer              = barrier.buffer.getBuffer().get(),
+                                         .offset              = barrier.buffer.getBufferOffset(),
+                                         .size                = barrier.buffer.getBufferSize()});
+
+                preCopyAcquireBufferBarriers[dstFamily.getIndex()].emplace_back(
+                  VkBufferMemoryBarrier2{.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+                                         .pNext               = nullptr,
+                                         .srcStageMask        = VK_PIPELINE_STAGE_2_NONE,
+                                         .srcAccessMask       = VK_ACCESS_2_NONE,
+                                         .dstStageMask        = barrier.dstStage,
+                                         .dstAccessMask       = barrier.dstAccess,
+                                         .srcQueueFamilyIndex = srcFamily.getIndex(),
+                                         .dstQueueFamilyIndex = dstFamily.getIndex(),
+                                         .buffer              = barrier.buffer.getBuffer().get(),
+                                         .offset              = barrier.buffer.getBufferOffset(),
+                                         .size                = barrier.buffer.getBufferSize()});
+
+                // Update queue family.
+                barrier.buffer.setQueueFamily(dstFamily);
+            }
         }
 
-        // Collect copy infos. (Needs to happen after bufferCopies was fully filled for stable pointers.)
-        size_t copyIndex = 0;
-        for (const auto& [preBarrier, postBarrier, s2bCopy, b2bCopy, stagingBuffer] : staged)
+        for (const auto& barrier : postBufferBarriers)
         {
-            if (s2bCopy)
+            const auto& srcFamily = barrier.buffer.getQueueFamily();
+            const auto& dstFamily = barrier.dstFamily ? *barrier.dstFamily : srcFamily;
+
+            // Source and destionation family are the same. Only an acquire on the destination queue is needed.
+            if (&srcFamily == &dstFamily)
             {
-                copies.emplace_back(VkCopyBufferInfo2{.sType       = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,
-                                                      .pNext       = nullptr,
-                                                      .srcBuffer   = stagingBuffer->getBuffer().get(),
-                                                      .dstBuffer   = s2bCopy->dstBuffer.getBuffer().get(),
-                                                      .regionCount = 1,
-                                                      .pRegions    = &bufferCopies[copyIndex++]});
+                postCopyAcquireBufferBarriers[dstFamily.getIndex()].emplace_back(
+                  VkBufferMemoryBarrier2{.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+                                         .pNext               = nullptr,
+                                         .srcStageMask        = barrier.srcStage,
+                                         .srcAccessMask       = barrier.srcAccess,
+                                         .dstStageMask        = barrier.dstStage,
+                                         .dstAccessMask       = barrier.dstAccess,
+                                         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                                         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                                         .buffer              = barrier.buffer.getBuffer().get(),
+                                         .offset              = barrier.buffer.getBufferOffset(),
+                                         .size                = barrier.buffer.getBufferSize()});
             }
-            // Copy.
-            else if (b2bCopy)
+            // Source and destination family are different. Release and acquire are needed.
+            else
             {
-                copies.emplace_back(VkCopyBufferInfo2{.sType       = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,
-                                                      .pNext       = nullptr,
-                                                      .srcBuffer   = b2bCopy->srcBuffer.getBuffer().get(),
-                                                      .dstBuffer   = b2bCopy->dstBuffer.getBuffer().get(),
-                                                      .regionCount = 1,
-                                                      .pRegions    = &bufferCopies[copyIndex++]});
+                postCopyReleaseBufferBarriers[srcFamily.getIndex()].emplace_back(
+                  VkBufferMemoryBarrier2{.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+                                         .pNext               = nullptr,
+                                         .srcStageMask        = barrier.srcStage,
+                                         .srcAccessMask       = barrier.srcAccess,
+                                         .dstStageMask        = VK_PIPELINE_STAGE_2_NONE,
+                                         .dstAccessMask       = VK_ACCESS_2_NONE,
+                                         .srcQueueFamilyIndex = srcFamily.getIndex(),
+                                         .dstQueueFamilyIndex = dstFamily.getIndex(),
+                                         .buffer              = barrier.buffer.getBuffer().get(),
+                                         .offset              = barrier.buffer.getBufferOffset(),
+                                         .size                = barrier.buffer.getBufferSize()});
+
+                postCopyAcquireBufferBarriers[dstFamily.getIndex()].emplace_back(
+                  VkBufferMemoryBarrier2{.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+                                         .pNext               = nullptr,
+                                         .srcStageMask        = VK_PIPELINE_STAGE_2_NONE,
+                                         .srcAccessMask       = VK_ACCESS_2_NONE,
+                                         .dstStageMask        = barrier.dstStage,
+                                         .dstAccessMask       = barrier.dstAccess,
+                                         .srcQueueFamilyIndex = srcFamily.getIndex(),
+                                         .dstQueueFamilyIndex = dstFamily.getIndex(),
+                                         .buffer              = barrier.buffer.getBuffer().get(),
+                                         .offset              = barrier.buffer.getBufferOffset(),
+                                         .size                = barrier.buffer.getBufferSize()});
+
+                // Update queue family.
+                barrier.buffer.setQueueFamily(dstFamily);
             }
+        }
+
+        for (const auto& barrier : preImageBarriers)
+        {
+            const auto& srcFamily = barrier.image.getQueueFamily(barrier.baseMipLevel, barrier.baseArrayLayer);
+            const auto& dstFamily = barrier.dstFamily ? *barrier.dstFamily : srcFamily;
+
+            // Source and destionation family are the same. Only an acquire on the destination queue is needed.
+            if (&srcFamily == &dstFamily)
+            {
+                preCopyAcquireImageBarriers[dstFamily.getIndex()].emplace_back(VkImageMemoryBarrier2{
+                  .sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                  .pNext               = nullptr,
+                  .srcStageMask        = barrier.srcStage,
+                  .srcAccessMask       = barrier.srcAccess,
+                  .dstStageMask        = barrier.dstStage,
+                  .dstAccessMask       = barrier.dstAccess,
+                  .oldLayout           = barrier.srcLayout,
+                  .newLayout           = barrier.dstLayout,
+                  .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                  .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                  .image               = barrier.image.getImage().get(),
+                  .subresourceRange    = VkImageSubresourceRange{.aspectMask     = barrier.aspectMask,
+                                                                 .baseMipLevel   = barrier.baseMipLevel,
+                                                                 .levelCount     = barrier.levelCount,
+                                                                 .baseArrayLayer = barrier.baseArrayLayer,
+                                                                 .layerCount     = barrier.layerCount}});
+            }
+            // Source and destination family are different. Release and acquire are needed.
+            else
+            {
+                preCopyReleaseImageBarriers[srcFamily.getIndex()].emplace_back(VkImageMemoryBarrier2{
+                  .sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                  .pNext               = nullptr,
+                  .srcStageMask        = barrier.srcStage,
+                  .srcAccessMask       = barrier.srcAccess,
+                  .dstStageMask        = VK_PIPELINE_STAGE_2_NONE,
+                  .dstAccessMask       = VK_ACCESS_2_NONE,
+                  .oldLayout           = barrier.srcLayout,
+                  .newLayout           = barrier.dstLayout,
+                  .srcQueueFamilyIndex = srcFamily.getIndex(),
+                  .dstQueueFamilyIndex = dstFamily.getIndex(),
+                  .image               = barrier.image.getImage().get(),
+                  .subresourceRange    = VkImageSubresourceRange{.aspectMask     = barrier.aspectMask,
+                                                                 .baseMipLevel   = barrier.baseMipLevel,
+                                                                 .levelCount     = barrier.levelCount,
+                                                                 .baseArrayLayer = barrier.baseArrayLayer,
+                                                                 .layerCount     = barrier.layerCount}});
+
+                preCopyAcquireImageBarriers[dstFamily.getIndex()].emplace_back(VkImageMemoryBarrier2{
+                  .sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                  .pNext               = nullptr,
+                  .srcStageMask        = VK_PIPELINE_STAGE_2_NONE,
+                  .srcAccessMask       = VK_ACCESS_2_NONE,
+                  .dstStageMask        = barrier.dstStage,
+                  .dstAccessMask       = barrier.dstAccess,
+                  .oldLayout           = barrier.srcLayout,
+                  .newLayout           = barrier.dstLayout,
+                  .srcQueueFamilyIndex = srcFamily.getIndex(),
+                  .dstQueueFamilyIndex = dstFamily.getIndex(),
+                  .image               = barrier.image.getImage().get(),
+                  .subresourceRange    = VkImageSubresourceRange{.aspectMask     = barrier.aspectMask,
+                                                                 .baseMipLevel   = barrier.baseMipLevel,
+                                                                 .levelCount     = barrier.levelCount,
+                                                                 .baseArrayLayer = barrier.baseArrayLayer,
+                                                                 .layerCount     = barrier.layerCount}});
+
+                // Update queue family.
+                for (uint32_t level = barrier.baseMipLevel; level < barrier.baseMipLevel + barrier.levelCount; level++)
+                    for (uint32_t layer = barrier.baseArrayLayer; level < barrier.baseArrayLayer + barrier.layerCount;
+                         layer++)
+                        barrier.image.setQueueFamily(dstFamily, level, layer);
+            }
+        }
+
+        for (const auto& barrier : postImageBarriers)
+        {
+            const auto& srcFamily = barrier.image.getQueueFamily(barrier.baseMipLevel, barrier.baseArrayLayer);
+            const auto& dstFamily = barrier.dstFamily ? *barrier.dstFamily : srcFamily;
+
+            // Source and destionation family are the same. Only an acquire on the destination queue is needed.
+            if (&srcFamily == &dstFamily)
+            {
+                postCopyAcquireImageBarriers[dstFamily.getIndex()].emplace_back(VkImageMemoryBarrier2{
+                  .sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                  .pNext               = nullptr,
+                  .srcStageMask        = barrier.srcStage,
+                  .srcAccessMask       = barrier.srcAccess,
+                  .dstStageMask        = barrier.dstStage,
+                  .dstAccessMask       = barrier.dstAccess,
+                  .oldLayout           = barrier.srcLayout,
+                  .newLayout           = barrier.dstLayout,
+                  .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                  .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                  .image               = barrier.image.getImage().get(),
+                  .subresourceRange    = VkImageSubresourceRange{.aspectMask     = barrier.aspectMask,
+                                                                 .baseMipLevel   = barrier.baseMipLevel,
+                                                                 .levelCount     = barrier.levelCount,
+                                                                 .baseArrayLayer = barrier.baseArrayLayer,
+                                                                 .layerCount     = barrier.layerCount}});
+            }
+            // Source and destination family are different. Release and acquire are needed.
+            else
+            {
+                postCopyReleaseImageBarriers[srcFamily.getIndex()].emplace_back(VkImageMemoryBarrier2{
+                  .sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                  .pNext               = nullptr,
+                  .srcStageMask        = barrier.srcStage,
+                  .srcAccessMask       = barrier.srcAccess,
+                  .dstStageMask        = VK_PIPELINE_STAGE_2_NONE,
+                  .dstAccessMask       = VK_ACCESS_2_NONE,
+                  .oldLayout           = barrier.srcLayout,
+                  .newLayout           = barrier.dstLayout,
+                  .srcQueueFamilyIndex = srcFamily.getIndex(),
+                  .dstQueueFamilyIndex = dstFamily.getIndex(),
+                  .image               = barrier.image.getImage().get(),
+                  .subresourceRange    = VkImageSubresourceRange{.aspectMask     = barrier.aspectMask,
+                                                                 .baseMipLevel   = barrier.baseMipLevel,
+                                                                 .levelCount     = barrier.levelCount,
+                                                                 .baseArrayLayer = barrier.baseArrayLayer,
+                                                                 .layerCount     = barrier.layerCount}});
+
+                postCopyAcquireImageBarriers[dstFamily.getIndex()].emplace_back(VkImageMemoryBarrier2{
+                  .sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                  .pNext               = nullptr,
+                  .srcStageMask        = VK_PIPELINE_STAGE_2_NONE,
+                  .srcAccessMask       = VK_ACCESS_2_NONE,
+                  .dstStageMask        = barrier.dstStage,
+                  .dstAccessMask       = barrier.dstAccess,
+                  .oldLayout           = barrier.srcLayout,
+                  .newLayout           = barrier.dstLayout,
+                  .srcQueueFamilyIndex = srcFamily.getIndex(),
+                  .dstQueueFamilyIndex = dstFamily.getIndex(),
+                  .image               = barrier.image.getImage().get(),
+                  .subresourceRange    = VkImageSubresourceRange{.aspectMask     = barrier.aspectMask,
+                                                                 .baseMipLevel   = barrier.baseMipLevel,
+                                                                 .levelCount     = barrier.levelCount,
+                                                                 .baseArrayLayer = barrier.baseArrayLayer,
+                                                                 .layerCount     = barrier.layerCount}});
+
+                // Update queue family.
+                for (uint32_t level = barrier.baseMipLevel; level < barrier.baseMipLevel + barrier.levelCount; level++)
+                    for (uint32_t layer = barrier.baseArrayLayer; level < barrier.baseArrayLayer + barrier.layerCount;
+                         layer++)
+                        barrier.image.setQueueFamily(dstFamily, level, layer);
+            }
+        }
+
+
+
+        for (const auto& [copy, buffer] : s2bCopies)
+        {
+            s2bRegions.emplace_back(
+              VkBufferCopy2{.sType     = VK_STRUCTURE_TYPE_BUFFER_COPY_2,
+                            .pNext     = nullptr,
+                            .srcOffset = buffer->getBufferOffset(),
+                            .dstOffset = copy.offset + copy.dstBuffer.getBufferOffset(),
+                            .size      = copy.size == VK_WHOLE_SIZE ? copy.dstBuffer.getBufferSize() : copy.size});
+        }
+
+        for (const auto& [copy, buffer] : s2iCopies)
+        {
+            for (const auto& region : copy.regions)
+                s2iRegions.emplace_back(VkBufferImageCopy2{
+                  .sType             = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2,
+                  .pNext             = nullptr,
+                  .bufferOffset      = buffer->getBufferOffset() + region.dataOffset,
+                  .bufferRowLength   = 0,
+                  .bufferImageHeight = 0,
+                  .imageSubresource  = VkImageSubresourceLayers{.aspectMask     = region.aspectMask,
+                                                                .mipLevel       = region.mipLevel,
+                                                                .baseArrayLayer = region.baseArrayLayer,
+                                                                .layerCount     = region.layerCount},
+                  .imageOffset       = VkOffset3D{region.offset[0], region.offset[1], region.offset[2]},
+                  .imageExtent       = VkExtent3D{region.extent[0], region.extent[1], region.extent[2]}});
+        }
+
+        for (const auto& copy : b2bCopies)
+        {
+            s2bRegions.emplace_back(
+              VkBufferCopy2{.sType     = VK_STRUCTURE_TYPE_BUFFER_COPY_2,
+                            .pNext     = nullptr,
+                            .srcOffset = copy.srcOffset + copy.srcBuffer.getBufferOffset(),
+                            .dstOffset = copy.dstOffset + copy.dstBuffer.getBufferOffset(),
+                            .size      = copy.size == VK_WHOLE_SIZE ? copy.srcBuffer.getBufferSize() : copy.size});
+        }
+
+        // Collect copy infos. (Needs to happen after regions were fully filled for stable pointers.)
+        size_t copyIndex = 0;
+        for (const auto& [copy, buffer] : s2bCopies)
+        {
+            s2bInfos.emplace_back(VkCopyBufferInfo2{.sType       = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,
+                                                    .pNext       = nullptr,
+                                                    .srcBuffer   = buffer->getBuffer().get(),
+                                                    .dstBuffer   = copy.dstBuffer.getBuffer().get(),
+                                                    .regionCount = 1,
+                                                    .pRegions    = &s2bRegions[copyIndex++]});
+        }
+        for (const auto& copy : b2bCopies)
+        {
+            s2bInfos.emplace_back(VkCopyBufferInfo2{.sType       = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,
+                                                    .pNext       = nullptr,
+                                                    .srcBuffer   = copy.srcBuffer.getBuffer().get(),
+                                                    .dstBuffer   = copy.dstBuffer.getBuffer().get(),
+                                                    .regionCount = 1,
+                                                    .pRegions    = &s2bRegions[copyIndex++]});
+        }
+
+        copyIndex = 0;
+        for (const auto& [copy, buffer] : s2iCopies)
+        {
+            s2iInfos.emplace_back(VkCopyBufferToImageInfo2{.sType     = VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2,
+                                                           .pNext     = nullptr,
+                                                           .srcBuffer = buffer->getBuffer().get(),
+                                                           .dstImage  = copy.dstImage.getImage().get(),
+                                                           .dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                                           .regionCount    = static_cast<uint32_t>(copy.regions.size()),
+                                                           .pRegions       = &s2iRegions[copyIndex]});
+            copyIndex += copy.regions.size();
         }
 
         // Lock manager and wait on previous commits.
@@ -439,20 +704,20 @@ namespace sol
         // Submit pre-copy release barriers.
         for (uint32_t i = 0; i < familyCount; i++)
         {
-            if (preCopyReleaseBarriers[i].empty()) continue;
+            if (preCopyReleaseBufferBarriers[i].empty() && preCopyReleaseImageBarriers.empty()) continue;
 
             auto& cmdBuffer = *manager->preCopyReleaseCmdBuffers[i];
 
-            const VkDependencyInfo dependency{.sType              = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-                                              .pNext              = VK_NULL_HANDLE,
-                                              .dependencyFlags    = 0,
-                                              .memoryBarrierCount = 0,
-                                              .pMemoryBarriers    = VK_NULL_HANDLE,
-                                              .bufferMemoryBarrierCount =
-                                                static_cast<uint32_t>(preCopyReleaseBarriers[i].size()),
-                                              .pBufferMemoryBarriers   = preCopyReleaseBarriers[i].data(),
-                                              .imageMemoryBarrierCount = 0,
-                                              .pImageMemoryBarriers    = VK_NULL_HANDLE};
+            const VkDependencyInfo dependency{
+              .sType                    = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+              .pNext                    = VK_NULL_HANDLE,
+              .dependencyFlags          = 0,
+              .memoryBarrierCount       = 0,
+              .pMemoryBarriers          = VK_NULL_HANDLE,
+              .bufferMemoryBarrierCount = static_cast<uint32_t>(preCopyReleaseBufferBarriers[i].size()),
+              .pBufferMemoryBarriers    = preCopyReleaseBufferBarriers[i].data(),
+              .imageMemoryBarrierCount  = static_cast<uint32_t>(preCopyReleaseImageBarriers[i].size()),
+              .pImageMemoryBarriers     = preCopyReleaseImageBarriers[i].data()};
 
             cmdBuffer.resetCommand(VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
             cmdBuffer.beginOneTimeCommand();
@@ -487,20 +752,20 @@ namespace sol
         // Submit pre-copy acquire barriers.
         for (uint32_t i = 0; i < familyCount; i++)
         {
-            if (preCopyAcquireBarriers[i].empty()) continue;
+            if (preCopyAcquireBufferBarriers[i].empty() && preCopyAcquireImageBarriers[i].empty()) continue;
 
             auto& cmdBuffer = *manager->preCopyAcquireCmdBuffers[i];
 
-            const VkDependencyInfo dependency{.sType              = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-                                              .pNext              = VK_NULL_HANDLE,
-                                              .dependencyFlags    = 0,
-                                              .memoryBarrierCount = 0,
-                                              .pMemoryBarriers    = VK_NULL_HANDLE,
-                                              .bufferMemoryBarrierCount =
-                                                static_cast<uint32_t>(preCopyAcquireBarriers[i].size()),
-                                              .pBufferMemoryBarriers   = preCopyAcquireBarriers[i].data(),
-                                              .imageMemoryBarrierCount = 0,
-                                              .pImageMemoryBarriers    = VK_NULL_HANDLE};
+            const VkDependencyInfo dependency{
+              .sType                    = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+              .pNext                    = VK_NULL_HANDLE,
+              .dependencyFlags          = 0,
+              .memoryBarrierCount       = 0,
+              .pMemoryBarriers          = VK_NULL_HANDLE,
+              .bufferMemoryBarrierCount = static_cast<uint32_t>(preCopyAcquireBufferBarriers[i].size()),
+              .pBufferMemoryBarriers    = preCopyAcquireBufferBarriers[i].data(),
+              .imageMemoryBarrierCount  = static_cast<uint32_t>(preCopyAcquireImageBarriers[i].size()),
+              .pImageMemoryBarriers     = preCopyAcquireImageBarriers[i].data()};
 
             cmdBuffer.resetCommand(VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
             cmdBuffer.beginOneTimeCommand();
@@ -548,14 +813,15 @@ namespace sol
         }
 
         // Submit copies.
-        if (!copies.empty())
+        if (!s2bInfos.empty() || !s2iInfos.empty())
         {
             auto& transferQueue = getMemoryManager().getTransferQueue();
             auto& cmdBuffer     = *manager->copyCmdBuffer;
 
             cmdBuffer.resetCommand(VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
             cmdBuffer.beginOneTimeCommand();
-            for (const auto& cp : copies) vkCmdCopyBuffer2(cmdBuffer.get(), &cp);
+            for (const auto& cp : s2bInfos) vkCmdCopyBuffer2(cmdBuffer.get(), &cp);
+            for (const auto& cp : s2iInfos) vkCmdCopyBufferToImage2(cmdBuffer.get(), &cp);
             cmdBuffer.endCommand();
 
             std::vector<VkSemaphoreSubmitInfo> waitSemaphores;
@@ -602,20 +868,20 @@ namespace sol
         // Submit post-copy release barriers.
         for (uint32_t i = 0; i < familyCount; i++)
         {
-            if (postCopyReleaseBarriers[i].empty()) continue;
+            if (postCopyReleaseBufferBarriers[i].empty() && postCopyReleaseImageBarriers[i].empty()) continue;
 
             auto& cmdBuffer = *manager->postCopyReleaseCmdBuffers[i];
 
-            const VkDependencyInfo dependency{.sType              = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-                                              .pNext              = VK_NULL_HANDLE,
-                                              .dependencyFlags    = 0,
-                                              .memoryBarrierCount = 0,
-                                              .pMemoryBarriers    = VK_NULL_HANDLE,
-                                              .bufferMemoryBarrierCount =
-                                                static_cast<uint32_t>(postCopyReleaseBarriers[i].size()),
-                                              .pBufferMemoryBarriers   = postCopyReleaseBarriers[i].data(),
-                                              .imageMemoryBarrierCount = 0,
-                                              .pImageMemoryBarriers    = VK_NULL_HANDLE};
+            const VkDependencyInfo dependency{
+              .sType                    = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+              .pNext                    = VK_NULL_HANDLE,
+              .dependencyFlags          = 0,
+              .memoryBarrierCount       = 0,
+              .pMemoryBarriers          = VK_NULL_HANDLE,
+              .bufferMemoryBarrierCount = static_cast<uint32_t>(postCopyReleaseBufferBarriers[i].size()),
+              .pBufferMemoryBarriers    = postCopyReleaseBufferBarriers[i].data(),
+              .imageMemoryBarrierCount  = static_cast<uint32_t>(postCopyReleaseImageBarriers[i].size()),
+              .pImageMemoryBarriers     = postCopyReleaseImageBarriers[i].data()};
 
             cmdBuffer.resetCommand(VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
             cmdBuffer.beginOneTimeCommand();
@@ -650,20 +916,20 @@ namespace sol
         // Submit post-copy acquire barriers.
         for (uint32_t i = 0; i < familyCount; i++)
         {
-            if (postCopyAcquireBarriers[i].empty()) continue;
+            if (postCopyAcquireBufferBarriers[i].empty() && postCopyAcquireImageBarriers[i].empty()) continue;
 
             auto& cmdBuffer = *manager->postCopyAcquireCmdBuffers[i];
 
-            const VkDependencyInfo dependency{.sType              = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-                                              .pNext              = VK_NULL_HANDLE,
-                                              .dependencyFlags    = 0,
-                                              .memoryBarrierCount = 0,
-                                              .pMemoryBarriers    = VK_NULL_HANDLE,
-                                              .bufferMemoryBarrierCount =
-                                                static_cast<uint32_t>(postCopyAcquireBarriers[i].size()),
-                                              .pBufferMemoryBarriers   = postCopyAcquireBarriers[i].data(),
-                                              .imageMemoryBarrierCount = 0,
-                                              .pImageMemoryBarriers    = VK_NULL_HANDLE};
+            const VkDependencyInfo dependency{
+              .sType                    = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+              .pNext                    = VK_NULL_HANDLE,
+              .dependencyFlags          = 0,
+              .memoryBarrierCount       = 0,
+              .pMemoryBarriers          = VK_NULL_HANDLE,
+              .bufferMemoryBarrierCount = static_cast<uint32_t>(postCopyAcquireBufferBarriers[i].size()),
+              .pBufferMemoryBarriers    = postCopyAcquireBufferBarriers[i].data(),
+              .imageMemoryBarrierCount  = static_cast<uint32_t>(postCopyAcquireImageBarriers[i].size()),
+              .pImageMemoryBarriers     = postCopyAcquireImageBarriers[i].data()};
 
             cmdBuffer.resetCommand(VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
             cmdBuffer.beginOneTimeCommand();
@@ -728,7 +994,8 @@ namespace sol
         if (manager->transactionIndex == index) manager->wait();
 
         // Clear out all staging buffers.
-        staged.clear();
+        s2bCopies.clear();
+        s2iCopies.clear();
 
         done = true;
     }

@@ -14,6 +14,7 @@ namespace sol
     class FreeAtOnceMemoryPool;
     class IBuffer;
     class IBufferAllocator;
+    class IImage;
     class IMemoryPool;
     class MemoryManager;
     class MemoryPoolBuffer;
@@ -34,6 +35,8 @@ namespace sol
     using IBufferSharedPtr               = std::shared_ptr<IBuffer>;
     using IBufferAllocatorPtr            = std::unique_ptr<IBufferAllocator>;
     using IBufferAllocatorSharedPtr      = std::shared_ptr<IBufferAllocator>;
+    using IImagePtr                      = std::unique_ptr<IImage>;
+    using IImageSharedPtr                = std::shared_ptr<IImage>;
     using IMemoryPoolPtr                 = std::unique_ptr<IMemoryPool>;
     using IMemoryPoolSharedPtr           = std::shared_ptr<IMemoryPool>;
     using MemoryManagerPtr               = std::unique_ptr<MemoryManager>;

@@ -48,7 +48,7 @@ namespace sol
         };
 
         /**
-         * \brief Describes a memory barrier and optional queue family transfer.
+         * \brief Describes a buffer memory barrier with optional queue family transfer.
          */
         struct MemoryBarrier
         {
@@ -84,6 +84,62 @@ namespace sol
         };
 
         /**
+         * \brief Describes an image memory barrier with optional queue family transfer and layout transition.
+         */
+        struct ImageBarrier
+        {
+            /**
+             * \brief Image.
+             */
+            IImage& image;
+
+            /**
+             * \brief Destination queue family. If not null, the image will be owned by dstFamily after the barrier.
+             */
+            const VulkanQueueFamily* dstFamily = nullptr;
+
+            /**
+             * \brief Source stage.
+             */
+            VkPipelineStageFlags2 srcStage = VK_PIPELINE_STAGE_2_NONE_KHR;
+
+            /**
+             * \brief Destination stage.
+             */
+            VkPipelineStageFlags2 dstStage = VK_PIPELINE_STAGE_2_NONE_KHR;
+
+            /**
+             * \brief Source access.
+             */
+            VkAccessFlags2 srcAccess = VK_ACCESS_2_NONE;
+
+            /**
+             * \brief Destination access.
+             */
+            VkAccessFlags2 dstAccess = VK_ACCESS_2_NONE;
+
+            /**
+             * \brief Source layout. Only used if not the same as dstLayout.
+             */
+            VkImageLayout srcLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+            /**
+             * \brief Destination layout. Only used if not the same as srcLayout.
+             */
+            VkImageLayout dstLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+            VkImageAspectFlags aspectMask = 0;
+
+            uint32_t baseMipLevel = 0;
+
+            uint32_t levelCount = 0;
+
+            uint32_t baseArrayLayer = 0;
+
+            uint32_t layerCount = 0;
+        };
+
+        /**
          * \brief Describes a copy from an automatically allocated staging buffer to a destination buffer.
          */
         struct StagingBufferCopy
@@ -110,6 +166,69 @@ namespace sol
 
             /**
              * \brief If there is an explicit memory barrier, transfer ownership of the destination buffer to the
+             * transfer queue before doing the copy.
+             * -
+             *
+             * If no explicit barrier with a destination queue is specified, ownership will go from the current owner
+             * to the transfer queue before the copy, and back to the current owner after the copy.
+             * -
+             *
+             * With an explicit destination queue, ownership will go from the current owner to the transfer queue
+             * before the copy, and to the destination queue after the copy.
+             */
+            bool dstOnDedicatedTransfer = false;
+        };
+
+        /**
+         * \brief Describes a copy from an automatically allocated staging buffer to a destination image.
+         */
+        struct StagingImageCopy
+        {
+            struct Region
+            {
+                /**
+                 * \brief Offset into the data array.
+                 */
+                VkDeviceSize dataOffset = 0;
+
+                VkImageAspectFlags aspectMask = 0;
+
+                uint32_t mipLevel = 0;
+
+                uint32_t baseArrayLayer = 0;
+
+                uint32_t layerCount = 0;
+
+                /**
+                 * \brief Offset of the region in the destination image to copy to.
+                 */
+                std::array<int32_t, 3> offset{};
+
+                /**
+                 * \brief Extent of the region in the destination image to copy to.
+                 */
+                std::array<uint32_t, 3> extent{};
+            };
+
+            /**
+             * \brief Destination image.
+             */
+            IImage& dstImage;
+
+            /**
+             * \brief Pointer to data.
+             */
+            const void* data = nullptr;
+
+            /**
+             * \brief Size of data in bytes.
+             */
+            size_t dataSize = 0;
+
+            std::vector<Region> regions;
+
+            /**
+             * \brief If there is an explicit memory barrier, transfer ownership of the destination image to the
              * transfer queue before doing the copy.
              * -
              *
@@ -182,17 +301,7 @@ namespace sol
             bool dstOnDedicatedTransfer = false;
         };
 
-        /**
-         * \brief At any time, only 1 of the 4 optional values is valid.
-         */
-        struct Element
-        {
-            std::optional<MemoryBarrier>      preBarrier;
-            std::optional<MemoryBarrier>      postBarrier;
-            std::optional<StagingBufferCopy>  s2bCopy;
-            std::optional<BufferToBufferCopy> b2bCopy;
-            IBufferPtr                        stagingBuffer;
-        };
+
 
         ////////////////////////////////////////////////////////////////
         // Constructors.
@@ -240,11 +349,18 @@ namespace sol
         ////////////////////////////////////////////////////////////////
 
         /**
-         * \brief Stage a barrier.
+         * \brief Stage a buffer barrier.
          * \param barrier Barrier.
          * \param location Where to place the barrier, if a separate copy on the same buffer is being staged.
          */
         void stage(MemoryBarrier barrier, BarrierLocation location);
+
+        /**
+         * \brief Stage an image barrier.
+         * \param barrier Barrier.
+         * \param location Where to place the barrier, if a separate copy on the same image is being staged.
+         */
+        void stage(ImageBarrier barrier, BarrierLocation location);
 
         /**
          * \brief Stage a copy from a pointer to a buffer. Optionally places a memory barrier around the copy.
@@ -276,7 +392,13 @@ namespace sol
          * copies can still be added regardless of the outcome of this call, since they do not require any staging
          * buffer allocations.
          */
-        [[nodiscard]] bool stage(const StagingBufferCopy& copy, const std::optional<MemoryBarrier>& barrier = {}, bool waitOnAllocFailure = false);
+        [[nodiscard]] bool stage(const StagingBufferCopy&            copy,
+                                 const std::optional<MemoryBarrier>& barrier            = {},
+                                 bool                                waitOnAllocFailure = false);
+
+        [[nodiscard]] bool stage(const StagingImageCopy&            copy,
+                                 const std::optional<ImageBarrier>& barrier            = {},
+                                 bool                               waitOnAllocFailure = false);
 
         /**
          * \brief Stage a copy from a source buffer to a destination buffer. Optionally places barriers around the
@@ -325,7 +447,13 @@ namespace sol
 
         size_t index = 0;
 
-        std::vector<Element> staged;
+        std::vector<MemoryBarrier>                            preBufferBarriers;
+        std::vector<MemoryBarrier>                            postBufferBarriers;
+        std::vector<ImageBarrier>                             preImageBarriers;
+        std::vector<ImageBarrier>                             postImageBarriers;
+        std::vector<std::pair<StagingBufferCopy, IBufferPtr>> s2bCopies;
+        std::vector<std::pair<StagingImageCopy, IBufferPtr>>  s2iCopies;
+        std::vector<BufferToBufferCopy>                       b2bCopies;
 
         bool committed = false;
 
