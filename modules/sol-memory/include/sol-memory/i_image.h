@@ -1,0 +1,114 @@
+#pragma once
+////////////////////////////////////////////////////////////////
+// External includes.
+////////////////////////////////////////////////////////////////
+
+#include <vulkan/vulkan.hpp>
+
+////////////////////////////////////////////////////////////////
+// Module includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-core/fwd.h"
+
+////////////////////////////////////////////////////////////////
+// Current target includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-memory/fwd.h"
+
+namespace sol
+{
+    class IImage
+    {
+    public:
+        ////////////////////////////////////////////////////////////////
+        // Types.
+        ////////////////////////////////////////////////////////////////
+
+        enum class ImageType : uint32_t
+        {
+            Image1D = 1,
+            Image2D = 2,
+            Image3D = 3,
+        };
+
+        ////////////////////////////////////////////////////////////////
+        // Constructors.
+        ////////////////////////////////////////////////////////////////
+
+        IImage() = delete;
+
+        explicit IImage(MemoryManager& memoryManager);
+
+        IImage(const IImage&) = delete;
+
+        IImage(IImage&&) noexcept = default;
+
+        virtual ~IImage() noexcept;
+
+        IImage& operator=(const IImage&) = delete;
+
+        IImage& operator=(IImage&&) noexcept = default;
+
+        ////////////////////////////////////////////////////////////////
+        // Getters.
+        ////////////////////////////////////////////////////////////////
+
+        [[nodiscard]] VulkanDevice& getDevice() noexcept;
+
+        [[nodiscard]] const VulkanDevice& getDevice() const noexcept;
+
+        [[nodiscard]] MemoryManager& getMemoryManager() noexcept;
+
+        [[nodiscard]] const MemoryManager& getMemoryManager() const noexcept;
+
+        /**
+         * \brief Get the queue family that currently owns this resource.
+         * \param level Mip level to get owner for.
+         * \param layer Array layer to get owner for.
+         * \return VulkanQueueFamily.
+         */
+        [[nodiscard]] virtual const VulkanQueueFamily& getQueueFamily(uint32_t level,
+                                                                      uint32_t layer) const noexcept = 0;
+
+        [[nodiscard]] virtual VulkanImage& getImage() = 0;
+
+        [[nodiscard]] virtual const VulkanImage& getImage() const = 0;
+
+        [[nodiscard]] virtual ImageType getImageType() const noexcept = 0;
+
+        [[nodiscard]] virtual uint32_t getLevelCount() const noexcept = 0;
+
+        [[nodiscard]] virtual uint32_t getLayerCount() const noexcept = 0;
+
+        [[nodiscard]] virtual std::array<uint32_t, 3> getSize() const noexcept = 0;
+
+        [[nodiscard]] virtual VkImageUsageFlags getImageUsageFlags() const noexcept = 0;
+
+        [[nodiscard]] virtual VkImageAspectFlags getImageAspectFlags() const noexcept = 0;
+
+        [[nodiscard]] virtual VkImageLayout getImageLayout(uint32_t level, uint32_t layer) const noexcept = 0;
+
+        ////////////////////////////////////////////////////////////////
+        // Setters.
+        ////////////////////////////////////////////////////////////////
+
+        /**
+         * \brief Set the queue family that owns the specified level and layer of this image. 
+         * \param family New queue family.
+         * \param level Mip level to set owner for. If -1, set for all levels.
+         * \param layer Array layer to set owner for. If -1, set for all layers.
+         */
+        virtual void setQueueFamily(const VulkanQueueFamily& family, uint32_t level, uint32_t layer) noexcept = 0;
+
+        virtual void setImageLayout(VkImageLayout layout, uint32_t level, uint32_t layer) noexcept = 0;
+
+    private:
+        ////////////////////////////////////////////////////////////////
+        // Member variables.
+        ////////////////////////////////////////////////////////////////
+
+        MemoryManager* manager = nullptr;
+    };
+}  // namespace sol
