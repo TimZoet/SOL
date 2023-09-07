@@ -1,4 +1,5 @@
 find_package(common REQUIRED)
+find_package(stduuid REQUIRED)
 
 set(NAME sol-memory)
 set(TYPE module)
@@ -42,6 +43,8 @@ set(SOURCES
 
 set(DEPS_PUBLIC
     sol-core
+
+    stduuid::stduuid
 )
 
 set(DEPS_PRIVATE
