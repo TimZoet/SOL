@@ -72,8 +72,7 @@ namespace sol
          * \param layer Array layer to get owner for.
          * \return VulkanQueueFamily.
          */
-        [[nodiscard]] virtual const VulkanQueueFamily& getQueueFamily(uint32_t level,
-                                                                      uint32_t layer) const noexcept = 0;
+        [[nodiscard]] virtual const VulkanQueueFamily& getQueueFamily(uint32_t level, uint32_t layer) const = 0;
 
         /**
          * \brief Get the underlying vulkan image object.
@@ -135,7 +134,11 @@ namespace sol
 
         [[nodiscard]] virtual VkImageAspectFlags getImageAspectFlags() const noexcept = 0;
 
-        [[nodiscard]] virtual VkImageLayout getImageLayout(uint32_t level, uint32_t layer) const noexcept = 0;
+        [[nodiscard]] virtual VkImageLayout getImageLayout(uint32_t level, uint32_t layer) const = 0;
+
+        [[nodiscard]] virtual VkImageTiling getImageTiling() const = 0;
+
+        [[nodiscard]] VkSubresourceLayout getSubresourceLayout(uint32_t level, uint32_t layer) const;
 
         ////////////////////////////////////////////////////////////////
         // Setters.
@@ -147,7 +150,7 @@ namespace sol
          * \param level Mip level to set owner for. If -1, set for all levels.
          * \param layer Array layer to set owner for. If -1, set for all layers.
          */
-        virtual void setQueueFamily(const VulkanQueueFamily& family, uint32_t level, uint32_t layer) noexcept = 0;
+        virtual void setQueueFamily(const VulkanQueueFamily& family, uint32_t level, uint32_t layer) = 0;
 
         /**
          * \brief Set the layout of the image for the the specified level and layer of this image.
@@ -155,7 +158,7 @@ namespace sol
          * \param level Mip level to set layout for. If -1, set for all levels.
          * \param layer Array layer to set layout for. If -1, set for all layers.
          */
-        virtual void setImageLayout(VkImageLayout layout, uint32_t level, uint32_t layer) noexcept = 0;
+        virtual void setImageLayout(VkImageLayout layout, uint32_t level, uint32_t layer) = 0;
 
     private:
         ////////////////////////////////////////////////////////////////

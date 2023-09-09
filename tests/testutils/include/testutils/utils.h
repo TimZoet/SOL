@@ -1,6 +1,12 @@
 #pragma once
 
 ////////////////////////////////////////////////////////////////
+// Standard includes.
+////////////////////////////////////////////////////////////////
+
+#include <vector>
+
+////////////////////////////////////////////////////////////////
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
@@ -31,4 +37,14 @@ public:
     [[nodiscard]] static sol::MemoryManager& getMemoryManager();
 
     [[nodiscard]] static sol::TransferManager& getTransferManager();
+};
+
+class ImageDataGeneration
+{
+public:
+    /**
+     * \brief 8 bits per channel. RGBA. 256x256. Filled with a gradient.
+     * \return 
+     */
+    [[nodiscard]] static std::vector<uint32_t> genR8G8B8A8W256H256Gradient();
 };

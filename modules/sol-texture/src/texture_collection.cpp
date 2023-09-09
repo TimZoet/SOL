@@ -57,18 +57,16 @@ namespace sol
     Image2D2& TextureCollection::createImage2D(const std::array<uint32_t, 2>& size,
                                                const VkFormat                 format,
                                                uint32_t                       levels,
-                                               VkImageUsageFlags              usage,
+                                               const VkImageUsageFlags        usage,
                                                const VkImageAspectFlags       aspect,
                                                const VkImageLayout            initialLayout,
-                                               const VulkanQueueFamily&       initialOwner)
+                                               const VulkanQueueFamily&       initialOwner,
+                                               const VkImageTiling            tiling)
     {
         assert(size[0] > 0 && size[1] > 0);
 
         // Calculate mips automatically.
         if (levels == 0) levels = static_cast<uint32_t>(std::floor(std::log2(std::max(size[0], size[1])))) + 1;
-
-        // Enable transfer usage for mips.
-        if (levels > 1) usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
         VulkanImage::Settings imageSettings;
         imageSettings.device             = getMemoryManager().getDevice();
@@ -78,7 +76,7 @@ namespace sol
         imageSettings.depth              = 1;
         imageSettings.mipLevels          = levels;
         imageSettings.arrayLayers        = 1;
-        imageSettings.tiling             = VK_IMAGE_TILING_OPTIMAL;
+        imageSettings.tiling             = tiling;
         imageSettings.imageUsage         = usage;
         imageSettings.sharingMode        = VK_SHARING_MODE_EXCLUSIVE;
         imageSettings.initialLayout      = initialLayout;
@@ -91,12 +89,13 @@ namespace sol
 
         auto image = std::make_unique<Image2D2>(*this, uuids::uuid_system_generator{}());
         image->queueFamily.resize(levels, &initialOwner);
+        image->imageLayout.resize(levels, initialLayout);
         image->image       = std::move(vulkanImage);
         image->format      = format;
         image->size        = size;
         image->usageFlags  = usage;
         image->aspectFlags = aspect;
-        image->imageLayout.resize(levels, initialLayout);
+        image->tiling      = tiling;
 
         return *images2D.emplace(image->getUuid(), std::move(image)).first->second;
     }

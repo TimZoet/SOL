@@ -1,6 +1,12 @@
 #include "testutils/utils.h"
 
 ////////////////////////////////////////////////////////////////
+// Standard includes.
+////////////////////////////////////////////////////////////////
+
+#include <ranges>
+
+////////////////////////////////////////////////////////////////
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
@@ -167,3 +173,13 @@ MemoryManagerFixture::~MemoryManagerFixture() noexcept
 sol::MemoryManager& MemoryManagerFixture::getMemoryManager() { return *memoryManager; }
 
 sol::TransferManager& MemoryManagerFixture::getTransferManager() { return *transferManager; }
+
+std::vector<uint32_t> ImageDataGeneration::genR8G8B8A8W256H256Gradient()
+{
+    std::vector<uint32_t> data(256ull * 256ull, 0);
+    for (const auto y : std::views::iota(0) | std::views::take(256))
+        for (const auto x : std::views::iota(0) | std::views::take(256))
+            data[x + y * 256] = x << 24 | y << 16 | std::max(x, y) << 8 | 0xff;
+
+    return data;
+}

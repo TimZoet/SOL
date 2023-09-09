@@ -34,6 +34,7 @@ namespace sol
         // Types.
         ////////////////////////////////////////////////////////////////
 
+        // TODO: Place all these types outside of the class to make accessing them a bit less verbose? Don't think there are clashing names...
         enum class BarrierLocation : uint32_t
         {
             /**
@@ -47,6 +48,7 @@ namespace sol
             AfterCopy = 1
         };
 
+        // TODO: Rename to BufferBarrier.
         /**
          * \brief Describes a buffer memory barrier with optional queue family transfer.
          */
@@ -139,6 +141,32 @@ namespace sol
             uint32_t layerCount = 0;
         };
 
+        struct ImageRegion
+        {
+            /**
+             * \brief Offset into the data array / buffer.
+             */
+            VkDeviceSize dataOffset = 0;
+
+            VkImageAspectFlags aspectMask = 0;
+
+            uint32_t mipLevel = 0;
+
+            uint32_t baseArrayLayer = 0;
+
+            uint32_t layerCount = 0;
+
+            /**
+             * \brief Offset of the region in the destination image to copy to.
+             */
+            std::array<int32_t, 3> offset{};
+
+            /**
+             * \brief Extent of the region in the destination image to copy to.
+             */
+            std::array<uint32_t, 3> extent{};
+        };
+
         /**
          * \brief Describes a copy from an automatically allocated staging buffer to a destination buffer.
          */
@@ -184,32 +212,6 @@ namespace sol
          */
         struct StagingImageCopy
         {
-            struct Region
-            {
-                /**
-                 * \brief Offset into the data array.
-                 */
-                VkDeviceSize dataOffset = 0;
-
-                VkImageAspectFlags aspectMask = 0;
-
-                uint32_t mipLevel = 0;
-
-                uint32_t baseArrayLayer = 0;
-
-                uint32_t layerCount = 0;
-
-                /**
-                 * \brief Offset of the region in the destination image to copy to.
-                 */
-                std::array<int32_t, 3> offset{};
-
-                /**
-                 * \brief Extent of the region in the destination image to copy to.
-                 */
-                std::array<uint32_t, 3> extent{};
-            };
-
             /**
              * \brief Destination image.
              */
@@ -225,7 +227,7 @@ namespace sol
              */
             size_t dataSize = 0;
 
-            std::vector<Region> regions;
+            std::vector<ImageRegion> regions;
 
             /**
              * \brief If there is an explicit memory barrier, transfer ownership of the destination image to the
@@ -301,7 +303,28 @@ namespace sol
             bool dstOnDedicatedTransfer = false;
         };
 
+        struct ImageToImageCopy
+        {
+            // TODO
+        };
 
+        struct BufferToImageCopy
+        {
+            // TODO
+        };
+
+        struct ImageToBufferCopy
+        {
+            IImage& srcImage;
+
+            IBuffer& dstBuffer;
+
+            std::vector<ImageRegion> regions;
+
+            bool srcOnDedicatedTransfer = false;
+
+            bool dstOnDedicatedTransfer = false;
+        };
 
         ////////////////////////////////////////////////////////////////
         // Constructors.
@@ -422,6 +445,10 @@ namespace sol
                    const std::optional<MemoryBarrier>& srcBarrier = {},
                    const std::optional<MemoryBarrier>& dstBarrier = {});
 
+        void stage(const ImageToBufferCopy&            copy,
+                   const std::optional<ImageBarrier>&  srcBarrier = {},
+                   const std::optional<MemoryBarrier>& dstBarrier = {});
+
         ////////////////////////////////////////////////////////////////
         // Commit.
         ////////////////////////////////////////////////////////////////
@@ -454,6 +481,9 @@ namespace sol
         std::vector<std::pair<StagingBufferCopy, IBufferPtr>> s2bCopies;
         std::vector<std::pair<StagingImageCopy, IBufferPtr>>  s2iCopies;
         std::vector<BufferToBufferCopy>                       b2bCopies;
+        std::vector<ImageToImageCopy>                         i2iCopies;
+        std::vector<BufferToImageCopy>                        b2iCopies;
+        std::vector<ImageToBufferCopy>                        i2bCopies;
 
         bool committed = false;
 

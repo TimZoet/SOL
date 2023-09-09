@@ -76,11 +76,11 @@ namespace sol
          * \param levels Number of mip levels.
          * If == 0, the number of mips is calculated automatically as log_2 of the size.
          * If == 1, no mips are used. If > 1, the value is used explicitly.
-         * If mips are used, VK_IMAGE_USAGE_TRANSFER_SRC_BIT and VK_IMAGE_USAGE_TRANSFER_DST_BIT are added automatically to the usage flags.
          * \param usage Image usage.
          * \param aspect Image aspect.
          * \param initialLayout Initial image layout (can be VK_IMAGE_LAYOUT_UNDEFINED).
          * \param initialOwner Initial queue family that owns the image.
+         * \param tiling Image tiling.
          * \return Image.
          */
         Image2D2& createImage2D(const std::array<uint32_t, 2>& size,
@@ -89,7 +89,8 @@ namespace sol
                                 VkImageUsageFlags              usage,
                                 VkImageAspectFlags             aspect,
                                 VkImageLayout                  initialLayout,
-                                const VulkanQueueFamily&       initialOwner);
+                                const VulkanQueueFamily&       initialOwner,
+                                VkImageTiling                  tiling);
 
         void destroyImage2D(Image2D2& image);
 

@@ -228,7 +228,7 @@ namespace sol
                                .srcAccess      = barrier->srcAccess,
                                .dstAccess      = VK_ACCESS_2_TRANSFER_WRITE_BIT,
                                .srcLayout      = barrier->srcLayout,
-                               .dstLayout      = barrier->dstLayout,
+                               .dstLayout      = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                .aspectMask     = barrier->aspectMask,
                                .baseMipLevel   = barrier->baseMipLevel,
                                .levelCount     = barrier->levelCount,
@@ -240,12 +240,12 @@ namespace sol
         // The actual copy.
         s2iCopies.emplace_back(copy, std::move(stagingBuffer));
 
-        // Memory barrier that will get the destination buffer from the transfer state to its final state.
+        // Memory barrier that will get the destination image from the transfer state to its final state.
         if (barrier)
         {
             const auto* dstFamily = barrier->dstFamily;
             // TODO: This assumes that all levels and layers are owned by the same queue (also done during the commit).
-            // Make a note of that in the docs.
+            // If they have different owners, you must stage barriers/copies separately. Make a note of that in the docs.
             if (copy.dstOnDedicatedTransfer && !dstFamily)
                 dstFamily = &copy.dstImage.getQueueFamily(barrier->baseMipLevel, barrier->baseArrayLayer);
 
@@ -255,7 +255,7 @@ namespace sol
                                .dstStage       = barrier->dstStage,
                                .srcAccess      = VK_ACCESS_2_TRANSFER_WRITE_BIT,
                                .dstAccess      = barrier->dstStage,
-                               .srcLayout      = barrier->srcLayout,
+                               .srcLayout      = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                .dstLayout      = barrier->dstLayout,
                                .aspectMask     = barrier->aspectMask,
                                .baseMipLevel   = barrier->baseMipLevel,
@@ -334,6 +334,84 @@ namespace sol
         }
     }
 
+    void BufferTransaction::stage(const ImageToBufferCopy&            copy,
+                                  const std::optional<ImageBarrier>&  srcBarrier,
+                                  const std::optional<MemoryBarrier>& dstBarrier)
+    {
+        // TODO: If there is a barrier, it is currently assumed that the levels and layers it describes match the regions in the copy.
+        // Image barrier that will get the source image from its current state to the transfer read state.
+        if (srcBarrier)
+        {
+            stage(ImageBarrier{.image          = copy.srcImage,
+                               .dstFamily      = copy.dstOnDedicatedTransfer ?
+                                                   &getMemoryManager().getTransferQueue().getFamily() :
+                                                   nullptr,
+                               .srcStage       = srcBarrier->srcStage,
+                               .dstStage       = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                               .srcAccess      = srcBarrier->srcAccess,
+                               .dstAccess      = VK_ACCESS_2_TRANSFER_READ_BIT,
+                               .srcLayout      = srcBarrier->srcLayout,
+                               .dstLayout      = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                               .aspectMask     = srcBarrier->aspectMask,
+                               .baseMipLevel   = srcBarrier->baseMipLevel,
+                               .levelCount     = srcBarrier->levelCount,
+                               .baseArrayLayer = srcBarrier->baseArrayLayer,
+                               .layerCount     = srcBarrier->layerCount},
+                  BarrierLocation::BeforeCopy);
+        }
+
+        // Memory barrier that will get the destination buffer from its current state to the transfer write state.
+        if (dstBarrier)
+        {
+            stage(MemoryBarrier{.buffer    = copy.dstBuffer,
+                                .dstFamily = copy.dstOnDedicatedTransfer ?
+                                               &getMemoryManager().getTransferQueue().getFamily() :
+                                               nullptr,
+                                .srcStage  = dstBarrier->srcStage,
+                                .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                .srcAccess = dstBarrier->srcAccess,
+                                .dstAccess = VK_ACCESS_2_TRANSFER_WRITE_BIT},
+                  BarrierLocation::BeforeCopy);
+        }
+
+        // The actual copy.
+        i2bCopies.emplace_back(copy);
+
+        // Image barrier that will get the source image from the transfer read state to its final state.
+        if (srcBarrier)
+        {
+            stage(ImageBarrier{.image          = copy.srcImage,
+                               .dstFamily      = srcBarrier->dstFamily,
+                               .srcStage       = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                               .dstStage       = srcBarrier->dstStage,
+                               .srcAccess      = VK_ACCESS_2_TRANSFER_READ_BIT,
+                               .dstAccess      = srcBarrier->dstAccess,
+                               .srcLayout      = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                               .dstLayout      = srcBarrier->dstLayout,
+                               .aspectMask     = srcBarrier->aspectMask,
+                               .baseMipLevel   = srcBarrier->baseMipLevel,
+                               .levelCount     = srcBarrier->levelCount,
+                               .baseArrayLayer = srcBarrier->baseArrayLayer,
+                               .layerCount     = srcBarrier->layerCount},
+                  BarrierLocation::AfterCopy);
+        }
+
+        // Memory barrier that will get the destination buffer from the transfer state to its final state.
+        if (dstBarrier)
+        {
+            const auto* dstFamily = dstBarrier->dstFamily;
+            if (copy.dstOnDedicatedTransfer && !dstFamily) dstFamily = &copy.dstBuffer.getQueueFamily();
+
+            stage(MemoryBarrier{.buffer    = copy.dstBuffer,
+                                .dstFamily = dstFamily,
+                                .srcStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                .dstStage  = dstBarrier->dstStage,
+                                .srcAccess = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                                .dstAccess = dstBarrier->dstStage},
+                  BarrierLocation::AfterCopy);
+        }
+    }
+
     ////////////////////////////////////////////////////////////////
     // Commit.
     ////////////////////////////////////////////////////////////////
@@ -363,10 +441,14 @@ namespace sol
         std::vector<std::vector<VkBufferMemoryBarrier2>> postCopyAcquireBufferBarriers(familyCount);
         std::vector<std::vector<VkImageMemoryBarrier2>>  postCopyAcquireImageBarriers(familyCount);
 
-        std::vector<VkBufferCopy2>            s2bRegions;
-        std::vector<VkBufferImageCopy2>       s2iRegions;
-        std::vector<VkCopyBufferInfo2>        s2bInfos;
-        std::vector<VkCopyBufferToImageInfo2> s2iInfos;
+        std::vector<VkBufferCopy2>            bufferCopies;  // [s2b[0], ..., s2b[n], b2b[0], ..., b2b[n]]
+        std::vector<VkImageCopy2>             imageCopies;
+        std::vector<VkBufferImageCopy2>       bufferImageCopies;  // [s2i[0], ..., s2i[n], b2i[0], ..., b2i[n]]
+        std::vector<VkBufferImageCopy2>       imageBufferCopies;
+        std::vector<VkCopyBufferInfo2>        bufferInfos;
+        std::vector<VkCopyImageInfo2>         imageInfos;
+        std::vector<VkCopyBufferToImageInfo2> bufferImageInfos;
+        std::vector<VkCopyImageToBufferInfo2> imageBufferInfos;
 
         for (const auto& barrier : preBufferBarriers)
         {
@@ -545,7 +627,7 @@ namespace sol
 
                 // Update queue family.
                 for (uint32_t level = barrier.baseMipLevel; level < barrier.baseMipLevel + barrier.levelCount; level++)
-                    for (uint32_t layer = barrier.baseArrayLayer; level < barrier.baseArrayLayer + barrier.layerCount;
+                    for (uint32_t layer = barrier.baseArrayLayer; layer < barrier.baseArrayLayer + barrier.layerCount;
                          layer++)
                         barrier.image.setQueueFamily(dstFamily, level, layer);
             }
@@ -618,17 +700,16 @@ namespace sol
 
                 // Update queue family.
                 for (uint32_t level = barrier.baseMipLevel; level < barrier.baseMipLevel + barrier.levelCount; level++)
-                    for (uint32_t layer = barrier.baseArrayLayer; level < barrier.baseArrayLayer + barrier.layerCount;
+                    for (uint32_t layer = barrier.baseArrayLayer; layer < barrier.baseArrayLayer + barrier.layerCount;
                          layer++)
                         barrier.image.setQueueFamily(dstFamily, level, layer);
             }
         }
 
-
-
+        // Collect copies from staging buffers to buffers.
         for (const auto& [copy, buffer] : s2bCopies)
         {
-            s2bRegions.emplace_back(
+            bufferCopies.emplace_back(
               VkBufferCopy2{.sType     = VK_STRUCTURE_TYPE_BUFFER_COPY_2,
                             .pNext     = nullptr,
                             .srcOffset = buffer->getBufferOffset(),
@@ -636,10 +717,11 @@ namespace sol
                             .size      = copy.size == VK_WHOLE_SIZE ? copy.dstBuffer.getBufferSize() : copy.size});
         }
 
+        // Collect copies from staging buffers to images.
         for (const auto& [copy, buffer] : s2iCopies)
         {
             for (const auto& region : copy.regions)
-                s2iRegions.emplace_back(VkBufferImageCopy2{
+                bufferImageCopies.emplace_back(VkBufferImageCopy2{
                   .sType             = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2,
                   .pNext             = nullptr,
                   .bufferOffset      = buffer->getBufferOffset() + region.dataOffset,
@@ -653,9 +735,10 @@ namespace sol
                   .imageExtent       = VkExtent3D{region.extent[0], region.extent[1], region.extent[2]}});
         }
 
+        // Collect copies from buffers to buffers.
         for (const auto& copy : b2bCopies)
         {
-            s2bRegions.emplace_back(
+            bufferCopies.emplace_back(
               VkBufferCopy2{.sType     = VK_STRUCTURE_TYPE_BUFFER_COPY_2,
                             .pNext     = nullptr,
                             .srcOffset = copy.srcOffset + copy.srcBuffer.getBufferOffset(),
@@ -663,38 +746,117 @@ namespace sol
                             .size      = copy.size == VK_WHOLE_SIZE ? copy.srcBuffer.getBufferSize() : copy.size});
         }
 
-        // Collect copy infos. (Needs to happen after regions were fully filled for stable pointers.)
+        // Collect copies from images to images.
+        for (const auto& copy : i2iCopies)
+        {
+            // TODO:
+            static_cast<void>(copy);
+        }
+
+        // Collect copies from buffers to images.
+        for (const auto& copy : b2iCopies)
+        {
+            // TODO:
+            static_cast<void>(copy);
+        }
+
+        // Collect copies from images to buffers.
+        for (const auto& [srcImage, dstBuffer, regions, srcOnDedicatedTransfer, dstOnDedicatedTransfer] : i2bCopies)
+        {
+            for (const auto& region : regions)
+                imageBufferCopies.emplace_back(VkBufferImageCopy2{
+                  .sType             = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2,
+                  .pNext             = nullptr,
+                  .bufferOffset      = dstBuffer.getBufferOffset() + region.dataOffset,
+                  .bufferRowLength   = 0,
+                  .bufferImageHeight = 0,
+                  .imageSubresource  = VkImageSubresourceLayers{.aspectMask     = region.aspectMask,
+                                                                .mipLevel       = region.mipLevel,
+                                                                .baseArrayLayer = region.baseArrayLayer,
+                                                                .layerCount     = region.layerCount},
+                  .imageOffset       = VkOffset3D{region.offset[0], region.offset[1], region.offset[2]},
+                  .imageExtent       = VkExtent3D{region.extent[0], region.extent[1], region.extent[2]}});
+        }
+
+        /*
+         * Collect copy infos. Needs to happen after copies were fully collected for stable pointers.
+         */
+
         size_t copyIndex = 0;
+
+        // Collect copy infos from staging buffers to buffers.
         for (const auto& [copy, buffer] : s2bCopies)
         {
-            s2bInfos.emplace_back(VkCopyBufferInfo2{.sType       = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,
-                                                    .pNext       = nullptr,
-                                                    .srcBuffer   = buffer->getBuffer().get(),
-                                                    .dstBuffer   = copy.dstBuffer.getBuffer().get(),
-                                                    .regionCount = 1,
-                                                    .pRegions    = &s2bRegions[copyIndex++]});
+            bufferInfos.emplace_back(VkCopyBufferInfo2{.sType       = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,
+                                                       .pNext       = nullptr,
+                                                       .srcBuffer   = buffer->getBuffer().get(),
+                                                       .dstBuffer   = copy.dstBuffer.getBuffer().get(),
+                                                       .regionCount = 1,
+                                                       .pRegions    = &bufferCopies[copyIndex++]});
         }
-        for (const auto& copy : b2bCopies)
+        // Collect copy infos from buffers to buffers.
+        for (const auto& [srcBuffer,
+                          dstBuffer,
+                          size,
+                          srcOffset,
+                          dstOffset,
+                          srcOnDedicatedTransfer,
+                          dstOnDedicatedTransfer] : b2bCopies)
         {
-            s2bInfos.emplace_back(VkCopyBufferInfo2{.sType       = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,
-                                                    .pNext       = nullptr,
-                                                    .srcBuffer   = copy.srcBuffer.getBuffer().get(),
-                                                    .dstBuffer   = copy.dstBuffer.getBuffer().get(),
-                                                    .regionCount = 1,
-                                                    .pRegions    = &s2bRegions[copyIndex++]});
+            bufferInfos.emplace_back(VkCopyBufferInfo2{.sType       = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,
+                                                       .pNext       = nullptr,
+                                                       .srcBuffer   = srcBuffer.getBuffer().get(),
+                                                       .dstBuffer   = dstBuffer.getBuffer().get(),
+                                                       .regionCount = 1,
+                                                       .pRegions    = &bufferCopies[copyIndex++]});
         }
 
         copyIndex = 0;
+
+        // Collect copy infos from staging buffers to images.
         for (const auto& [copy, buffer] : s2iCopies)
         {
-            s2iInfos.emplace_back(VkCopyBufferToImageInfo2{.sType     = VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2,
-                                                           .pNext     = nullptr,
-                                                           .srcBuffer = buffer->getBuffer().get(),
-                                                           .dstImage  = copy.dstImage.getImage().get(),
-                                                           .dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                                           .regionCount    = static_cast<uint32_t>(copy.regions.size()),
-                                                           .pRegions       = &s2iRegions[copyIndex]});
+            bufferImageInfos.emplace_back(
+              VkCopyBufferToImageInfo2{.sType          = VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2,
+                                       .pNext          = nullptr,
+                                       .srcBuffer      = buffer->getBuffer().get(),
+                                       .dstImage       = copy.dstImage.getImage().get(),
+                                       .dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                       .regionCount    = static_cast<uint32_t>(copy.regions.size()),
+                                       .pRegions       = &bufferImageCopies[copyIndex]});
             copyIndex += copy.regions.size();
+        }
+        // Collect copy infos from buffers to images
+        for (const auto& copy : b2iCopies)
+        {
+            // TODO:
+            // bufferImageInfos.emplace_back
+            static_cast<void>(copy);
+        }
+
+        copyIndex = 0;
+
+        // Collect copy infos from images to images
+        for (const auto& copy : i2iCopies)
+        {
+            // TODO:
+            // imageInfos.emplace_back()
+            static_cast<void>(copy);
+        }
+
+        copyIndex = 0;
+
+        // Collect copy infos from images to buffers.
+        for (const auto& [srcImage, dstBuffer, regions, srcOnDedicatedTransfer, dstOnDedicatedTransfer] : i2bCopies)
+        {
+            imageBufferInfos.emplace_back(
+              VkCopyImageToBufferInfo2{.sType          = VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2,
+                                       .pNext          = nullptr,
+                                       .srcImage       = srcImage.getImage().get(),
+                                       .srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                       .dstBuffer      = dstBuffer.getBuffer().get(),
+                                       .regionCount    = static_cast<uint32_t>(regions.size()),
+                                       .pRegions       = &imageBufferCopies[copyIndex]});
         }
 
         // Lock manager and wait on previous commits.
@@ -813,15 +975,17 @@ namespace sol
         }
 
         // Submit copies.
-        if (!s2bInfos.empty() || !s2iInfos.empty())
+        if (!bufferInfos.empty() || !bufferImageInfos.empty())
         {
             auto& transferQueue = getMemoryManager().getTransferQueue();
             auto& cmdBuffer     = *manager->copyCmdBuffer;
 
             cmdBuffer.resetCommand(VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
             cmdBuffer.beginOneTimeCommand();
-            for (const auto& cp : s2bInfos) vkCmdCopyBuffer2(cmdBuffer.get(), &cp);
-            for (const auto& cp : s2iInfos) vkCmdCopyBufferToImage2(cmdBuffer.get(), &cp);
+            for (const auto& cp : bufferInfos) vkCmdCopyBuffer2(cmdBuffer.get(), &cp);
+            for (const auto& cp : imageInfos) vkCmdCopyImage2(cmdBuffer.get(), &cp);
+            for (const auto& cp : bufferImageInfos) vkCmdCopyBufferToImage2(cmdBuffer.get(), &cp);
+            for (const auto& cp : imageBufferInfos) vkCmdCopyImageToBuffer2(cmdBuffer.get(), &cp);
             cmdBuffer.endCommand();
 
             std::vector<VkSemaphoreSubmitInfo> waitSemaphores;
