@@ -14,7 +14,7 @@
 
 #include "testutils/utils.h"
 
-class LargeCopy final : public bt::UnitTest<LargeCopy, bt::CompareMixin, bt::ExceptionMixin>, MemoryManagerFixture
+class LargeCopy final : public bt::UnitTest<LargeCopy, bt::CompareMixin, bt::ExceptionMixin>, BasicFixture
 {
 public:
     void operator()() override;

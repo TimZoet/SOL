@@ -16,6 +16,8 @@ set(SOURCES
 set(DEPS_PUBLIC
     sol-core
     sol-memory
+    sol-render
+    sol-window
 )
 
 make_target(

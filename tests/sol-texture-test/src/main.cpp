@@ -29,6 +29,7 @@ int main(int argc, char** argv)
         std::filesystem::current_path(p);
     }
 #endif
+
     // TODO: Parallel tests are not supported. BetterTest needs an option to always disable them and perhaps even give an error when trying run in parallel.
     return bt::run<Image2D, Image2DBarriers, Image2DData, Sampler2D>(argc, argv, "sol-texture");
 }

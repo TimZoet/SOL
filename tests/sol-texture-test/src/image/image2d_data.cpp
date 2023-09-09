@@ -5,6 +5,7 @@
 ////////////////////////////////////////////////////////////////
 
 #include "sol-core/vulkan_buffer.h"
+#include "sol-core/vulkan_device.h"
 #include "sol-core/vulkan_queue.h"
 #include "sol-memory/buffer_transaction.h"
 #include "sol-memory/i_buffer.h"
@@ -15,8 +16,12 @@
 
 void Image2DData::operator()()
 {
+    // Generate some test data.
+    const auto data = genR8G8B8A8W256H256Gradient();
+
     const auto collection = std::make_unique<sol::TextureCollection>(getMemoryManager());
 
+    // Copy test data into image.
     sol::Image2D2* image = nullptr;
     expectNoThrow([&] {
         image = &collection->createImage2D({256, 256},
@@ -29,9 +34,6 @@ void Image2DData::operator()()
                                            getMemoryManager().getGraphicsQueue().getFamily(),
                                            VK_IMAGE_TILING_OPTIMAL);
     });
-
-    const auto data = genR8G8B8A8W256H256Gradient();
-
     {
         const auto transaction = getTransferManager().beginTransaction();
 
@@ -66,8 +68,8 @@ void Image2DData::operator()()
           .alignment            = 0};
         const auto buffer = getMemoryManager().allocateBuffer(alloc, sol::IBufferAllocator::OnAllocationFailure::Throw);
 
-        const auto transaction = getTransferManager().beginTransaction();
-
+        // Copy data back.
+        const auto                          transaction = getTransferManager().beginTransaction();
         constexpr sol::Image2D2::CopyRegion region{
           .dataOffset = 0, .level = 0, .regionOffset = {0, 0}, .regionSize = {256, 256}};
         image->getData(*transaction,
@@ -83,12 +85,12 @@ void Image2DData::operator()()
                         .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,
                         .srcAccess = VK_ACCESS_2_NONE,
                         .dstAccess = VK_ACCESS_2_HOST_READ_BIT,
-                        .dstLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
+                        .dstLayout = VK_IMAGE_LAYOUT_UNDEFINED},
                        {region});
-
         transaction->commit();
         transaction->wait();
 
+        // Get buffer data into vector and compare.
         std::vector<uint32_t> data2(256ull * 256ull, 0);
         std::memcpy(data2.data(), buffer->getBuffer().getMappedData<uint32_t>(), 256ull * 256ull * 4);
         compareEQ(data, data2);

@@ -16,7 +16,7 @@
 
 class ConcurrentBufferTransactions final
     : public bt::UnitTest<ConcurrentBufferTransactions, bt::CompareMixin, bt::ExceptionMixin>,
-      MemoryManagerFixture
+      BasicFixture
 {
 public:
     void operator()() override;

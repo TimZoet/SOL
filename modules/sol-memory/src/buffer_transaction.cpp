@@ -866,7 +866,7 @@ namespace sol
         // Submit pre-copy release barriers.
         for (uint32_t i = 0; i < familyCount; i++)
         {
-            if (preCopyReleaseBufferBarriers[i].empty() && preCopyReleaseImageBarriers.empty()) continue;
+            if (preCopyReleaseBufferBarriers[i].empty() && preCopyReleaseImageBarriers[i].empty()) continue;
 
             auto& cmdBuffer = *manager->preCopyReleaseCmdBuffers[i];
 
@@ -975,7 +975,7 @@ namespace sol
         }
 
         // Submit copies.
-        if (!bufferInfos.empty() || !bufferImageInfos.empty())
+        if (!bufferInfos.empty() || !imageInfos.empty() || !bufferImageInfos.empty() || !imageBufferInfos.empty())
         {
             auto& transferQueue = getMemoryManager().getTransferQueue();
             auto& cmdBuffer     = *manager->copyCmdBuffer;

@@ -14,7 +14,7 @@
 
 #include "testutils/utils.h"
 
-class PartialCopy final : public bt::UnitTest<PartialCopy, bt::CompareMixin, bt::ExceptionMixin>, MemoryManagerFixture
+class PartialCopy final : public bt::UnitTest<PartialCopy, bt::CompareMixin, bt::ExceptionMixin>, BasicFixture
 {
 public:
     void operator()() override;

@@ -14,8 +14,7 @@
 
 #include "testutils/utils.h"
 
-class MultipleCopies final : public bt::UnitTest<MultipleCopies, bt::CompareMixin, bt::ExceptionMixin>,
-                             MemoryManagerFixture
+class MultipleCopies final : public bt::UnitTest<MultipleCopies, bt::CompareMixin, bt::ExceptionMixin>, BasicFixture
 {
 public:
     void operator()() override;

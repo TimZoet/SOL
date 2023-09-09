@@ -15,7 +15,7 @@
 #include "testutils/utils.h"
 
 class Image2DBarriers final : public bt::UnitTest<Image2DBarriers, bt::CompareMixin, bt::ExceptionMixin>,
-                              MemoryManagerFixture,
+                              BasicFixture,
                               ImageDataGeneration
 {
 public:

@@ -15,7 +15,7 @@
 #include "testutils/utils.h"
 
 class Image2DData final : public bt::UnitTest<Image2DData, bt::CompareMixin, bt::ExceptionMixin>,
-                          MemoryManagerFixture,
+                          BasicFixture,
                           ImageDataGeneration
 {
 public:
