@@ -220,15 +220,21 @@ namespace sol
         // Transactions.
         ////////////////////////////////////////////////////////////////
 
+        /**
+         * \brief Place a barrier.
+         * \param transaction Transaction to append to.
+         * \param barrier Barrier.
+         * \param location Where to place the barrier, if a separate copy on the same image is being staged.
+         */
         void
           barrier(BufferTransaction& transaction, const Barrier& barrier, BufferTransaction::BarrierLocation location);
 
         /**
          * \brief Set the image data for a list of regions. Can fail if there is not enough memory for a staging buffer.
          * \param transaction Transaction to append to.
-         * \param data Pointer to data.
+         * \param data Pointer to data. Will be copied into a staging buffer. Can be released directly after this call.
          * \param dataSize Size of data in bytes. A staging buffer of this size is allocated.
-         * \param barrier Barrier placed around the copy command.
+         * \param barrier Barrier placed around the copy command. Transfer stage, access and layout are automatically taken care of.
          * \param waitOnAllocFailure If true and staging buffer allocation fails, wait on previous transaction(s)
          * to complete so that they release their staging buffers, and try allocating again.
          * \param regions List of regions.
