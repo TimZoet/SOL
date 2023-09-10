@@ -857,6 +857,7 @@ namespace sol
                                        .dstBuffer      = dstBuffer.getBuffer().get(),
                                        .regionCount    = static_cast<uint32_t>(regions.size()),
                                        .pRegions       = &imageBufferCopies[copyIndex]});
+            copyIndex += regions.size();
         }
 
         // Lock manager and wait on previous commits.

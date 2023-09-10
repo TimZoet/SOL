@@ -88,12 +88,12 @@ namespace
         surface = sol::VulkanSurface::create(settings);
     }
 
-    void createDefaultPhysicalDevice()
+    void createDefaultPhysicalDevice(const bool enableFrame)
     {
         sol::VulkanPhysicalDevice::Settings settings;
         settings.instance = instance;
         settings.surface  = surface;
-        settings.extensions.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+        if (enableFrame) settings.extensions.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
         settings.propertyFilter = [](const VkPhysicalDeviceProperties& props) {
             return props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
         };
@@ -235,7 +235,7 @@ BasicFixture::BasicFixture(const bool enableFrame)
     createSupportedFeatures();
     createEnabledFeatures();
     if (enableFrame) createDefaultSurface();
-    createDefaultPhysicalDevice();
+    createDefaultPhysicalDevice(enableFrame);
     createDefaultDevice();
     createDefaultMemoryManager();
     if (enableFrame)
@@ -291,6 +291,7 @@ void BasicFixture::render()
 {
     const VkFence f = acquireFence->get();
     vkWaitForFences(device->get(), 1, &f, true, UINT64_MAX);
+    vkResetFences(device->get(), 1, &f);
     swapchainCommandBuffer->resetCommand(VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
     swapchainCommandBuffer->beginOneTimeCommand();
     renderingInfos[imageIndex]->preTransition(*swapchainCommandBuffer);
@@ -311,6 +312,7 @@ void BasicFixture::present()
 {
     const VkFence f = presentFence->get();
     vkWaitForFences(device->get(), 1, &f, true, UINT64_MAX);
+    vkResetFences(device->get(), 1, &f);
 
     VkPresentInfoKHR     presentInfo{};
     const VkSwapchainKHR swapchains[] = {swapchain->get()};
