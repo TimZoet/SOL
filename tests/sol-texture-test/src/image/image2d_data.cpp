@@ -5,7 +5,6 @@
 ////////////////////////////////////////////////////////////////
 
 #include "sol-core/vulkan_buffer.h"
-#include "sol-core/vulkan_device.h"
 #include "sol-core/vulkan_queue.h"
 #include "sol-memory/buffer_transaction.h"
 #include "sol-memory/i_buffer.h"
@@ -67,7 +66,7 @@ void Image2DData::operator()()
                                      .dstStage  = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
                                      .srcAccess = VK_ACCESS_2_NONE,
                                      .dstAccess = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
-                                     .dstLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
+                                     .dstLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL},
                                     false,
                                     {region0}));
 
@@ -80,13 +79,19 @@ void Image2DData::operator()()
                                      .dstStage  = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
                                      .srcAccess = VK_ACCESS_2_NONE,
                                      .dstAccess = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
-                                     .dstLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
+                                     .dstLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL},
                                     false,
                                     {region0, region1, region2, region3}));
 
         transaction->commit();
         transaction->wait();
     }
+
+    // Verify layout and queue family.
+    compareEQ(VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, image0->getImageLayout(0, 0));
+    compareEQ(VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, image1->getImageLayout(0, 0));
+    compareEQ(&getMemoryManager().getGraphicsQueue().getFamily(), &image0->getQueueFamily(0, 0));
+    compareEQ(&getMemoryManager().getGraphicsQueue().getFamily(), &image1->getQueueFamily(0, 0));
 
     {
         // Create a host-side buffer to copy the image data back to.
@@ -143,6 +148,14 @@ void Image2DData::operator()()
                         {region1});
         transaction->commit();
         transaction->wait();
+
+        // Verify layout and queue family.
+        compareEQ(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, image0->getImageLayout(0, 0));
+        compareEQ(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, image1->getImageLayout(0, 0));
+        compareEQ(&getMemoryManager().getGraphicsQueue().getFamily(), &image0->getQueueFamily(0, 0));
+        compareEQ(&getMemoryManager().getGraphicsQueue().getFamily(), &image1->getQueueFamily(0, 0));
+        compareEQ(&getMemoryManager().getTransferQueue().getFamily(), &buffer0->getQueueFamily());
+        compareEQ(&getMemoryManager().getTransferQueue().getFamily(), &buffer0->getQueueFamily());
 
         // Get buffer data into vector and compare.
 

@@ -135,7 +135,7 @@ namespace sol
             postBufferBarriers.emplace_back(barrier);
     }
 
-    void BufferTransaction::stage(ImageBarrier barrier, BarrierLocation location)
+    void BufferTransaction::stage(ImageBarrier barrier, const BarrierLocation location)
     {
         if (location == BarrierLocation::BeforeCopy)
             preImageBarriers.emplace_back(barrier);
@@ -220,9 +220,8 @@ namespace sol
         if (barrier)
         {
             stage(ImageBarrier{.image          = copy.dstImage,
-                               .dstFamily      = copy.dstOnDedicatedTransfer ?
-                                                   &getMemoryManager().getTransferQueue().getFamily() :
-                                                   nullptr,
+                               .srcFamily      = barrier->srcFamily,
+                               .dstFamily      = barrier->dstFamily,
                                .srcStage       = barrier->srcStage,
                                .dstStage       = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                .srcAccess      = barrier->srcAccess,
@@ -243,14 +242,9 @@ namespace sol
         // Memory barrier that will get the destination image from the transfer state to its final state.
         if (barrier)
         {
-            const auto* dstFamily = barrier->dstFamily;
-            // TODO: This assumes that all levels and layers are owned by the same queue (also done during the commit).
-            // If they have different owners, you must stage barriers/copies separately. Make a note of that in the docs.
-            if (copy.dstOnDedicatedTransfer && !dstFamily)
-                dstFamily = &copy.dstImage.getQueueFamily(barrier->baseMipLevel, barrier->baseArrayLayer);
-
             stage(ImageBarrier{.image          = copy.dstImage,
-                               .dstFamily      = dstFamily,
+                               .srcFamily      = barrier->dstFamily,
+                               .dstFamily      = barrier->dstFamily,
                                .srcStage       = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                .dstStage       = barrier->dstStage,
                                .srcAccess      = VK_ACCESS_2_TRANSFER_WRITE_BIT,
@@ -343,9 +337,8 @@ namespace sol
         if (srcBarrier)
         {
             stage(ImageBarrier{.image          = copy.srcImage,
-                               .dstFamily      = copy.dstOnDedicatedTransfer ?
-                                                   &getMemoryManager().getTransferQueue().getFamily() :
-                                                   nullptr,
+                               .srcFamily      = srcBarrier->srcFamily,
+                               .dstFamily      = srcBarrier->dstFamily,
                                .srcStage       = srcBarrier->srcStage,
                                .dstStage       = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                .srcAccess      = srcBarrier->srcAccess,
@@ -381,6 +374,7 @@ namespace sol
         if (srcBarrier)
         {
             stage(ImageBarrier{.image          = copy.srcImage,
+                               .srcFamily      = srcBarrier->dstFamily,
                                .dstFamily      = srcBarrier->dstFamily,
                                .srcStage       = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                .dstStage       = srcBarrier->dstStage,
@@ -562,13 +556,13 @@ namespace sol
 
         for (const auto& barrier : preImageBarriers)
         {
-            const auto& srcFamily = barrier.image.getQueueFamily(barrier.baseMipLevel, barrier.baseArrayLayer);
-            const auto& dstFamily = barrier.dstFamily ? *barrier.dstFamily : srcFamily;
+            const auto* srcFamily = barrier.srcFamily;
+            const auto* dstFamily = barrier.dstFamily ? barrier.dstFamily : srcFamily;
 
             // Source and destionation family are the same. Only an acquire on the destination queue is needed.
-            if (&srcFamily == &dstFamily)
+            if (srcFamily == dstFamily)
             {
-                preCopyAcquireImageBarriers[dstFamily.getIndex()].emplace_back(VkImageMemoryBarrier2{
+                preCopyAcquireImageBarriers[dstFamily->getIndex()].emplace_back(VkImageMemoryBarrier2{
                   .sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
                   .pNext               = nullptr,
                   .srcStageMask        = barrier.srcStage,
@@ -589,7 +583,7 @@ namespace sol
             // Source and destination family are different. Release and acquire are needed.
             else
             {
-                preCopyReleaseImageBarriers[srcFamily.getIndex()].emplace_back(VkImageMemoryBarrier2{
+                preCopyReleaseImageBarriers[srcFamily->getIndex()].emplace_back(VkImageMemoryBarrier2{
                   .sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
                   .pNext               = nullptr,
                   .srcStageMask        = barrier.srcStage,
@@ -598,8 +592,8 @@ namespace sol
                   .dstAccessMask       = VK_ACCESS_2_NONE,
                   .oldLayout           = barrier.srcLayout,
                   .newLayout           = barrier.dstLayout,
-                  .srcQueueFamilyIndex = srcFamily.getIndex(),
-                  .dstQueueFamilyIndex = dstFamily.getIndex(),
+                  .srcQueueFamilyIndex = srcFamily->getIndex(),
+                  .dstQueueFamilyIndex = dstFamily->getIndex(),
                   .image               = barrier.image.getImage().get(),
                   .subresourceRange    = VkImageSubresourceRange{.aspectMask     = barrier.aspectMask,
                                                                  .baseMipLevel   = barrier.baseMipLevel,
@@ -607,7 +601,7 @@ namespace sol
                                                                  .baseArrayLayer = barrier.baseArrayLayer,
                                                                  .layerCount     = barrier.layerCount}});
 
-                preCopyAcquireImageBarriers[dstFamily.getIndex()].emplace_back(VkImageMemoryBarrier2{
+                preCopyAcquireImageBarriers[dstFamily->getIndex()].emplace_back(VkImageMemoryBarrier2{
                   .sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
                   .pNext               = nullptr,
                   .srcStageMask        = VK_PIPELINE_STAGE_2_NONE,
@@ -616,32 +610,26 @@ namespace sol
                   .dstAccessMask       = barrier.dstAccess,
                   .oldLayout           = barrier.srcLayout,
                   .newLayout           = barrier.dstLayout,
-                  .srcQueueFamilyIndex = srcFamily.getIndex(),
-                  .dstQueueFamilyIndex = dstFamily.getIndex(),
+                  .srcQueueFamilyIndex = srcFamily->getIndex(),
+                  .dstQueueFamilyIndex = dstFamily->getIndex(),
                   .image               = barrier.image.getImage().get(),
                   .subresourceRange    = VkImageSubresourceRange{.aspectMask     = barrier.aspectMask,
                                                                  .baseMipLevel   = barrier.baseMipLevel,
                                                                  .levelCount     = barrier.levelCount,
                                                                  .baseArrayLayer = barrier.baseArrayLayer,
                                                                  .layerCount     = barrier.layerCount}});
-
-                // Update queue family.
-                for (uint32_t level = barrier.baseMipLevel; level < barrier.baseMipLevel + barrier.levelCount; level++)
-                    for (uint32_t layer = barrier.baseArrayLayer; layer < barrier.baseArrayLayer + barrier.layerCount;
-                         layer++)
-                        barrier.image.setQueueFamily(dstFamily, level, layer);
             }
         }
 
         for (const auto& barrier : postImageBarriers)
         {
-            const auto& srcFamily = barrier.image.getQueueFamily(barrier.baseMipLevel, barrier.baseArrayLayer);
-            const auto& dstFamily = barrier.dstFamily ? *barrier.dstFamily : srcFamily;
+            const auto* srcFamily = barrier.srcFamily;
+            const auto* dstFamily = barrier.dstFamily ? barrier.dstFamily : srcFamily;
 
             // Source and destionation family are the same. Only an acquire on the destination queue is needed.
-            if (&srcFamily == &dstFamily)
+            if (srcFamily == dstFamily)
             {
-                postCopyAcquireImageBarriers[dstFamily.getIndex()].emplace_back(VkImageMemoryBarrier2{
+                postCopyAcquireImageBarriers[dstFamily->getIndex()].emplace_back(VkImageMemoryBarrier2{
                   .sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
                   .pNext               = nullptr,
                   .srcStageMask        = barrier.srcStage,
@@ -662,7 +650,7 @@ namespace sol
             // Source and destination family are different. Release and acquire are needed.
             else
             {
-                postCopyReleaseImageBarriers[srcFamily.getIndex()].emplace_back(VkImageMemoryBarrier2{
+                postCopyReleaseImageBarriers[srcFamily->getIndex()].emplace_back(VkImageMemoryBarrier2{
                   .sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
                   .pNext               = nullptr,
                   .srcStageMask        = barrier.srcStage,
@@ -671,8 +659,8 @@ namespace sol
                   .dstAccessMask       = VK_ACCESS_2_NONE,
                   .oldLayout           = barrier.srcLayout,
                   .newLayout           = barrier.dstLayout,
-                  .srcQueueFamilyIndex = srcFamily.getIndex(),
-                  .dstQueueFamilyIndex = dstFamily.getIndex(),
+                  .srcQueueFamilyIndex = srcFamily->getIndex(),
+                  .dstQueueFamilyIndex = dstFamily->getIndex(),
                   .image               = barrier.image.getImage().get(),
                   .subresourceRange    = VkImageSubresourceRange{.aspectMask     = barrier.aspectMask,
                                                                  .baseMipLevel   = barrier.baseMipLevel,
@@ -680,7 +668,7 @@ namespace sol
                                                                  .baseArrayLayer = barrier.baseArrayLayer,
                                                                  .layerCount     = barrier.layerCount}});
 
-                postCopyAcquireImageBarriers[dstFamily.getIndex()].emplace_back(VkImageMemoryBarrier2{
+                postCopyAcquireImageBarriers[dstFamily->getIndex()].emplace_back(VkImageMemoryBarrier2{
                   .sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
                   .pNext               = nullptr,
                   .srcStageMask        = VK_PIPELINE_STAGE_2_NONE,
@@ -689,20 +677,14 @@ namespace sol
                   .dstAccessMask       = barrier.dstAccess,
                   .oldLayout           = barrier.srcLayout,
                   .newLayout           = barrier.dstLayout,
-                  .srcQueueFamilyIndex = srcFamily.getIndex(),
-                  .dstQueueFamilyIndex = dstFamily.getIndex(),
+                  .srcQueueFamilyIndex = srcFamily->getIndex(),
+                  .dstQueueFamilyIndex = dstFamily->getIndex(),
                   .image               = barrier.image.getImage().get(),
                   .subresourceRange    = VkImageSubresourceRange{.aspectMask     = barrier.aspectMask,
                                                                  .baseMipLevel   = barrier.baseMipLevel,
                                                                  .levelCount     = barrier.levelCount,
                                                                  .baseArrayLayer = barrier.baseArrayLayer,
                                                                  .layerCount     = barrier.layerCount}});
-
-                // Update queue family.
-                for (uint32_t level = barrier.baseMipLevel; level < barrier.baseMipLevel + barrier.levelCount; level++)
-                    for (uint32_t layer = barrier.baseArrayLayer; layer < barrier.baseArrayLayer + barrier.layerCount;
-                         layer++)
-                        barrier.image.setQueueFamily(dstFamily, level, layer);
             }
         }
 
@@ -761,7 +743,7 @@ namespace sol
         }
 
         // Collect copies from images to buffers.
-        for (const auto& [srcImage, dstBuffer, regions, srcOnDedicatedTransfer, dstOnDedicatedTransfer] : i2bCopies)
+        for (const auto& [srcImage, dstBuffer, regions, dstOnDedicatedTransfer] : i2bCopies)
         {
             for (const auto& region : regions)
                 imageBufferCopies.emplace_back(VkBufferImageCopy2{
@@ -847,7 +829,7 @@ namespace sol
         copyIndex = 0;
 
         // Collect copy infos from images to buffers.
-        for (const auto& [srcImage, dstBuffer, regions, srcOnDedicatedTransfer, dstOnDedicatedTransfer] : i2bCopies)
+        for (const auto& [srcImage, dstBuffer, regions, dstOnDedicatedTransfer] : i2bCopies)
         {
             imageBufferInfos.emplace_back(
               VkCopyImageToBufferInfo2{.sType          = VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2,

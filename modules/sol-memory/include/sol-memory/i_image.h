@@ -140,26 +140,6 @@ namespace sol
 
         [[nodiscard]] VkSubresourceLayout getSubresourceLayout(uint32_t level, uint32_t layer) const;
 
-        ////////////////////////////////////////////////////////////////
-        // Setters.
-        ////////////////////////////////////////////////////////////////
-
-        /**
-         * \brief Set the queue family that owns the specified level and layer of this image. 
-         * \param family New queue family.
-         * \param level Mip level to set owner for. If -1, set for all levels.
-         * \param layer Array layer to set owner for. If -1, set for all layers.
-         */
-        virtual void setQueueFamily(const VulkanQueueFamily& family, uint32_t level, uint32_t layer) = 0;
-
-        /**
-         * \brief Set the layout of the image for the the specified level and layer of this image.
-         * \param layout Layout.
-         * \param level Mip level to set layout for. If -1, set for all levels.
-         * \param layer Array layer to set layout for. If -1, set for all layers.
-         */
-        virtual void setImageLayout(VkImageLayout layout, uint32_t level, uint32_t layer) = 0;
-
     private:
         ////////////////////////////////////////////////////////////////
         // Member variables.

@@ -97,6 +97,11 @@ namespace sol
             IImage& image;
 
             /**
+             * \brief Source queue family. If not null, the image will be owned by dstFamily after the barrier.
+             */
+            const VulkanQueueFamily* srcFamily = nullptr;
+
+            /**
              * \brief Destination queue family. If not null, the image will be owned by dstFamily after the barrier.
              */
             const VulkanQueueFamily* dstFamily = nullptr;
@@ -232,20 +237,6 @@ namespace sol
              * \brief List of regions.
              */
             std::vector<ImageRegion> regions;
-
-            /**
-             * \brief If there is an explicit memory barrier, transfer ownership of the destination image to the
-             * transfer queue before doing the copy.
-             * -
-             *
-             * If no explicit barrier with a destination queue is specified, ownership will go from the current owner
-             * to the transfer queue before the copy, and back to the current owner after the copy.
-             * -
-             *
-             * With an explicit destination queue, ownership will go from the current owner to the transfer queue
-             * before the copy, and to the destination queue after the copy.
-             */
-            bool dstOnDedicatedTransfer = false;
         };
 
         /**
@@ -324,20 +315,6 @@ namespace sol
             IBuffer& dstBuffer;
 
             std::vector<ImageRegion> regions;
-
-            /**
-             * \brief If there is an explicit memory barrier, transfer ownership of the source image to the transfer
-             * queue before doing the copy.
-             * -
-             *
-             * If no explicit destination queue is specified in the barrier, ownership will go from the current owner
-             * to the transfer queue before the copy, and back to the current owner after the copy.
-             * -
-             *
-             * With an explicit destination queue, ownership will go from the current owner to the transfer queue
-             * before the copy, and to the destination queue after the copy.
-             */
-            bool srcOnDedicatedTransfer = false;
 
             /**
              * \brief If there is an explicit memory barrier, transfer ownership of the destination buffer to the
