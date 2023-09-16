@@ -43,6 +43,10 @@ namespace sol
 
             uint32_t depth = 0;
 
+            uint32_t mipLevels = 1;
+
+            uint32_t arrayLayers = 1;
+
             VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL;
 
             VkImageUsageFlags imageUsage = 0;

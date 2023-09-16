@@ -27,6 +27,7 @@
 
 namespace sol
 {
+    // TODO: Rename to transaction.
     class BufferTransaction
     {
     public:
@@ -34,6 +35,7 @@ namespace sol
         // Types.
         ////////////////////////////////////////////////////////////////
 
+        // TODO: Place all these types outside of the class to make accessing them a bit less verbose? Don't think there are clashing names...
         enum class BarrierLocation : uint32_t
         {
             /**
@@ -47,6 +49,7 @@ namespace sol
             AfterCopy = 1
         };
 
+        // TODO: Rename to BufferBarrier.
         /**
          * \brief Describes a buffer memory barrier with optional queue family transfer.
          */
@@ -94,6 +97,11 @@ namespace sol
             IImage& image;
 
             /**
+             * \brief Source queue family. If not null, the image will be owned by dstFamily after the barrier.
+             */
+            const VulkanQueueFamily* srcFamily = nullptr;
+
+            /**
              * \brief Destination queue family. If not null, the image will be owned by dstFamily after the barrier.
              */
             const VulkanQueueFamily* dstFamily = nullptr;
@@ -137,6 +145,32 @@ namespace sol
             uint32_t baseArrayLayer = 0;
 
             uint32_t layerCount = 0;
+        };
+
+        struct ImageRegion
+        {
+            /**
+             * \brief Offset into the data array / buffer.
+             */
+            VkDeviceSize dataOffset = 0;
+
+            VkImageAspectFlags aspectMask = 0;
+
+            uint32_t mipLevel = 0;
+
+            uint32_t baseArrayLayer = 0;
+
+            uint32_t layerCount = 0;
+
+            /**
+             * \brief Offset of the region in the destination image to copy to.
+             */
+            std::array<int32_t, 3> offset{};
+
+            /**
+             * \brief Extent of the region in the destination image to copy to.
+             */
+            std::array<uint32_t, 3> extent{};
         };
 
         /**
@@ -184,32 +218,6 @@ namespace sol
          */
         struct StagingImageCopy
         {
-            struct Region
-            {
-                /**
-                 * \brief Offset into the data array.
-                 */
-                VkDeviceSize dataOffset = 0;
-
-                VkImageAspectFlags aspectMask = 0;
-
-                uint32_t mipLevel = 0;
-
-                uint32_t baseArrayLayer = 0;
-
-                uint32_t layerCount = 0;
-
-                /**
-                 * \brief Offset of the region in the destination image to copy to.
-                 */
-                std::array<int32_t, 3> offset{};
-
-                /**
-                 * \brief Extent of the region in the destination image to copy to.
-                 */
-                std::array<uint32_t, 3> extent{};
-            };
-
             /**
              * \brief Destination image.
              */
@@ -225,21 +233,10 @@ namespace sol
              */
             size_t dataSize = 0;
 
-            std::vector<Region> regions;
-
             /**
-             * \brief If there is an explicit memory barrier, transfer ownership of the destination image to the
-             * transfer queue before doing the copy.
-             * -
-             *
-             * If no explicit barrier with a destination queue is specified, ownership will go from the current owner
-             * to the transfer queue before the copy, and back to the current owner after the copy.
-             * -
-             *
-             * With an explicit destination queue, ownership will go from the current owner to the transfer queue
-             * before the copy, and to the destination queue after the copy.
+             * \brief List of regions.
              */
-            bool dstOnDedicatedTransfer = false;
+            std::vector<ImageRegion> regions;
         };
 
         /**
@@ -301,7 +298,38 @@ namespace sol
             bool dstOnDedicatedTransfer = false;
         };
 
+        struct ImageToImageCopy
+        {
+            // TODO
+        };
 
+        struct BufferToImageCopy
+        {
+            // TODO
+        };
+
+        struct ImageToBufferCopy
+        {
+            IImage& srcImage;
+
+            IBuffer& dstBuffer;
+
+            std::vector<ImageRegion> regions;
+
+            /**
+             * \brief If there is an explicit memory barrier, transfer ownership of the destination buffer to the
+             * transfer queue before doing the copy.
+             * -
+             *
+             * If no explicit barrier with a destination queue is specified, ownership will go from the current owner
+             * to the transfer queue before the copy, and back to the current owner after the copy.
+             * -
+             *
+             * With an explicit destination queue, ownership will go from the current owner to the transfer queue
+             * before the copy, and to the destination queue after the copy.
+             */
+            bool dstOnDedicatedTransfer = false;
+        };
 
         ////////////////////////////////////////////////////////////////
         // Constructors.
@@ -369,7 +397,7 @@ namespace sol
          * Will try to allocate an intermediate staging buffer. If allocation succeeds, a memcpy is performed
          * immediately and the data pointer can be released directly after this call. If allocation fails, this
          * transaction must be committed before doing any additional copies. Note that more memory barriers and
-         * buffer-to-buffer copies can still be staged regardless of the outcome of this call, since they do not
+         * non-staging copies can still be staged regardless of the outcome of this call, since they do not
          * require any staging buffer allocations.
          * -
          *
@@ -388,14 +416,44 @@ namespace sol
          * \param waitOnAllocFailure If true and staging buffer allocation fails, wait on previous transaction(s)
          * to complete so that they release their staging buffers, and try allocating again.
          * \return Staging buffer allocation success. If allocation fails, false is returned and this transaction must
-         * be committed before doing any additional copies. Note that more memory barriers and buffer-to-buffer
-         * copies can still be added regardless of the outcome of this call, since they do not require any staging
+         * be committed before doing any additional copies. Note that more memory barriers and non-staging copies
+         * can still be added regardless of the outcome of this call, since they do not require any staging
          * buffer allocations.
          */
         [[nodiscard]] bool stage(const StagingBufferCopy&            copy,
                                  const std::optional<MemoryBarrier>& barrier            = {},
                                  bool                                waitOnAllocFailure = false);
 
+        /**
+         * \brief Stage a copy from a pointer to an image. Optionally places a memory barrier around the copy.
+         * -
+         *
+         * Will try to allocate an intermediate staging buffer. If allocation succeeds, a memcpy is performed
+         * immediately and the data pointer can be released directly after this call. If allocation fails, this
+         * transaction must be committed before doing any additional copies. Note that more memory barriers and
+         * non-staging copies can still be staged regardless of the outcome of this call, since they do not
+         * require any staging buffer allocations.
+         * -
+         *
+         * If there is no explicit barrier, it is assumed that manually placed barriers before and/or after the copy
+         * will take care of any required synchronization. No automatic barriers are placed.
+         * -
+         *
+         * With an explicit barrier, the supplied parameters are used to place two barriers around the copy command.
+         * The before barrier takes the barrier.src values for the first scope and the transfer stage as the second
+         * scope. The after barrier takes the transfer stage as the first scope and the barrier.dst values for the
+         * second scope. Note that if the copy is only for part of the image, both barriers still apply to the whole
+         * image.
+         *
+         * \param copy Copy info.
+         * \param barrier Optional explicit barrier placed around the copy command.
+         * \param waitOnAllocFailure If true and staging buffer allocation fails, wait on previous transaction(s)
+         * to complete so that they release their staging buffers, and try allocating again.
+         * \return Staging buffer allocation success. If allocation fails, false is returned and this transaction must
+         * be committed before doing any additional copies. Note that more memory barriers and non-staging copies
+         * can still be added regardless of the outcome of this call, since they do not require any staging
+         * buffer allocations.
+         */
         [[nodiscard]] bool stage(const StagingImageCopy&            copy,
                                  const std::optional<ImageBarrier>& barrier            = {},
                                  bool                               waitOnAllocFailure = false);
@@ -420,6 +478,28 @@ namespace sol
          */
         void stage(const BufferToBufferCopy&           copy,
                    const std::optional<MemoryBarrier>& srcBarrier = {},
+                   const std::optional<MemoryBarrier>& dstBarrier = {});
+
+        /**
+         * \brief Stage a copy from a source image to a destination buffer. Optionally places barriers around the
+         * copy.
+         * -
+         *
+         * If there are no explicit barriers, it is assumed that manually placed barriers before and/or after the copy
+         * will take care of any required synchronization. No automatic barriers are placed.
+         * -
+         *
+         * With explicit barriers, the supplied parameters are used to place two barriers around the copy command for
+         * the source and/or destination image and buffer. The before barrier takes the barrier.src values for the
+         * first scope and the transfer stage as the second scope. The after barrier takes the transfer stage as the
+         * first scope and the barrier.dst values for the second scope. Note that if the copy is only for part of the
+         * image/buffer, both barriers still apply to the whole image/buffer.
+         * \param copy Copy.
+         * \param srcBarrier Optional explicit memory barrier for the source image.
+         * \param dstBarrier Optional explicit memory barrier for the destination buffer.
+         */
+        void stage(const ImageToBufferCopy&            copy,
+                   const std::optional<ImageBarrier>&  srcBarrier = {},
                    const std::optional<MemoryBarrier>& dstBarrier = {});
 
         ////////////////////////////////////////////////////////////////
@@ -454,6 +534,9 @@ namespace sol
         std::vector<std::pair<StagingBufferCopy, IBufferPtr>> s2bCopies;
         std::vector<std::pair<StagingImageCopy, IBufferPtr>>  s2iCopies;
         std::vector<BufferToBufferCopy>                       b2bCopies;
+        std::vector<ImageToImageCopy>                         i2iCopies;
+        std::vector<BufferToImageCopy>                        b2iCopies;
+        std::vector<ImageToBufferCopy>                        i2bCopies;
 
         bool committed = false;
 

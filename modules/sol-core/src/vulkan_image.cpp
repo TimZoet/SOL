@@ -80,8 +80,8 @@ namespace sol
         createInfo.extent.width          = settings.width;
         createInfo.extent.height         = settings.height;
         createInfo.extent.depth          = settings.depth;
-        createInfo.mipLevels             = 1;
-        createInfo.arrayLayers           = 1;
+        createInfo.mipLevels             = settings.mipLevels;
+        createInfo.arrayLayers           = settings.arrayLayers;
         createInfo.samples               = VK_SAMPLE_COUNT_1_BIT;
         createInfo.tiling                = settings.tiling;
         createInfo.usage                 = settings.imageUsage;

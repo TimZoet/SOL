@@ -15,7 +15,7 @@
 #include "testutils/utils.h"
 
 class ManualCopyBarrier final : public bt::UnitTest<ManualCopyBarrier, bt::CompareMixin, bt::ExceptionMixin>,
-                                MemoryManagerFixture
+                                BasicFixture
 {
 public:
     void operator()() override;

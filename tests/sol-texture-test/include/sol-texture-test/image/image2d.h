@@ -14,9 +14,9 @@
 
 #include "testutils/utils.h"
 
-class ConcurrentBufferTransactions final
-    : public bt::UnitTest<ConcurrentBufferTransactions, bt::CompareMixin, bt::ExceptionMixin>,
-      BasicFixture
+class Image2D final : public bt::UnitTest<Image2D, bt::CompareMixin, bt::ExceptionMixin>,
+                      BasicFixture,
+                      ImageDataGeneration
 {
 public:
     void operator()() override;
