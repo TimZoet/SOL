@@ -12,10 +12,10 @@
 
 #include "sol-core/vulkan_buffer.h"
 #include "sol-core/vulkan_queue.h"
-#include "sol-memory/buffer_transaction.h"
 #include "sol-memory/i_buffer.h"
 #include "sol-memory/memory_manager.h"
-#include "sol-memory/transfer_manager.h"
+#include "sol-memory/transaction.h"
+#include "sol-memory/transaction_manager.h"
 
 void LargeCopy::operator()()
 {
@@ -47,7 +47,7 @@ void LargeCopy::operator()()
     size_t transactionCount = 0;
     for (size_t i = 0; i < bufferCount; i++)
     {
-        const sol::BufferTransaction::StagingBufferCopy copy{.dstBuffer              = *buffers[i],
+        const sol::StagingBufferCopy copy{.dstBuffer              = *buffers[i],
                                                              .data                   = data.data(),
                                                              .size                   = sizeof(uint32_t) * count,
                                                              .offset                 = 0,

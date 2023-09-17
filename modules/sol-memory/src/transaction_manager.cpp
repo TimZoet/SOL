@@ -1,4 +1,4 @@
-#include "sol-memory/transfer_manager.h"
+#include "sol-memory/transaction_manager.h"
 
 ////////////////////////////////////////////////////////////////
 // Standard includes.
@@ -21,9 +21,9 @@
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-memory/buffer_transaction.h"
 #include "sol-memory/i_buffer.h"
 #include "sol-memory/memory_manager.h"
+#include "sol-memory/transaction.h"
 
 namespace sol
 {
@@ -31,7 +31,7 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    TransferManager::TransferManager(MemoryManager& memoryManager, RingBufferMemoryPool& memoryPool) :
+    TransactionManager::TransactionManager(MemoryManager& memoryManager, RingBufferMemoryPool& memoryPool) :
         manager(&memoryManager), pool(&memoryPool)
     {
         const auto familyCount = static_cast<uint32_t>(getDevice().getPhysicalDevice().getQueueFamilies().size());
@@ -57,7 +57,7 @@ namespace sol
         }
     }
 
-    TransferManager::~TransferManager() noexcept
+    TransactionManager::~TransactionManager() noexcept
     {
         // TODO: If there is a deadlock somewhere, this will get stuck. Wait with a timeout instead?
         static_cast<void>(lockAndWait());
@@ -67,7 +67,7 @@ namespace sol
     // Create.
     ////////////////////////////////////////////////////////////////
 
-    TransferManagerPtr TransferManager::create(MemoryManager& memoryManager, const size_t memoryPoolSize)
+    TransactionManagerPtr TransactionManager::create(MemoryManager& memoryManager, const size_t memoryPoolSize)
     {
         const IMemoryPool::CreateInfo info{
           .createFlags          = 0,
@@ -80,24 +80,24 @@ namespace sol
           .minBlocks       = 1,
           .maxBlocks       = 1};
         auto& pool = memoryManager.createRingBufferMemoryPool("transfer", info);
-        return std::make_unique<TransferManager>(memoryManager, pool);
+        return std::make_unique<TransactionManager>(memoryManager, pool);
     }
 
     ////////////////////////////////////////////////////////////////
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    VulkanDevice& TransferManager::getDevice() noexcept { return manager->getDevice(); }
+    VulkanDevice& TransactionManager::getDevice() noexcept { return manager->getDevice(); }
 
-    const VulkanDevice& TransferManager::getDevice() const noexcept { return manager->getDevice(); }
+    const VulkanDevice& TransactionManager::getDevice() const noexcept { return manager->getDevice(); }
 
-    MemoryManager& TransferManager::getMemoryManager() noexcept { return *manager; }
+    MemoryManager& TransactionManager::getMemoryManager() noexcept { return *manager; }
 
-    const MemoryManager& TransferManager::getMemoryManager() const noexcept { return *manager; }
+    const MemoryManager& TransactionManager::getMemoryManager() const noexcept { return *manager; }
 
-    RingBufferMemoryPool& TransferManager::getMemoryPool() const noexcept { return *pool; }
+    RingBufferMemoryPool& TransactionManager::getMemoryPool() const noexcept { return *pool; }
 
-    const std::vector<VulkanTimelineSemaphorePtr>& TransferManager::getSemaphores() const noexcept
+    const std::vector<VulkanTimelineSemaphorePtr>& TransactionManager::getSemaphores() const noexcept
     {
         return semaphores;
     }
@@ -106,16 +106,16 @@ namespace sol
     // Transactions.
     ////////////////////////////////////////////////////////////////
 
-    BufferTransactionPtr TransferManager::beginTransaction() { return std::make_unique<BufferTransaction>(*this); }
+    BufferTransactionPtr TransactionManager::beginTransaction() { return std::make_unique<Transaction>(*this); }
 
-    std::unique_ptr<std::scoped_lock<std::mutex>> TransferManager::lockAndWait()
+    std::unique_ptr<std::scoped_lock<std::mutex>> TransactionManager::lockAndWait()
     {
         auto l = lock();
         wait();
         return std::move(l);
     }
 
-    void TransferManager::wait()
+    void TransactionManager::wait()
     {
         const auto handles =
           semaphores | std::views::transform([](const auto& s) { return s->get(); }) | std::ranges::to<std::vector>();
@@ -131,7 +131,7 @@ namespace sol
         pendingStagingBuffers.clear();
     }
 
-    std::unique_ptr<std::scoped_lock<std::mutex>> TransferManager::lock()
+    std::unique_ptr<std::scoped_lock<std::mutex>> TransactionManager::lock()
     {
         return std::make_unique<std::scoped_lock<std::mutex>>(mutex);
     }

@@ -18,8 +18,8 @@
 ////////////////////////////////////////////////////////////////
 
 #include "sol-core/fwd.h"
-#include "sol-memory/buffer_transaction.h"
 #include "sol-memory/i_image.h"
+#include "sol-memory/transaction.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
@@ -210,8 +210,7 @@ namespace sol
          * \param barrier Barrier.
          * \param location Where to place the barrier, if a separate copy on the same image is being staged.
          */
-        void
-          barrier(BufferTransaction& transaction, const Barrier& barrier, BufferTransaction::BarrierLocation location);
+        void barrier(Transaction& transaction, const Barrier& barrier, BarrierLocation location);
 
         /**
          * \brief Set the image data for a list of regions. Can fail if there is not enough memory for a staging buffer.
@@ -225,7 +224,7 @@ namespace sol
          * \return True if staging buffer allocation succeeded and transaction can be committed.
          * On failure, already staged transactions should be committed and waited on before trying again.
          */
-        [[nodiscard]] bool setData(BufferTransaction&             transaction,
+        [[nodiscard]] bool setData(Transaction&             transaction,
                                    const void*                    data,
                                    size_t                         dataSize,
                                    const Barrier&                 barrier,
@@ -240,7 +239,7 @@ namespace sol
          * \param dstBarrier Barrier placed around the copy command for the destination buffer.
          * \param regions List of regions.
          */
-        void getData(BufferTransaction&             transaction,
+        void getData(Transaction&             transaction,
                      IBuffer&                       dstBuffer,
                      const Barrier&                 srcBarrier,
                      const Barrier&                 dstBarrier,

@@ -5,9 +5,9 @@
 ////////////////////////////////////////////////////////////////
 
 #include "sol-core/vulkan_queue.h"
-#include "sol-memory/buffer_transaction.h"
 #include "sol-memory/memory_manager.h"
-#include "sol-memory/transfer_manager.h"
+#include "sol-memory/transaction.h"
+#include "sol-memory/transaction_manager.h"
 #include "sol-texture/image2d2.h"
 #include "sol-texture/texture_collection.h"
 
@@ -43,7 +43,7 @@ void Image2DBarriers::operator()()
                         .srcAccess = VK_ACCESS_2_SHADER_READ_BIT,
                         .dstAccess = VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
                         .dstLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL},
-                       sol::BufferTransaction::BarrierLocation::BeforeCopy);
+                       sol::BarrierLocation::BeforeCopy);
 
         transaction->commit();
         transaction->wait();
@@ -63,7 +63,7 @@ void Image2DBarriers::operator()()
                         .srcAccess = VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
                         .dstAccess = VK_ACCESS_2_TRANSFER_READ_BIT,
                         .dstLayout = VK_IMAGE_LAYOUT_GENERAL},
-                       sol::BufferTransaction::BarrierLocation::BeforeCopy);
+                       sol::BarrierLocation::BeforeCopy);
 
         transaction->commit();
         transaction->wait();
@@ -83,7 +83,7 @@ void Image2DBarriers::operator()()
                         .srcAccess = VK_ACCESS_2_TRANSFER_READ_BIT,
                         .dstAccess = VK_ACCESS_2_SHADER_READ_BIT,
                         .dstLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL},
-                       sol::BufferTransaction::BarrierLocation::BeforeCopy);
+                       sol::BarrierLocation::BeforeCopy);
         image->barrier(*transaction,
                        {.dstFamily = nullptr,
                         .srcStage  = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
@@ -91,7 +91,7 @@ void Image2DBarriers::operator()()
                         .srcAccess = VK_ACCESS_2_SHADER_READ_BIT,
                         .dstAccess = VK_ACCESS_2_SHADER_READ_BIT,
                         .dstLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL},
-                       sol::BufferTransaction::BarrierLocation::AfterCopy);
+                       sol::BarrierLocation::AfterCopy);
 
         transaction->commit();
         transaction->wait();
@@ -111,7 +111,7 @@ void Image2DBarriers::operator()()
                         .srcAccess = VK_ACCESS_2_SHADER_READ_BIT,
                         .dstAccess = VK_ACCESS_2_TRANSFER_READ_BIT,
                         .dstLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL},
-                       sol::BufferTransaction::BarrierLocation::BeforeCopy);
+                       sol::BarrierLocation::BeforeCopy);
         image->barrier(*transaction,
                        {.dstFamily = &getMemoryManager().getComputeQueue().getFamily(),
                         .srcStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
@@ -119,7 +119,7 @@ void Image2DBarriers::operator()()
                         .srcAccess = VK_ACCESS_2_TRANSFER_READ_BIT,
                         .dstAccess = VK_ACCESS_2_SHADER_READ_BIT,
                         .dstLayout = VK_IMAGE_LAYOUT_GENERAL},
-                       sol::BufferTransaction::BarrierLocation::AfterCopy);
+                       sol::BarrierLocation::AfterCopy);
 
         transaction->commit();
         transaction->wait();
