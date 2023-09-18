@@ -21,7 +21,7 @@
 #include "sol-core/vulkan_swapchain.h"
 #include "sol-error/vulkan_error_handler.h"
 #include "sol-memory/memory_manager.h"
-#include "sol-memory/transfer_manager.h"
+#include "sol-memory/transaction_manager.h"
 #include "sol-render/graphics/fwd.h"
 #include "sol-render/graphics/graphics_rendering_info.h"
 #include "sol-window/fwd.h"
@@ -43,7 +43,7 @@ namespace
     uint32_t                                   imageIndex = 0;
     std::vector<sol::GraphicsRenderingInfoPtr> renderingInfos;
     sol::MemoryManagerPtr                      memoryManager;
-    sol::TransferManagerPtr                    transferManager;
+    sol::TransactionManagerPtr                    transferManager;
 
     void createDefaultWindow() { window = std::make_unique<sol::Window>(std::array{1024, 512}, "Test"); }
 
@@ -222,7 +222,7 @@ namespace
           .minBlocks       = 1,
           .maxBlocks       = 1};
         auto& pool      = memoryManager->createRingBufferMemoryPool("transfer", info);
-        transferManager = std::make_unique<sol::TransferManager>(*memoryManager, pool);
+        transferManager = std::make_unique<sol::TransactionManager>(*memoryManager, pool);
     }
 }  // namespace
 
@@ -275,7 +275,7 @@ sol::VulkanDevice& BasicFixture::getDevice() { return *device; }
 
 sol::MemoryManager& BasicFixture::getMemoryManager() { return *memoryManager; }
 
-sol::TransferManager& BasicFixture::getTransferManager() { return *transferManager; }
+sol::TransactionManager& BasicFixture::getTransferManager() { return *transferManager; }
 
 void BasicFixture::acquire()
 {

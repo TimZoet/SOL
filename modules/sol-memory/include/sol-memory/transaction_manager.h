@@ -22,34 +22,34 @@
 
 namespace sol
 {
-    class TransferManager
+    class TransactionManager
     {
     public:
-        friend class BufferTransaction;
+        friend class Transaction;
 
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        TransferManager() = delete;
+        TransactionManager() = delete;
 
-        TransferManager(MemoryManager& memoryManager, RingBufferMemoryPool& memoryPool);
+        TransactionManager(MemoryManager& memoryManager, RingBufferMemoryPool& memoryPool);
 
-        TransferManager(const TransferManager&) = delete;
+        TransactionManager(const TransactionManager&) = delete;
 
-        TransferManager(TransferManager&&) noexcept = delete;
+        TransactionManager(TransactionManager&&) noexcept = delete;
 
-        virtual ~TransferManager() noexcept;
+        virtual ~TransactionManager() noexcept;
 
-        TransferManager& operator=(const TransferManager&) = delete;
+        TransactionManager& operator=(const TransactionManager&) = delete;
 
-        TransferManager& operator=(TransferManager&&) noexcept = delete;
+        TransactionManager& operator=(TransactionManager&&) noexcept = delete;
 
         ////////////////////////////////////////////////////////////////
         // Create.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] static TransferManagerPtr create(MemoryManager& memoryManager, size_t memoryPoolSize);
+        [[nodiscard]] static TransactionManagerPtr create(MemoryManager& memoryManager, size_t memoryPoolSize);
 
         ////////////////////////////////////////////////////////////////
         // Getters.

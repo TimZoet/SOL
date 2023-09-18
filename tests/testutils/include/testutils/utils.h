@@ -28,7 +28,7 @@ public:
 
     [[nodiscard]] static sol::MemoryManager& getMemoryManager();
 
-    [[nodiscard]] static sol::TransferManager& getTransferManager();
+    [[nodiscard]] static sol::TransactionManager& getTransferManager();
 
     static void acquire();
 

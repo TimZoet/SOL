@@ -12,10 +12,10 @@
 
 #include "sol-core/vulkan_buffer.h"
 #include "sol-core/vulkan_queue.h"
-#include "sol-memory/buffer_transaction.h"
 #include "sol-memory/i_buffer.h"
 #include "sol-memory/memory_manager.h"
-#include "sol-memory/transfer_manager.h"
+#include "sol-memory/transaction.h"
+#include "sol-memory/transaction_manager.h"
 
 void MultipleCopies::operator()()
 {
@@ -53,31 +53,31 @@ void MultipleCopies::operator()()
 
     // Transfer data to srcBuffers.
     expectNoThrow([&] {
-        const auto                                      transaction = getTransferManager().beginTransaction();
-        const sol::BufferTransaction::StagingBufferCopy copy0{
+        const auto                   transaction = getTransferManager().beginTransaction();
+        const sol::StagingBufferCopy copy0{
           .dstBuffer = *srcBuffer0, .data = data0.data(), .size = VK_WHOLE_SIZE, .offset = 0};
-        const sol::BufferTransaction::StagingBufferCopy copy1{
+        const sol::StagingBufferCopy copy1{
           .dstBuffer = *srcBuffer1, .data = data1.data(), .size = VK_WHOLE_SIZE, .offset = 0};
-        const sol::BufferTransaction::StagingBufferCopy copy2{
+        const sol::StagingBufferCopy copy2{
           .dstBuffer = *srcBuffer2, .data = data2.data(), .size = VK_WHOLE_SIZE, .offset = 0};
-        const sol::BufferTransaction::MemoryBarrier barrier0{.buffer    = *srcBuffer0,
-                                                             .dstFamily = nullptr,
-                                                             .srcStage  = 0,
-                                                             .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                                                             .srcAccess = 0,
-                                                             .dstAccess = VK_ACCESS_2_TRANSFER_READ_BIT};
-        const sol::BufferTransaction::MemoryBarrier barrier1{.buffer    = *srcBuffer1,
-                                                             .dstFamily = nullptr,
-                                                             .srcStage  = 0,
-                                                             .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                                                             .srcAccess = 0,
-                                                             .dstAccess = VK_ACCESS_2_TRANSFER_READ_BIT};
-        const sol::BufferTransaction::MemoryBarrier barrier2{.buffer    = *srcBuffer2,
-                                                             .dstFamily = nullptr,
-                                                             .srcStage  = 0,
-                                                             .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                                                             .srcAccess = 0,
-                                                             .dstAccess = VK_ACCESS_2_TRANSFER_READ_BIT};
+        const sol::BufferBarrier barrier0{.buffer    = *srcBuffer0,
+                                          .dstFamily = nullptr,
+                                          .srcStage  = 0,
+                                          .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                          .srcAccess = 0,
+                                          .dstAccess = VK_ACCESS_2_TRANSFER_READ_BIT};
+        const sol::BufferBarrier barrier1{.buffer    = *srcBuffer1,
+                                          .dstFamily = nullptr,
+                                          .srcStage  = 0,
+                                          .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                          .srcAccess = 0,
+                                          .dstAccess = VK_ACCESS_2_TRANSFER_READ_BIT};
+        const sol::BufferBarrier barrier2{.buffer    = *srcBuffer2,
+                                          .dstFamily = nullptr,
+                                          .srcStage  = 0,
+                                          .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                          .srcAccess = 0,
+                                          .dstAccess = VK_ACCESS_2_TRANSFER_READ_BIT};
         compareTrue(transaction->stage(copy0, barrier0));
         compareTrue(transaction->stage(copy1, barrier1));
         compareTrue(transaction->stage(copy2, barrier2));
@@ -88,53 +88,53 @@ void MultipleCopies::operator()()
 
     // Copy from src to dst.
     expectNoThrow([&] {
-        const auto                                       transaction = getTransferManager().beginTransaction();
-        const sol::BufferTransaction::BufferToBufferCopy copy0{.srcBuffer              = *srcBuffer0,
-                                                               .dstBuffer              = *dstBuffer0,
-                                                               .size                   = VK_WHOLE_SIZE,
-                                                               .srcOffset              = 0,
-                                                               .dstOffset              = 0,
-                                                               .srcOnDedicatedTransfer = false,
-                                                               .dstOnDedicatedTransfer = false};
-        const sol::BufferTransaction::BufferToBufferCopy copy1{.srcBuffer              = *srcBuffer1,
-                                                               .dstBuffer              = *dstBuffer1,
-                                                               .size                   = VK_WHOLE_SIZE,
-                                                               .srcOffset              = 0,
-                                                               .dstOffset              = 0,
-                                                               .srcOnDedicatedTransfer = false,
-                                                               .dstOnDedicatedTransfer = false};
-        const sol::BufferTransaction::BufferToBufferCopy copy2{.srcBuffer              = *srcBuffer2,
-                                                               .dstBuffer              = *dstBuffer2,
-                                                               .size                   = VK_WHOLE_SIZE,
-                                                               .srcOffset              = 0,
-                                                               .dstOffset              = 0,
-                                                               .srcOnDedicatedTransfer = false,
-                                                               .dstOnDedicatedTransfer = false};
-        const sol::BufferTransaction::MemoryBarrier      srcBarrier0{
+        const auto                    transaction = getTransferManager().beginTransaction();
+        const sol::BufferToBufferCopy copy0{.srcBuffer              = *srcBuffer0,
+                                            .dstBuffer              = *dstBuffer0,
+                                            .size                   = VK_WHOLE_SIZE,
+                                            .srcOffset              = 0,
+                                            .dstOffset              = 0,
+                                            .srcOnDedicatedTransfer = false,
+                                            .dstOnDedicatedTransfer = false};
+        const sol::BufferToBufferCopy copy1{.srcBuffer              = *srcBuffer1,
+                                            .dstBuffer              = *dstBuffer1,
+                                            .size                   = VK_WHOLE_SIZE,
+                                            .srcOffset              = 0,
+                                            .dstOffset              = 0,
+                                            .srcOnDedicatedTransfer = false,
+                                            .dstOnDedicatedTransfer = false};
+        const sol::BufferToBufferCopy copy2{.srcBuffer              = *srcBuffer2,
+                                            .dstBuffer              = *dstBuffer2,
+                                            .size                   = VK_WHOLE_SIZE,
+                                            .srcOffset              = 0,
+                                            .dstOffset              = 0,
+                                            .srcOnDedicatedTransfer = false,
+                                            .dstOnDedicatedTransfer = false};
+        const sol::BufferBarrier      srcBarrier0{
                .buffer = *srcBuffer0, .dstFamily = nullptr, .srcStage = 0, .dstStage = 0, .srcAccess = 0, .dstAccess = 0};
-        const sol::BufferTransaction::MemoryBarrier srcBarrier1{
+        const sol::BufferBarrier srcBarrier1{
           .buffer = *srcBuffer1, .dstFamily = nullptr, .srcStage = 0, .dstStage = 0, .srcAccess = 0, .dstAccess = 0};
-        const sol::BufferTransaction::MemoryBarrier srcBarrier2{
+        const sol::BufferBarrier srcBarrier2{
           .buffer = *srcBuffer2, .dstFamily = nullptr, .srcStage = 0, .dstStage = 0, .srcAccess = 0, .dstAccess = 0};
-        const sol::BufferTransaction::MemoryBarrier dstBarrier0{.buffer    = *dstBuffer0,
-                                                                .dstFamily = nullptr,
-                                                                .srcStage  = 0,
-                                                                .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,
-                                                                .srcAccess = 0,
-                                                                .dstAccess = VK_ACCESS_2_HOST_READ_BIT};
-        const sol::BufferTransaction::MemoryBarrier dstBarrier1{.buffer    = *dstBuffer1,
-                                                                .dstFamily = nullptr,
-                                                                .srcStage  = 0,
-                                                                .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,
-                                                                .srcAccess = 0,
-                                                                .dstAccess = VK_ACCESS_2_HOST_READ_BIT};
+        const sol::BufferBarrier dstBarrier0{.buffer    = *dstBuffer0,
+                                             .dstFamily = nullptr,
+                                             .srcStage  = 0,
+                                             .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,
+                                             .srcAccess = 0,
+                                             .dstAccess = VK_ACCESS_2_HOST_READ_BIT};
+        const sol::BufferBarrier dstBarrier1{.buffer    = *dstBuffer1,
+                                             .dstFamily = nullptr,
+                                             .srcStage  = 0,
+                                             .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,
+                                             .srcAccess = 0,
+                                             .dstAccess = VK_ACCESS_2_HOST_READ_BIT};
         transaction->stage(copy0, srcBarrier0, dstBarrier0);
-        const sol::BufferTransaction::MemoryBarrier dstBarrier2{.buffer    = *dstBuffer2,
-                                                                .dstFamily = nullptr,
-                                                                .srcStage  = 0,
-                                                                .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,
-                                                                .srcAccess = 0,
-                                                                .dstAccess = VK_ACCESS_2_HOST_READ_BIT};
+        const sol::BufferBarrier dstBarrier2{.buffer    = *dstBuffer2,
+                                             .dstFamily = nullptr,
+                                             .srcStage  = 0,
+                                             .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,
+                                             .srcAccess = 0,
+                                             .dstAccess = VK_ACCESS_2_HOST_READ_BIT};
         transaction->stage(copy0, srcBarrier0, dstBarrier0);
         transaction->stage(copy0, srcBarrier0, dstBarrier0);
         transaction->stage(copy1, srcBarrier1, dstBarrier1);

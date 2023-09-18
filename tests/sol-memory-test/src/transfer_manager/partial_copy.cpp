@@ -12,10 +12,10 @@
 
 #include "sol-core/vulkan_buffer.h"
 #include "sol-core/vulkan_queue.h"
-#include "sol-memory/buffer_transaction.h"
 #include "sol-memory/i_buffer.h"
 #include "sol-memory/memory_manager.h"
-#include "sol-memory/transfer_manager.h"
+#include "sol-memory/transaction.h"
+#include "sol-memory/transaction_manager.h"
 
 void PartialCopy::operator()()
 {
@@ -41,15 +41,15 @@ void PartialCopy::operator()()
 
     // Transfer data to srcBuffer.
     expectNoThrow([&] {
-        const auto                                      transaction = getTransferManager().beginTransaction();
-        const sol::BufferTransaction::StagingBufferCopy copy{
+        const auto                   transaction = getTransferManager().beginTransaction();
+        const sol::StagingBufferCopy copy{
           .dstBuffer = *srcBuffer, .data = data.data(), .size = VK_WHOLE_SIZE, .offset = 0};
-        const sol::BufferTransaction::MemoryBarrier barrier{.buffer    = *srcBuffer,
-                                                            .dstFamily = nullptr,
-                                                            .srcStage  = 0,
-                                                            .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                                                            .srcAccess = 0,
-                                                            .dstAccess = VK_ACCESS_2_TRANSFER_READ_BIT};
+        const sol::BufferBarrier barrier{.buffer    = *srcBuffer,
+                                         .dstFamily = nullptr,
+                                         .srcStage  = 0,
+                                         .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                         .srcAccess = 0,
+                                         .dstAccess = VK_ACCESS_2_TRANSFER_READ_BIT};
         compareTrue(transaction->stage(copy, barrier));
         transaction->commit();
         transaction->wait();
@@ -58,27 +58,26 @@ void PartialCopy::operator()()
 
     // Transfer first block of 256 elements to first block.
     {
-        const auto                                       transaction = getTransferManager().beginTransaction();
-        const sol::BufferTransaction::BufferToBufferCopy copy{.srcBuffer              = *srcBuffer,
-                                                              .dstBuffer              = *dstBuffer,
-                                                              .size                   = sizeof(uint32_t) * 256,
-                                                              .srcOffset              = 0,
-                                                              .dstOffset              = 0,
-                                                              .srcOnDedicatedTransfer = false,
-                                                              .dstOnDedicatedTransfer = false};
-        const sol::BufferTransaction::MemoryBarrier      srcBarrier{.buffer    = *srcBuffer,
-                                                                    .dstFamily = nullptr,
-                                                                    .srcStage  = 0,
-                                                                    .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                                                                    .srcAccess = 0,
-                                                                    .dstAccess = VK_ACCESS_2_TRANSFER_READ_BIT};
-        const sol::BufferTransaction::MemoryBarrier      dstBarrier{
-               .buffer    = *dstBuffer,
-               .dstFamily = nullptr,
-               .srcStage  = 0,
-               .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-               .srcAccess = 0,
-               .dstAccess = VK_ACCESS_2_HOST_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT};
+        const auto                    transaction = getTransferManager().beginTransaction();
+        const sol::BufferToBufferCopy copy{.srcBuffer              = *srcBuffer,
+                                           .dstBuffer              = *dstBuffer,
+                                           .size                   = sizeof(uint32_t) * 256,
+                                           .srcOffset              = 0,
+                                           .dstOffset              = 0,
+                                           .srcOnDedicatedTransfer = false,
+                                           .dstOnDedicatedTransfer = false};
+        const sol::BufferBarrier      srcBarrier{.buffer    = *srcBuffer,
+                                                 .dstFamily = nullptr,
+                                                 .srcStage  = 0,
+                                                 .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                                 .srcAccess = 0,
+                                                 .dstAccess = VK_ACCESS_2_TRANSFER_READ_BIT};
+        const sol::BufferBarrier      dstBarrier{.buffer    = *dstBuffer,
+                                                 .dstFamily = nullptr,
+                                                 .srcStage  = 0,
+                                                 .dstStage = VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                                 .srcAccess = 0,
+                                                 .dstAccess = VK_ACCESS_2_HOST_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT};
         transaction->stage(copy, srcBarrier, dstBarrier);
         transaction->commit();
         transaction->wait();
@@ -93,22 +92,22 @@ void PartialCopy::operator()()
 
     // Transfer fourth block of 256 elements to second block.
     {
-        const auto                                       transaction = getTransferManager().beginTransaction();
-        const sol::BufferTransaction::BufferToBufferCopy copy{.srcBuffer              = *srcBuffer,
-                                                              .dstBuffer              = *dstBuffer,
-                                                              .size                   = sizeof(uint32_t) * 256,
-                                                              .srcOffset              = sizeof(uint32_t) * 256 * 3,
-                                                              .dstOffset              = sizeof(uint32_t) * 256 * 1,
-                                                              .srcOnDedicatedTransfer = false,
-                                                              .dstOnDedicatedTransfer = false};
-        const sol::BufferTransaction::MemoryBarrier      srcBarrier{
+        const auto                    transaction = getTransferManager().beginTransaction();
+        const sol::BufferToBufferCopy copy{.srcBuffer              = *srcBuffer,
+                                           .dstBuffer              = *dstBuffer,
+                                           .size                   = sizeof(uint32_t) * 256,
+                                           .srcOffset              = sizeof(uint32_t) * 256 * 3,
+                                           .dstOffset              = sizeof(uint32_t) * 256 * 1,
+                                           .srcOnDedicatedTransfer = false,
+                                           .dstOnDedicatedTransfer = false};
+        const sol::BufferBarrier      srcBarrier{
                .buffer = *srcBuffer, .dstFamily = nullptr, .srcStage = 0, .dstStage = 0, .srcAccess = 0, .dstAccess = 0};
-        const sol::BufferTransaction::MemoryBarrier dstBarrier{.buffer    = *dstBuffer,
-                                                               .dstFamily = nullptr,
-                                                               .srcStage  = 0,
-                                                               .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,
-                                                               .srcAccess = 0,
-                                                               .dstAccess = VK_ACCESS_2_HOST_READ_BIT};
+        const sol::BufferBarrier dstBarrier{.buffer    = *dstBuffer,
+                                            .dstFamily = nullptr,
+                                            .srcStage  = 0,
+                                            .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,
+                                            .srcAccess = 0,
+                                            .dstAccess = VK_ACCESS_2_HOST_READ_BIT};
         transaction->stage(copy, srcBarrier, dstBarrier);
         transaction->commit();
         transaction->wait();
@@ -123,22 +122,22 @@ void PartialCopy::operator()()
 
     // Transfer second block of 256 elements to second block.
     {
-        const auto                                       transaction = getTransferManager().beginTransaction();
-        const sol::BufferTransaction::BufferToBufferCopy copy{.srcBuffer              = *srcBuffer,
-                                                              .dstBuffer              = *dstBuffer,
-                                                              .size                   = sizeof(uint32_t) * 256,
-                                                              .srcOffset              = sizeof(uint32_t) * 256,
-                                                              .dstOffset              = sizeof(uint32_t) * 256,
-                                                              .srcOnDedicatedTransfer = false,
-                                                              .dstOnDedicatedTransfer = false};
-        const sol::BufferTransaction::MemoryBarrier      srcBarrier{
+        const auto                    transaction = getTransferManager().beginTransaction();
+        const sol::BufferToBufferCopy copy{.srcBuffer              = *srcBuffer,
+                                           .dstBuffer              = *dstBuffer,
+                                           .size                   = sizeof(uint32_t) * 256,
+                                           .srcOffset              = sizeof(uint32_t) * 256,
+                                           .dstOffset              = sizeof(uint32_t) * 256,
+                                           .srcOnDedicatedTransfer = false,
+                                           .dstOnDedicatedTransfer = false};
+        const sol::BufferBarrier      srcBarrier{
                .buffer = *srcBuffer, .dstFamily = nullptr, .srcStage = 0, .dstStage = 0, .srcAccess = 0, .dstAccess = 0};
-        const sol::BufferTransaction::MemoryBarrier dstBarrier{.buffer    = *dstBuffer,
-                                                               .dstFamily = nullptr,
-                                                               .srcStage  = 0,
-                                                               .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,
-                                                               .srcAccess = 0,
-                                                               .dstAccess = VK_ACCESS_2_HOST_READ_BIT};
+        const sol::BufferBarrier dstBarrier{.buffer    = *dstBuffer,
+                                            .dstFamily = nullptr,
+                                            .srcStage  = 0,
+                                            .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,
+                                            .srcAccess = 0,
+                                            .dstAccess = VK_ACCESS_2_HOST_READ_BIT};
         transaction->stage(copy, srcBarrier, dstBarrier);
         transaction->commit();
         transaction->wait();
@@ -156,57 +155,57 @@ void PartialCopy::operator()()
         const auto transaction = getTransferManager().beginTransaction();
 
         expectNoThrow([&] {
-            const sol::BufferTransaction::MemoryBarrier before{.buffer    = *srcBuffer,
-                                                               .dstFamily = nullptr,
-                                                               .srcStage  = 0,
-                                                               .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                                                               .srcAccess = 0,
-                                                               .dstAccess = VK_ACCESS_2_TRANSFER_READ_BIT};
-            transaction->stage(before, sol::BufferTransaction::BarrierLocation::BeforeCopy);
+            const sol::BufferBarrier before{.buffer    = *srcBuffer,
+                                            .dstFamily = nullptr,
+                                            .srcStage  = 0,
+                                            .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                            .srcAccess = 0,
+                                            .dstAccess = VK_ACCESS_2_TRANSFER_READ_BIT};
+            transaction->stage(before, sol::BarrierLocation::BeforeCopy);
         });
 
         expectNoThrow([&] {
-            const sol::BufferTransaction::MemoryBarrier before{.buffer    = *dstBuffer,
-                                                               .dstFamily = nullptr,
-                                                               .srcStage  = 0,
-                                                               .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                                                               .srcAccess = 0,
-                                                               .dstAccess = VK_ACCESS_2_TRANSFER_WRITE_BIT};
-            transaction->stage(before, sol::BufferTransaction::BarrierLocation::BeforeCopy);
+            const sol::BufferBarrier before{.buffer    = *dstBuffer,
+                                            .dstFamily = nullptr,
+                                            .srcStage  = 0,
+                                            .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                            .srcAccess = 0,
+                                            .dstAccess = VK_ACCESS_2_TRANSFER_WRITE_BIT};
+            transaction->stage(before, sol::BarrierLocation::BeforeCopy);
         });
 
         expectNoThrow([&] {
-            const sol::BufferTransaction::BufferToBufferCopy copy{.srcBuffer              = *srcBuffer,
-                                                                  .dstBuffer              = *dstBuffer,
-                                                                  .size                   = sizeof(uint32_t) * 256,
-                                                                  .srcOffset              = 0,
-                                                                  .dstOffset              = sizeof(uint32_t) * 256 * 2,
-                                                                  .srcOnDedicatedTransfer = false,
-                                                                  .dstOnDedicatedTransfer = false};
+            const sol::BufferToBufferCopy copy{.srcBuffer              = *srcBuffer,
+                                               .dstBuffer              = *dstBuffer,
+                                               .size                   = sizeof(uint32_t) * 256,
+                                               .srcOffset              = 0,
+                                               .dstOffset              = sizeof(uint32_t) * 256 * 2,
+                                               .srcOnDedicatedTransfer = false,
+                                               .dstOnDedicatedTransfer = false};
 
             transaction->stage(copy);
         });
 
         expectNoThrow([&] {
-            const sol::BufferTransaction::BufferToBufferCopy copy{.srcBuffer              = *srcBuffer,
-                                                                  .dstBuffer              = *dstBuffer,
-                                                                  .size                   = sizeof(uint32_t) * 256,
-                                                                  .srcOffset              = sizeof(uint32_t) * 256 * 2,
-                                                                  .dstOffset              = sizeof(uint32_t) * 256 * 3,
-                                                                  .srcOnDedicatedTransfer = false,
-                                                                  .dstOnDedicatedTransfer = false};
+            const sol::BufferToBufferCopy copy{.srcBuffer              = *srcBuffer,
+                                               .dstBuffer              = *dstBuffer,
+                                               .size                   = sizeof(uint32_t) * 256,
+                                               .srcOffset              = sizeof(uint32_t) * 256 * 2,
+                                               .dstOffset              = sizeof(uint32_t) * 256 * 3,
+                                               .srcOnDedicatedTransfer = false,
+                                               .dstOnDedicatedTransfer = false};
 
             transaction->stage(copy);
         });
 
         expectNoThrow([&] {
-            const sol::BufferTransaction::MemoryBarrier after{.buffer    = *dstBuffer,
-                                                              .dstFamily = nullptr,
-                                                              .srcStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                                                              .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,
-                                                              .srcAccess = VK_ACCESS_2_TRANSFER_WRITE_BIT,
-                                                              .dstAccess = VK_ACCESS_2_HOST_READ_BIT};
-            transaction->stage(after, sol::BufferTransaction::BarrierLocation::AfterCopy);
+            const sol::BufferBarrier after{.buffer    = *dstBuffer,
+                                           .dstFamily = nullptr,
+                                           .srcStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                           .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,
+                                           .srcAccess = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                                           .dstAccess = VK_ACCESS_2_HOST_READ_BIT};
+            transaction->stage(after, sol::BarrierLocation::AfterCopy);
         });
 
         transaction->commit();

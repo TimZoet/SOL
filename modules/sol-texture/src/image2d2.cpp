@@ -92,26 +92,23 @@ namespace sol
     // Transactions.
     ////////////////////////////////////////////////////////////////
 
-    void Image2D2::barrier(BufferTransaction&                       transaction,
-                           const Barrier&                           barrier,
-                           const BufferTransaction::BarrierLocation location)
+    void Image2D2::barrier(Transaction& transaction, const Barrier& barrier, const BarrierLocation location)
     {
         // We just create a barrier for all levels and layers.
-        const BufferTransaction::ImageBarrier imgBarrier{.image     = *this,
-                                                         .srcFamily = queueFamily[0],
-                                                         .dstFamily =
-                                                           barrier.dstFamily ? barrier.dstFamily : queueFamily[0],
-                                                         .srcStage       = barrier.srcStage,
-                                                         .dstStage       = barrier.dstStage,
-                                                         .srcAccess      = barrier.srcAccess,
-                                                         .dstAccess      = barrier.dstAccess,
-                                                         .srcLayout      = imageLayout[0],
-                                                         .dstLayout      = barrier.dstLayout,
-                                                         .aspectMask     = getImageAspectFlags(),
-                                                         .baseMipLevel   = 0,
-                                                         .levelCount     = getLevelCount(),
-                                                         .baseArrayLayer = 0,
-                                                         .layerCount     = getLayerCount()};
+        const ImageBarrier imgBarrier{.image          = *this,
+                                      .srcFamily      = queueFamily[0],
+                                      .dstFamily      = barrier.dstFamily ? barrier.dstFamily : queueFamily[0],
+                                      .srcStage       = barrier.srcStage,
+                                      .dstStage       = barrier.dstStage,
+                                      .srcAccess      = barrier.srcAccess,
+                                      .dstAccess      = barrier.dstAccess,
+                                      .srcLayout      = imageLayout[0],
+                                      .dstLayout      = barrier.dstLayout,
+                                      .aspectMask     = getImageAspectFlags(),
+                                      .baseMipLevel   = 0,
+                                      .levelCount     = getLevelCount(),
+                                      .baseArrayLayer = 0,
+                                      .layerCount     = getLayerCount()};
 
         // Update image layout and queue family for all levels and layers.
         if (imgBarrier.srcLayout != imgBarrier.dstLayout) std::ranges::fill(imageLayout, imgBarrier.dstLayout);
@@ -120,7 +117,7 @@ namespace sol
         transaction.stage(imgBarrier, location);
     }
 
-    bool Image2D2::setData(BufferTransaction&             transaction,
+    bool Image2D2::setData(Transaction&             transaction,
                            const void*                    data,
                            const size_t                   dataSize,
                            const Barrier&                 barrier,
@@ -128,7 +125,7 @@ namespace sol
                            const std::vector<CopyRegion>& regions)
     {
         // Fill up copy with all regions.
-        BufferTransaction::StagingImageCopy copy{.dstImage = *this, .data = data, .dataSize = dataSize, .regions = {}};
+        StagingImageCopy copy{.dstImage = *this, .data = data, .dataSize = dataSize, .regions = {}};
         for (const auto& [dataOffset, level, regionOffset, regionSize] : regions)
         {
             auto rSize = regionSize;
@@ -144,21 +141,20 @@ namespace sol
         }
 
         // We just create a barrier for all levels and layers.
-        const BufferTransaction::ImageBarrier imgBarrier{.image     = *this,
-                                                         .srcFamily = queueFamily[0],
-                                                         .dstFamily =
-                                                           barrier.dstFamily ? barrier.dstFamily : queueFamily[0],
-                                                         .srcStage       = barrier.srcStage,
-                                                         .dstStage       = barrier.dstStage,
-                                                         .srcAccess      = barrier.srcAccess,
-                                                         .dstAccess      = barrier.dstAccess,
-                                                         .srcLayout      = imageLayout[0],
-                                                         .dstLayout      = barrier.dstLayout,
-                                                         .aspectMask     = getImageAspectFlags(),
-                                                         .baseMipLevel   = 0,
-                                                         .levelCount     = getLevelCount(),
-                                                         .baseArrayLayer = 0,
-                                                         .layerCount     = getLayerCount()};
+        const ImageBarrier imgBarrier{.image          = *this,
+                                      .srcFamily      = queueFamily[0],
+                                      .dstFamily      = barrier.dstFamily ? barrier.dstFamily : queueFamily[0],
+                                      .srcStage       = barrier.srcStage,
+                                      .dstStage       = barrier.dstStage,
+                                      .srcAccess      = barrier.srcAccess,
+                                      .dstAccess      = barrier.dstAccess,
+                                      .srcLayout      = imageLayout[0],
+                                      .dstLayout      = barrier.dstLayout,
+                                      .aspectMask     = getImageAspectFlags(),
+                                      .baseMipLevel   = 0,
+                                      .levelCount     = getLevelCount(),
+                                      .baseArrayLayer = 0,
+                                      .layerCount     = getLayerCount()};
 
         // Update image layout and queue family for all levels and layers.
         if (imgBarrier.srcLayout != imgBarrier.dstLayout) std::ranges::fill(imageLayout, imgBarrier.dstLayout);
@@ -167,14 +163,14 @@ namespace sol
         return transaction.stage(copy, imgBarrier, waitOnAllocFailure);
     }
 
-    void Image2D2::getData(BufferTransaction&             transaction,
+    void Image2D2::getData(Transaction&             transaction,
                            IBuffer&                       dstBuffer,
                            const Barrier&                 srcBarrier,
                            const Barrier&                 dstBarrier,
                            const std::vector<CopyRegion>& regions)
     {
         // Fill up copy with all regions.
-        BufferTransaction::ImageToBufferCopy copy{
+        ImageToBufferCopy copy{
           .srcImage = *this, .dstBuffer = dstBuffer, .regions = {}, .dstOnDedicatedTransfer = true};
 
         for (const auto& [dataOffset, level, regionOffset, regionSize] : regions)
@@ -192,33 +188,32 @@ namespace sol
         }
 
         // We just create a barrier for all levels and layers.
-        const BufferTransaction::ImageBarrier imgBarrier{.image     = *this,
-                                                         .srcFamily = queueFamily[0],
-                                                         .dstFamily =
-                                                           srcBarrier.dstFamily ? srcBarrier.dstFamily : queueFamily[0],
-                                                         .srcStage       = srcBarrier.srcStage,
-                                                         .dstStage       = srcBarrier.dstStage,
-                                                         .srcAccess      = srcBarrier.srcAccess,
-                                                         .dstAccess      = srcBarrier.dstAccess,
-                                                         .srcLayout      = imageLayout[0],
-                                                         .dstLayout      = srcBarrier.dstLayout,
-                                                         .aspectMask     = getImageAspectFlags(),
-                                                         .baseMipLevel   = 0,
-                                                         .levelCount     = getLevelCount(),
-                                                         .baseArrayLayer = 0,
-                                                         .layerCount     = getLayerCount()};
+        const ImageBarrier imgBarrier{.image          = *this,
+                                      .srcFamily      = queueFamily[0],
+                                      .dstFamily      = srcBarrier.dstFamily ? srcBarrier.dstFamily : queueFamily[0],
+                                      .srcStage       = srcBarrier.srcStage,
+                                      .dstStage       = srcBarrier.dstStage,
+                                      .srcAccess      = srcBarrier.srcAccess,
+                                      .dstAccess      = srcBarrier.dstAccess,
+                                      .srcLayout      = imageLayout[0],
+                                      .dstLayout      = srcBarrier.dstLayout,
+                                      .aspectMask     = getImageAspectFlags(),
+                                      .baseMipLevel   = 0,
+                                      .levelCount     = getLevelCount(),
+                                      .baseArrayLayer = 0,
+                                      .layerCount     = getLayerCount()};
 
         // Update image layout and queue family for all levels and layers.
         if (imgBarrier.srcLayout != imgBarrier.dstLayout) std::ranges::fill(imageLayout, imgBarrier.dstLayout);
         if (imgBarrier.srcFamily != imgBarrier.dstFamily) std::ranges::fill(queueFamily, imgBarrier.dstFamily);
 
-        const BufferTransaction::MemoryBarrier bufferBarrier{
-          .buffer    = dstBuffer,
-          .dstFamily = dstBarrier.dstFamily ? dstBarrier.dstFamily : &dstBuffer.getQueueFamily(),
-          .srcStage  = dstBarrier.srcStage,
-          .dstStage  = dstBarrier.dstStage,
-          .srcAccess = dstBarrier.srcAccess,
-          .dstAccess = dstBarrier.dstAccess};
+        const BufferBarrier bufferBarrier{.buffer = dstBuffer,
+                                          .dstFamily =
+                                            dstBarrier.dstFamily ? dstBarrier.dstFamily : &dstBuffer.getQueueFamily(),
+                                          .srcStage  = dstBarrier.srcStage,
+                                          .dstStage  = dstBarrier.dstStage,
+                                          .srcAccess = dstBarrier.srcAccess,
+                                          .dstAccess = dstBarrier.dstAccess};
 
         // TODO: If transaction no longer automatically takes care of this, also set family of destination buffer.
 

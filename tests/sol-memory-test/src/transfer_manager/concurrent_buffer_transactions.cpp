@@ -14,10 +14,10 @@
 
 #include "sol-core/vulkan_buffer.h"
 #include "sol-core/vulkan_queue.h"
-#include "sol-memory/buffer_transaction.h"
 #include "sol-memory/i_buffer.h"
 #include "sol-memory/memory_manager.h"
-#include "sol-memory/transfer_manager.h"
+#include "sol-memory/transaction.h"
+#include "sol-memory/transaction_manager.h"
 
 void ConcurrentBufferTransactions::operator()()
 {
@@ -54,15 +54,15 @@ void ConcurrentBufferTransactions::operator()()
 
                 // Transfer data to device buffer.
                 {
-                    const auto transaction = getTransferManager().beginTransaction();
-                    const sol::BufferTransaction::StagingBufferCopy copy{
+                    const auto                   transaction = getTransferManager().beginTransaction();
+                    const sol::StagingBufferCopy copy{
                       .dstBuffer = *deviceBuffer, .data = data.data(), .size = VK_WHOLE_SIZE, .offset = 0};
-                    const sol::BufferTransaction::MemoryBarrier barrier{.buffer    = *deviceBuffer,
-                                                                        .dstFamily = nullptr,
-                                                                        .srcStage  = 0,
-                                                                        .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                                                                        .srcAccess = 0,
-                                                                        .dstAccess = VK_ACCESS_2_TRANSFER_READ_BIT};
+                    const sol::BufferBarrier barrier{.buffer    = *deviceBuffer,
+                                                     .dstFamily = nullptr,
+                                                     .srcStage  = 0,
+                                                     .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                                     .srcAccess = 0,
+                                                     .dstAccess = VK_ACCESS_2_TRANSFER_READ_BIT};
                     if (!transaction->stage(copy, barrier))
                         throw std::runtime_error("Creation of staging buffer failed.");
                     transaction->commit();
@@ -71,26 +71,26 @@ void ConcurrentBufferTransactions::operator()()
 
                 // Transfer data from device buffer to host buffer.
                 {
-                    const auto transaction = getTransferManager().beginTransaction();
-                    const sol::BufferTransaction::BufferToBufferCopy copy{.srcBuffer              = *deviceBuffer,
-                                                                          .dstBuffer              = *hostBuffer,
-                                                                          .size                   = VK_WHOLE_SIZE,
-                                                                          .srcOffset              = 0,
-                                                                          .dstOffset              = 0,
-                                                                          .srcOnDedicatedTransfer = false,
-                                                                          .dstOnDedicatedTransfer = false};
-                    const sol::BufferTransaction::MemoryBarrier      srcBarrier{.buffer    = *deviceBuffer,
-                                                                                .dstFamily = nullptr,
-                                                                                .srcStage  = 0,
-                                                                                .dstStage  = 0,
-                                                                                .srcAccess = 0,
-                                                                                .dstAccess = 0};
-                    const sol::BufferTransaction::MemoryBarrier      dstBarrier{.buffer    = *hostBuffer,
-                                                                                .dstFamily = nullptr,
-                                                                                .srcStage  = 0,
-                                                                                .dstStage = VK_PIPELINE_STAGE_2_HOST_BIT,
-                                                                                .srcAccess = 0,
-                                                                                .dstAccess = VK_ACCESS_2_HOST_READ_BIT};
+                    const auto                    transaction = getTransferManager().beginTransaction();
+                    const sol::BufferToBufferCopy copy{.srcBuffer              = *deviceBuffer,
+                                                       .dstBuffer              = *hostBuffer,
+                                                       .size                   = VK_WHOLE_SIZE,
+                                                       .srcOffset              = 0,
+                                                       .dstOffset              = 0,
+                                                       .srcOnDedicatedTransfer = false,
+                                                       .dstOnDedicatedTransfer = false};
+                    const sol::BufferBarrier      srcBarrier{.buffer    = *deviceBuffer,
+                                                             .dstFamily = nullptr,
+                                                             .srcStage  = 0,
+                                                             .dstStage  = 0,
+                                                             .srcAccess = 0,
+                                                             .dstAccess = 0};
+                    const sol::BufferBarrier      dstBarrier{.buffer    = *hostBuffer,
+                                                             .dstFamily = nullptr,
+                                                             .srcStage  = 0,
+                                                             .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,
+                                                             .srcAccess = 0,
+                                                             .dstAccess = VK_ACCESS_2_HOST_READ_BIT};
                     transaction->stage(copy, srcBarrier, dstBarrier);
                     transaction->commit();
                     transaction->wait();

@@ -6,10 +6,10 @@
 
 #include "sol-core/vulkan_buffer.h"
 #include "sol-core/vulkan_queue.h"
-#include "sol-memory/buffer_transaction.h"
 #include "sol-memory/i_buffer.h"
 #include "sol-memory/memory_manager.h"
-#include "sol-memory/transfer_manager.h"
+#include "sol-memory/transaction.h"
+#include "sol-memory/transaction_manager.h"
 #include "sol-texture/image2d2.h"
 #include "sol-texture/texture_collection.h"
 

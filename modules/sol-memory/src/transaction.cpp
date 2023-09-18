@@ -1,4 +1,4 @@
-#include "sol-memory/buffer_transaction.h"
+#include "sol-memory/transaction.h"
 
 ////////////////////////////////////////////////////////////////
 // Standard includes.
@@ -27,12 +27,12 @@
 #include "sol-memory/i_buffer.h"
 #include "sol-memory/i_image.h"
 #include "sol-memory/memory_manager.h"
-#include "sol-memory/transfer_manager.h"
+#include "sol-memory/transaction_manager.h"
 
 namespace
 {
-    [[nodiscard]] sol::IBufferPtr tryAllocate(const sol::TransferManager&                      manager,
-                                              const sol::BufferTransaction::StagingBufferCopy& copy)
+    [[nodiscard]] sol::IBufferPtr tryAllocate(const sol::TransactionManager& manager,
+                                              const sol::StagingBufferCopy&  copy)
     {
         const sol::IBufferAllocator::AllocationInfo alloc{
           .size                 = copy.size == VK_WHOLE_SIZE ? copy.dstBuffer.getBufferSize() : copy.size,
@@ -52,8 +52,7 @@ namespace
         return stagingBuffer;
     }
 
-    [[nodiscard]] sol::IBufferPtr tryAllocate(const sol::TransferManager&                     manager,
-                                              const sol::BufferTransaction::StagingImageCopy& copy)
+    [[nodiscard]] sol::IBufferPtr tryAllocate(const sol::TransactionManager& manager, const sol::StagingImageCopy& copy)
     {
         const sol::IBufferAllocator::AllocationInfo alloc{
           .size                 = copy.dataSize,
@@ -80,9 +79,9 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    BufferTransaction::BufferTransaction(TransferManager& transferManager) : manager(&transferManager) {}
+    Transaction::Transaction(TransactionManager& transactionManager) : manager(&transactionManager) {}
 
-    BufferTransaction::~BufferTransaction() noexcept
+    Transaction::~Transaction() noexcept
     {
         /*
          * If necessary, collect pending staging buffers. They will be destroyed in the next wait of the manager.
@@ -103,21 +102,21 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    VulkanDevice& BufferTransaction::getDevice() noexcept { return manager->getDevice(); }
+    VulkanDevice& Transaction::getDevice() noexcept { return manager->getDevice(); }
 
-    const VulkanDevice& BufferTransaction::getDevice() const noexcept { return manager->getDevice(); }
+    const VulkanDevice& Transaction::getDevice() const noexcept { return manager->getDevice(); }
 
-    MemoryManager& BufferTransaction::getMemoryManager() noexcept { return manager->getMemoryManager(); }
+    MemoryManager& Transaction::getMemoryManager() noexcept { return manager->getMemoryManager(); }
 
-    const MemoryManager& BufferTransaction::getMemoryManager() const noexcept { return manager->getMemoryManager(); }
+    const MemoryManager& Transaction::getMemoryManager() const noexcept { return manager->getMemoryManager(); }
 
-    TransferManager& BufferTransaction::getTransferManager() noexcept { return *manager; }
+    TransactionManager& Transaction::getTransferManager() noexcept { return *manager; }
 
-    const TransferManager& BufferTransaction::getTransferManager() const noexcept { return *manager; }
+    const TransactionManager& Transaction::getTransferManager() const noexcept { return *manager; }
 
-    const std::vector<uint64_t>& BufferTransaction::getSemaphoreValues() const
+    const std::vector<uint64_t>& Transaction::getSemaphoreValues() const
     {
-        if (!committed) throw SolError("Cannot get semaphore values of BufferTransaction before it is committed.");
+        requireCommitted();
         return semaphoreValues;
     }
 
@@ -125,9 +124,9 @@ namespace sol
     // Staging.
     ////////////////////////////////////////////////////////////////
 
-    void BufferTransaction::stage(MemoryBarrier barrier, const BarrierLocation location)
+    void Transaction::stage(BufferBarrier barrier, const BarrierLocation location)
     {
-        // TODO: All stage methods should check transaction was not yet committed.
+        requireNotCommitted();
 
         if (location == BarrierLocation::BeforeCopy)
             preBufferBarriers.emplace_back(barrier);
@@ -135,18 +134,22 @@ namespace sol
             postBufferBarriers.emplace_back(barrier);
     }
 
-    void BufferTransaction::stage(ImageBarrier barrier, const BarrierLocation location)
+    void Transaction::stage(ImageBarrier barrier, const BarrierLocation location)
     {
+        requireNotCommitted();
+
         if (location == BarrierLocation::BeforeCopy)
             preImageBarriers.emplace_back(barrier);
         else
             postImageBarriers.emplace_back(barrier);
     }
 
-    bool BufferTransaction::stage(const StagingBufferCopy&            copy,
-                                  const std::optional<MemoryBarrier>& barrier,
-                                  const bool                          waitOnAllocFailure)
+    bool Transaction::stage(const StagingBufferCopy&            copy,
+                            const std::optional<BufferBarrier>& barrier,
+                            const bool                          waitOnAllocFailure)
     {
+        requireNotCommitted();
+
         // TODO: Here and in the other stage method we could test for image/bufferUsage being transfer_dst/src.
 
         auto stagingBuffer = tryAllocate(*manager, copy);
@@ -165,7 +168,7 @@ namespace sol
         // Memory barrier that will get the destination buffer from its current state to the transfer state.
         if (barrier)
         {
-            stage(MemoryBarrier{.buffer    = copy.dstBuffer,
+            stage(BufferBarrier{.buffer    = copy.dstBuffer,
                                 .dstFamily = copy.dstOnDedicatedTransfer ?
                                                &getMemoryManager().getTransferQueue().getFamily() :
                                                nullptr,
@@ -185,7 +188,7 @@ namespace sol
             const auto* dstFamily = barrier->dstFamily;
             if (copy.dstOnDedicatedTransfer && !dstFamily) dstFamily = &copy.dstBuffer.getQueueFamily();
 
-            stage(MemoryBarrier{.buffer    = copy.dstBuffer,
+            stage(BufferBarrier{.buffer    = copy.dstBuffer,
                                 .dstFamily = dstFamily,
                                 .srcStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                 .dstStage  = barrier->dstStage,
@@ -197,10 +200,12 @@ namespace sol
         return true;
     }
 
-    bool BufferTransaction::stage(const StagingImageCopy&            copy,
-                                  const std::optional<ImageBarrier>& barrier,
-                                  const bool                         waitOnAllocFailure)
+    bool Transaction::stage(const StagingImageCopy&            copy,
+                            const std::optional<ImageBarrier>& barrier,
+                            const bool                         waitOnAllocFailure)
     {
+        requireNotCommitted();
+
         // TODO: If there is a barrier, it is currently assumed that the levels and layers it describes match the regions in the copy.
 
         auto stagingBuffer = tryAllocate(*manager, copy);
@@ -262,14 +267,16 @@ namespace sol
         return true;
     }
 
-    void BufferTransaction::stage(const BufferToBufferCopy&           copy,
-                                  const std::optional<MemoryBarrier>& srcBarrier,
-                                  const std::optional<MemoryBarrier>& dstBarrier)
+    void Transaction::stage(const BufferToBufferCopy&           copy,
+                            const std::optional<BufferBarrier>& srcBarrier,
+                            const std::optional<BufferBarrier>& dstBarrier)
     {
+        requireNotCommitted();
+
         // Memory barrier that will get the source buffer from its current state to the transfer read state.
         if (srcBarrier)
         {
-            stage(MemoryBarrier{.buffer    = copy.srcBuffer,
+            stage(BufferBarrier{.buffer    = copy.srcBuffer,
                                 .dstFamily = copy.srcOnDedicatedTransfer ?
                                                &getMemoryManager().getTransferQueue().getFamily() :
                                                nullptr,
@@ -283,7 +290,7 @@ namespace sol
         // Memory barrier that will get the destination buffer from its current state to the transfer write state.
         if (dstBarrier)
         {
-            stage(MemoryBarrier{.buffer    = copy.dstBuffer,
+            stage(BufferBarrier{.buffer    = copy.dstBuffer,
                                 .dstFamily = copy.dstOnDedicatedTransfer ?
                                                &getMemoryManager().getTransferQueue().getFamily() :
                                                nullptr,
@@ -303,7 +310,7 @@ namespace sol
             const auto* dstFamily = srcBarrier->dstFamily;
             if (copy.dstOnDedicatedTransfer && !dstFamily) dstFamily = &copy.dstBuffer.getQueueFamily();
 
-            stage(MemoryBarrier{.buffer    = copy.srcBuffer,
+            stage(BufferBarrier{.buffer    = copy.srcBuffer,
                                 .dstFamily = dstFamily,
                                 .srcStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                 .dstStage  = srcBarrier->dstStage,
@@ -318,7 +325,7 @@ namespace sol
             const auto* dstFamily = dstBarrier->dstFamily;
             if (copy.dstOnDedicatedTransfer && !dstFamily) dstFamily = &copy.dstBuffer.getQueueFamily();
 
-            stage(MemoryBarrier{.buffer    = copy.dstBuffer,
+            stage(BufferBarrier{.buffer    = copy.dstBuffer,
                                 .dstFamily = dstFamily,
                                 .srcStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                 .dstStage  = dstBarrier->dstStage,
@@ -328,10 +335,12 @@ namespace sol
         }
     }
 
-    void BufferTransaction::stage(const ImageToBufferCopy&            copy,
-                                  const std::optional<ImageBarrier>&  srcBarrier,
-                                  const std::optional<MemoryBarrier>& dstBarrier)
+    void Transaction::stage(const ImageToBufferCopy&            copy,
+                            const std::optional<ImageBarrier>&  srcBarrier,
+                            const std::optional<BufferBarrier>& dstBarrier)
     {
+        requireNotCommitted();
+
         // TODO: If there is a barrier, it is currently assumed that the levels and layers it describes match the regions in the copy.
         // Image barrier that will get the source image from its current state to the transfer read state.
         if (srcBarrier)
@@ -356,7 +365,7 @@ namespace sol
         // Memory barrier that will get the destination buffer from its current state to the transfer write state.
         if (dstBarrier)
         {
-            stage(MemoryBarrier{.buffer    = copy.dstBuffer,
+            stage(BufferBarrier{.buffer    = copy.dstBuffer,
                                 .dstFamily = copy.dstOnDedicatedTransfer ?
                                                &getMemoryManager().getTransferQueue().getFamily() :
                                                nullptr,
@@ -396,7 +405,7 @@ namespace sol
             const auto* dstFamily = dstBarrier->dstFamily;
             if (copy.dstOnDedicatedTransfer && !dstFamily) dstFamily = &copy.dstBuffer.getQueueFamily();
 
-            stage(MemoryBarrier{.buffer    = copy.dstBuffer,
+            stage(BufferBarrier{.buffer    = copy.dstBuffer,
                                 .dstFamily = dstFamily,
                                 .srcStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                 .dstStage  = dstBarrier->dstStage,
@@ -410,9 +419,9 @@ namespace sol
     // Commit.
     ////////////////////////////////////////////////////////////////
 
-    void BufferTransaction::commit()
+    void Transaction::commit()
     {
-        if (committed) throw SolError("");
+        requireNotCommitted();
 
         auto&      memoryManager  = getMemoryManager();
         auto&      device         = memoryManager.getDevice();
@@ -728,17 +737,18 @@ namespace sol
                             .size      = copy.size == VK_WHOLE_SIZE ? copy.srcBuffer.getBufferSize() : copy.size});
         }
 
+        // TODO: Implement  image to image and buffer to image copies.
+        // Don't forget second loop for the copy infos a bit below.
+
         // Collect copies from images to images.
         for (const auto& copy : i2iCopies)
         {
-            // TODO:
             static_cast<void>(copy);
         }
 
         // Collect copies from buffers to images.
         for (const auto& copy : b2iCopies)
         {
-            // TODO:
             static_cast<void>(copy);
         }
 
@@ -811,7 +821,6 @@ namespace sol
         // Collect copy infos from buffers to images
         for (const auto& copy : b2iCopies)
         {
-            // TODO:
             // bufferImageInfos.emplace_back
             static_cast<void>(copy);
         }
@@ -821,7 +830,6 @@ namespace sol
         // Collect copy infos from images to images
         for (const auto& copy : i2iCopies)
         {
-            // TODO:
             // imageInfos.emplace_back()
             static_cast<void>(copy);
         }
@@ -869,11 +877,12 @@ namespace sol
             vkCmdPipelineBarrier2(cmdBuffer.get(), &dependency);
             cmdBuffer.endCommand();
 
+            // TODO: All wait and signal semaphores that are recorded in the transaction use ALL_COMMANDS. Is that unavoidable?
             const VkSemaphoreSubmitInfo signalSemaphore{.sType       = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
                                                         .pNext       = VK_NULL_HANDLE,
                                                         .semaphore   = manager->semaphores[i]->get(),
                                                         .value       = ++manager->semaphoreValues[i],
-                                                        .stageMask   = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,  //TODO
+                                                        .stageMask   = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
                                                         .deviceIndex = 0};
 
             const VkCommandBufferSubmitInfo commandSubmit{.sType         = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
@@ -923,20 +932,19 @@ namespace sol
                 // Wait on the same queue is not needed.
                 if (i == j) continue;
 
-                waitSemaphores.emplace_back(
-                  VkSemaphoreSubmitInfo{.sType       = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-                                        .pNext       = VK_NULL_HANDLE,
-                                        .semaphore   = manager->semaphores[j]->get(),
-                                        .value       = manager->semaphoreValues[j],
-                                        .stageMask   = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,  //TODO
-                                        .deviceIndex = 0});
+                waitSemaphores.emplace_back(VkSemaphoreSubmitInfo{.sType     = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+                                                                  .pNext     = VK_NULL_HANDLE,
+                                                                  .semaphore = manager->semaphores[j]->get(),
+                                                                  .value     = manager->semaphoreValues[j],
+                                                                  .stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+                                                                  .deviceIndex = 0});
             }
 
             const VkSemaphoreSubmitInfo signalSemaphore{.sType       = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
                                                         .pNext       = VK_NULL_HANDLE,
                                                         .semaphore   = manager->semaphores[i]->get(),
                                                         .value       = ++manager->semaphoreValues[i],
-                                                        .stageMask   = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,  //TODO
+                                                        .stageMask   = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
                                                         .deviceIndex = 0};
 
             const VkCommandBufferSubmitInfo commandSubmit{.sType         = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
@@ -977,13 +985,12 @@ namespace sol
                 // Wait on the same queue is not needed.
                 if (transferQueue.getFamily().getIndex() == j) continue;
 
-                waitSemaphores.emplace_back(
-                  VkSemaphoreSubmitInfo{.sType       = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-                                        .pNext       = VK_NULL_HANDLE,
-                                        .semaphore   = manager->semaphores[j]->get(),
-                                        .value       = manager->semaphoreValues[j],
-                                        .stageMask   = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,  //TODO
-                                        .deviceIndex = 0});
+                waitSemaphores.emplace_back(VkSemaphoreSubmitInfo{.sType     = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+                                                                  .pNext     = VK_NULL_HANDLE,
+                                                                  .semaphore = manager->semaphores[j]->get(),
+                                                                  .value     = manager->semaphoreValues[j],
+                                                                  .stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+                                                                  .deviceIndex = 0});
             }
 
             const VkSemaphoreSubmitInfo signalSemaphore{
@@ -991,7 +998,7 @@ namespace sol
               .pNext       = VK_NULL_HANDLE,
               .semaphore   = manager->semaphores[transferQueue.getFamily().getIndex()]->get(),
               .value       = ++manager->semaphoreValues[transferQueue.getFamily().getIndex()],
-              .stageMask   = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,  //TODO
+              .stageMask   = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
               .deviceIndex = 0};
 
             const VkCommandBufferSubmitInfo commandSubmit{.sType         = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
@@ -1039,7 +1046,7 @@ namespace sol
                                                         .pNext       = VK_NULL_HANDLE,
                                                         .semaphore   = manager->semaphores[i]->get(),
                                                         .value       = ++manager->semaphoreValues[i],
-                                                        .stageMask   = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,  //TODO
+                                                        .stageMask   = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
                                                         .deviceIndex = 0};
 
             const VkCommandBufferSubmitInfo commandSubmit{.sType         = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
@@ -1089,20 +1096,19 @@ namespace sol
                 // Wait on the same queue is not needed.
                 if (i == j) continue;
 
-                waitSemaphores.emplace_back(
-                  VkSemaphoreSubmitInfo{.sType       = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-                                        .pNext       = VK_NULL_HANDLE,
-                                        .semaphore   = manager->semaphores[j]->get(),
-                                        .value       = manager->semaphoreValues[j],
-                                        .stageMask   = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,  //TODO
-                                        .deviceIndex = 0});
+                waitSemaphores.emplace_back(VkSemaphoreSubmitInfo{.sType     = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+                                                                  .pNext     = VK_NULL_HANDLE,
+                                                                  .semaphore = manager->semaphores[j]->get(),
+                                                                  .value     = manager->semaphoreValues[j],
+                                                                  .stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+                                                                  .deviceIndex = 0});
             }
 
             const VkSemaphoreSubmitInfo signalSemaphore{.sType       = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
                                                         .pNext       = VK_NULL_HANDLE,
                                                         .semaphore   = manager->semaphores[i]->get(),
                                                         .value       = ++manager->semaphoreValues[i],
-                                                        .stageMask   = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,  //TODO
+                                                        .stageMask   = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
                                                         .deviceIndex = 0};
 
             const VkCommandBufferSubmitInfo commandSubmit{.sType         = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
@@ -1129,10 +1135,10 @@ namespace sol
         committed = true;
     }
 
-    void BufferTransaction::wait()
+    void Transaction::wait()
     {
         if (done) return;
-        if (!committed) throw SolError("Cannot wait on a BufferTransaction that was not yet committed.");
+        requireCommitted();
 
         auto lock = manager->lock();
 
@@ -1147,4 +1153,13 @@ namespace sol
         done = true;
     }
 
+    void Transaction::requireCommitted() const
+    {
+        if (!committed) throw SolError("Transaction was not yet committed.");
+    }
+
+    void Transaction::requireNotCommitted() const
+    {
+        if (committed) throw SolError("Transaction was already committed.");
+    }
 }  // namespace sol
