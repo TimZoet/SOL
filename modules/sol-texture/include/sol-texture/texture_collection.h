@@ -92,7 +92,14 @@ namespace sol
                                 const VulkanQueueFamily&       initialOwner,
                                 VkImageTiling                  tiling);
 
-        void destroyImage(Image2D2& image);
+        /**
+         * \brief Create a new 2D image with uninitialized data. All settings are copied from the provided image
+         * \param image Image to copy settings from.
+         * \return Image.
+         */
+        Image2D2& createImage2D(const Image2D2& image);
+
+        void destroyImage(const Image2D2& image);
 
         ////////////////////////////////////////////////////////////////
         // Samplers.
@@ -105,11 +112,15 @@ namespace sol
                                    VkSamplerAddressMode addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
                                    VkSamplerAddressMode addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
 
+        void destroySampler(const Sampler2D& sampler);
+
         ////////////////////////////////////////////////////////////////
         // Textures.
         ////////////////////////////////////////////////////////////////
 
         Texture2D2& createTexture2D(Image2D2& image, Sampler2D& sampler);
+
+        void destroyTexture(const Texture2D2& texture);
 
     private:
         ////////////////////////////////////////////////////////////////
