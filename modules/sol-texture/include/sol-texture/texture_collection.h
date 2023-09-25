@@ -92,7 +92,7 @@ namespace sol
                                 const VulkanQueueFamily&       initialOwner,
                                 VkImageTiling                  tiling);
 
-        void destroyImage2D(Image2D2& image);
+        void destroyImage(Image2D2& image);
 
         ////////////////////////////////////////////////////////////////
         // Samplers.
