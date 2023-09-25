@@ -100,16 +100,26 @@ namespace sol
         return *images2D.emplace(image->getUuid(), std::move(image)).first->second;
     }
 
-    void TextureCollection::destroyImage(Image2D2& image)
+    Image2D2& TextureCollection::createImage2D(const Image2D2& image)
+    {
+        return createImage2D({image.getWidth(), image.getHeight()},
+                             image.getFormat(),
+                             image.getLevelCount(),
+                             image.getImageUsageFlags(),
+                             image.getImageAspectFlags(),
+                             image.getImageLayout(0, 0),
+                             image.getQueueFamily(0, 0),
+                             image.getImageTiling());
+    }
+
+    void TextureCollection::destroyImage(const Image2D2& image)
     {
         // TODO: Do something with already staged transfers.
+        // // TODO: What about textures referencing this image.
         if (&image.getTextureCollection() != this)
             throw SolError("Cannot destroy image that is part of a different texture collection.");
-
-        // TODO: What about textures referencing this image.
-
         const auto it = images2D.find(image.getUuid());
-        assert(it != images2D.end());
+        if (it == images2D.end()) throw SolError("Cannot destroy image: image was already destroyed.");
         images2D.erase(it);
     }
 
@@ -139,6 +149,15 @@ namespace sol
         return *samplers2D.emplace(sampler->getUuid(), std::move(sampler)).first->second;
     }
 
+    void TextureCollection::destroySampler(const Sampler2D& sampler)
+    {
+        if (&sampler.getTextureCollection() != this)
+            throw SolError("Cannot destroy sampler that is part of a different texture collection.");
+        const auto it = samplers2D.find(sampler.getUuid());
+        if (it == samplers2D.end()) throw SolError("Cannot destroy sampler: sampler was already destroyed.");
+        samplers2D.erase(it);
+    }
+
     ////////////////////////////////////////////////////////////////
     // Textures.
     ////////////////////////////////////////////////////////////////
@@ -160,5 +179,14 @@ namespace sol
           std::make_unique<Texture2D2>(*this, uuids::uuid_system_generator{}(), image, sampler, std::move(vulkanView));
 
         return *textures2D.emplace(texture->getUuid(), std::move(texture)).first->second;
+    }
+
+    void TextureCollection::destroyTexture(const Texture2D2& texture)
+    {
+        if (&texture.getTextureCollection() != this)
+            throw SolError("Cannot destroy texture that is part of a different texture collection.");
+        const auto it = textures2D.find(texture.getUuid());
+        if (it == textures2D.end()) throw SolError("Cannot destroy texture: texture was already destroyed.");
+        textures2D.erase(it);
     }
 }  // namespace sol

@@ -11,6 +11,8 @@ set(HEADERS
     ${INCLUDE_DIR}/image/image2d_data.h
 
     ${INCLUDE_DIR}/sampler/sampler2d.h
+
+    ${INCLUDE_DIR}/texture/texture2d.h
 )
 
 set(SOURCES
@@ -21,6 +23,8 @@ set(SOURCES
     ${SRC_DIR}/image/image2d_data.cpp
 
     ${SRC_DIR}/sampler/sampler2d.cpp
+
+    ${SRC_DIR}/texture/texture2d.cpp
 )
 
 set(DEPS_PRIVATE

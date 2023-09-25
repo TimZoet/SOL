@@ -22,6 +22,7 @@ void Sampler2D::operator()()
     sol::Sampler2D* sampler0 = nullptr;
     expectNoThrow([&] { sampler0 = &collection->createSampler2D(); });
     compareEQ(collection.get(), &sampler0->getTextureCollection());
+    compareNE(uuids::uuid{}, sampler0->getUuid());
     expectNoThrow([&] { static_cast<void>(sampler0->getSampler()); });
     // TODO: Test properties of samplers.
 
@@ -35,6 +36,10 @@ void Sampler2D::operator()()
                                                 VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
     });
     compareEQ(collection.get(), &sampler1->getTextureCollection());
+    compareNE(uuids::uuid{}, sampler1->getUuid());
     expectNoThrow([&] { static_cast<void>(sampler1->getSampler()); });
     // TODO: Test properties of samplers.
+
+    expectNoThrow([&] { collection->destroySampler(*sampler0); });
+    expectNoThrow([&] { collection->destroySampler(*sampler1); });
 }

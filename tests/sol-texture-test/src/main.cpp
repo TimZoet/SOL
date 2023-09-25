@@ -12,6 +12,7 @@
 #include "sol-texture-test/image/image2d_barriers.h"
 #include "sol-texture-test/image/image2d_data.h"
 #include "sol-texture-test/sampler/sampler2d.h"
+#include "sol-texture-test/texture/texture2d.h"
 
 #ifdef WIN32
 #include "Windows.h"
@@ -31,5 +32,5 @@ int main(int argc, char** argv)
 #endif
 
     // TODO: Parallel tests are not supported. BetterTest needs an option to always disable them and perhaps even give an error when trying run in parallel.
-    return bt::run<Image2D, Image2DBarriers, Image2DData, Sampler2D>(argc, argv, "sol-texture");
+    return bt::run<Image2D, Image2DBarriers, Image2DData, Sampler2D, Texture2D>(argc, argv, "sol-texture");
 }
