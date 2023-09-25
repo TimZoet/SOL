@@ -194,6 +194,10 @@ namespace sol
          */
         [[nodiscard]] VkImageLayout getImageLayout(uint32_t level, uint32_t layer) const override;
 
+        /**
+         * \brief Get the image tiling mode.
+         * \return VkImageTiling
+         */
         [[nodiscard]] VkImageTiling getImageTiling() const override;
 
         ////////////////////////////////////////////////////////////////
@@ -224,7 +228,7 @@ namespace sol
          * \return True if staging buffer allocation succeeded and transaction can be committed.
          * On failure, already staged transactions should be committed and waited on before trying again.
          */
-        [[nodiscard]] bool setData(Transaction&             transaction,
+        [[nodiscard]] bool setData(Transaction&                   transaction,
                                    const void*                    data,
                                    size_t                         dataSize,
                                    const Barrier&                 barrier,
@@ -239,7 +243,7 @@ namespace sol
          * \param dstBarrier Barrier placed around the copy command for the destination buffer.
          * \param regions List of regions.
          */
-        void getData(Transaction&             transaction,
+        void getData(Transaction&                   transaction,
                      IBuffer&                       dstBuffer,
                      const Barrier&                 srcBarrier,
                      const Barrier&                 dstBarrier,

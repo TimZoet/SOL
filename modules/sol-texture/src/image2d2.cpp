@@ -117,7 +117,7 @@ namespace sol
         transaction.stage(imgBarrier, location);
     }
 
-    bool Image2D2::setData(Transaction&             transaction,
+    bool Image2D2::setData(Transaction&                   transaction,
                            const void*                    data,
                            const size_t                   dataSize,
                            const Barrier&                 barrier,
@@ -156,14 +156,16 @@ namespace sol
                                       .baseArrayLayer = 0,
                                       .layerCount     = getLayerCount()};
 
-        // Update image layout and queue family for all levels and layers.
+        if (!transaction.stage(copy, imgBarrier, waitOnAllocFailure)) return false;
+
+        // Update image layout and queue family for all levels and layers after staging.
         if (imgBarrier.srcLayout != imgBarrier.dstLayout) std::ranges::fill(imageLayout, imgBarrier.dstLayout);
         if (imgBarrier.srcFamily != imgBarrier.dstFamily) std::ranges::fill(queueFamily, imgBarrier.dstFamily);
 
-        return transaction.stage(copy, imgBarrier, waitOnAllocFailure);
+        return true;
     }
 
-    void Image2D2::getData(Transaction&             transaction,
+    void Image2D2::getData(Transaction&                   transaction,
                            IBuffer&                       dstBuffer,
                            const Barrier&                 srcBarrier,
                            const Barrier&                 dstBarrier,
@@ -203,10 +205,6 @@ namespace sol
                                       .baseArrayLayer = 0,
                                       .layerCount     = getLayerCount()};
 
-        // Update image layout and queue family for all levels and layers.
-        if (imgBarrier.srcLayout != imgBarrier.dstLayout) std::ranges::fill(imageLayout, imgBarrier.dstLayout);
-        if (imgBarrier.srcFamily != imgBarrier.dstFamily) std::ranges::fill(queueFamily, imgBarrier.dstFamily);
-
         const BufferBarrier bufferBarrier{.buffer = dstBuffer,
                                           .dstFamily =
                                             dstBarrier.dstFamily ? dstBarrier.dstFamily : &dstBuffer.getQueueFamily(),
@@ -215,9 +213,13 @@ namespace sol
                                           .srcAccess = dstBarrier.srcAccess,
                                           .dstAccess = dstBarrier.dstAccess};
 
-        // TODO: If transaction no longer automatically takes care of this, also set family of destination buffer.
+        transaction.stage(copy, imgBarrier, bufferBarrier);
 
-        return transaction.stage(copy, imgBarrier, bufferBarrier);
+        // Update image layout and queue family for all levels and layers after staging.
+        if (imgBarrier.srcLayout != imgBarrier.dstLayout) std::ranges::fill(imageLayout, imgBarrier.dstLayout);
+        if (imgBarrier.srcFamily != imgBarrier.dstFamily) std::ranges::fill(queueFamily, imgBarrier.dstFamily);
+
+        // TODO: If transaction no longer automatically takes care of this, also set family of destination buffer.
     }
 
 }  // namespace sol

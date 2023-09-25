@@ -100,7 +100,7 @@ namespace sol
         return *images2D.emplace(image->getUuid(), std::move(image)).first->second;
     }
 
-    void TextureCollection::destroyImage2D(Image2D2& image)
+    void TextureCollection::destroyImage(Image2D2& image)
     {
         // TODO: Do something with already staged transfers.
         if (&image.getTextureCollection() != this)

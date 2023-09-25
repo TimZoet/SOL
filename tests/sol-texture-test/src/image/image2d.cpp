@@ -80,4 +80,7 @@ void Image2D::operator()()
     expectThrow([&] { static_cast<void>(image1->getSubresourceLayout(1, 0)); });
     expectThrow([&] { static_cast<void>(image1->getSubresourceLayout(0, 1)); });
     compareEQ(VK_IMAGE_TILING_LINEAR, image1->getImageTiling());
+
+    expectNoThrow([&] { collection->destroyImage(*image0); });
+    expectNoThrow([&] { collection->destroyImage(*image1); });
 }
