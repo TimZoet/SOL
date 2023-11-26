@@ -204,6 +204,10 @@ namespace sol
         // Setters.
         ////////////////////////////////////////////////////////////////
 
+        void setQueueFamily(const VulkanQueueFamily& family, uint32_t level, uint32_t layer) override;
+
+        void setImageLayout(VkImageLayout layout, uint32_t level, uint32_t layer) override;
+
         ////////////////////////////////////////////////////////////////
         // Transactions.
         ////////////////////////////////////////////////////////////////

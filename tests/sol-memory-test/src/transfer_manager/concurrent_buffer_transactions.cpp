@@ -58,6 +58,7 @@ void ConcurrentBufferTransactions::operator()()
                     const sol::StagingBufferCopy copy{
                       .dstBuffer = *deviceBuffer, .data = data.data(), .size = VK_WHOLE_SIZE, .offset = 0};
                     const sol::BufferBarrier barrier{.buffer    = *deviceBuffer,
+                                                     .srcFamily = nullptr,
                                                      .dstFamily = nullptr,
                                                      .srcStage  = 0,
                                                      .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
@@ -80,12 +81,14 @@ void ConcurrentBufferTransactions::operator()()
                                                        .srcOnDedicatedTransfer = false,
                                                        .dstOnDedicatedTransfer = false};
                     const sol::BufferBarrier      srcBarrier{.buffer    = *deviceBuffer,
+                                                             .srcFamily = nullptr,
                                                              .dstFamily = nullptr,
                                                              .srcStage  = 0,
                                                              .dstStage  = 0,
                                                              .srcAccess = 0,
                                                              .dstAccess = 0};
                     const sol::BufferBarrier      dstBarrier{.buffer    = *hostBuffer,
+                                                             .srcFamily = nullptr,
                                                              .dstFamily = nullptr,
                                                              .srcStage  = 0,
                                                              .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,

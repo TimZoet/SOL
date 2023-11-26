@@ -51,6 +51,11 @@ namespace sol
         IBuffer& buffer;
 
         /**
+         * \brief Source queue family. If not null, the buffer will be owned by dstFamily after the barrier.
+         */
+        const VulkanQueueFamily* srcFamily = nullptr;
+
+        /**
          * \brief Destination queue family. If not null, the buffer will be owned by dstFamily after the barrier.
          */
         const VulkanQueueFamily* dstFamily = nullptr;
@@ -93,6 +98,8 @@ namespace sol
 
         /**
          * \brief Destination queue family. If not null, the image will be owned by dstFamily after the barrier.
+         * Note that you must take care of updating any state for tracking the queue family in the IImage object
+         * directly after staging the barrier.
          */
         const VulkanQueueFamily* dstFamily = nullptr;
 
@@ -137,6 +144,9 @@ namespace sol
         uint32_t layerCount = 0;
     };
 
+    /**
+     * \brief Describes a region of a single mip level of an image.
+     */
     struct ImageRegion
     {
         /**
@@ -144,21 +154,33 @@ namespace sol
          */
         VkDeviceSize dataOffset = 0;
 
+        /**
+         * \brief Image aspect flags.
+         */
         VkImageAspectFlags aspectMask = 0;
 
+        /**
+         * \brief Mip level.
+         */
         uint32_t mipLevel = 0;
 
+        /**
+         * \brief First array layer.
+         */
         uint32_t baseArrayLayer = 0;
 
+        /**
+         * \brief Number of layers.
+         */
         uint32_t layerCount = 0;
 
         /**
-         * \brief Offset of the region in the destination image to copy to.
+         * \brief Offset of the region in the image to copy from/to.
          */
         std::array<int32_t, 3> offset{};
 
         /**
-         * \brief Extent of the region in the destination image to copy to.
+         * \brief Extent of the region in the image to copy from/to.
          */
         std::array<uint32_t, 3> extent{};
     };
@@ -300,10 +322,19 @@ namespace sol
 
     struct ImageToBufferCopy
     {
+        /**
+         * \brief Source image.
+         */
         IImage& srcImage;
 
+        /**
+         * \brief Destination buffer.
+         */
         IBuffer& dstBuffer;
 
+        /**
+         * \brief List of regions describing the parts of the image that are copied. Regions should not overlap with one another.
+         */
         std::vector<ImageRegion> regions;
 
         /**
