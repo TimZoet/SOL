@@ -128,6 +128,11 @@ namespace sol
     {
         requireNotCommitted();
 
+        if (!barrier.srcFamily) barrier.srcFamily = &barrier.buffer.getQueueFamily();
+        if (!barrier.dstFamily) barrier.dstFamily = barrier.srcFamily;
+
+        if (barrier.srcFamily != barrier.dstFamily) barrier.buffer.setQueueFamily(*barrier.dstFamily);
+
         if (location == BarrierLocation::BeforeCopy)
             preBufferBarriers.emplace_back(barrier);
         else
@@ -137,6 +142,23 @@ namespace sol
     void Transaction::stage(ImageBarrier barrier, const BarrierLocation location)
     {
         requireNotCommitted();
+
+        if (!barrier.srcFamily)
+            barrier.srcFamily = &barrier.image.getQueueFamily(barrier.baseMipLevel, barrier.baseArrayLayer);
+        if (!barrier.dstFamily) barrier.dstFamily = barrier.srcFamily;
+
+        for (uint32_t level = 0; level < barrier.levelCount; level++)
+        {
+            for (uint32_t layer = 0; layer < barrier.layerCount; layer++)
+            {
+                if (barrier.srcFamily != barrier.dstFamily)
+                    barrier.image.setQueueFamily(
+                      *barrier.dstFamily, level + barrier.baseMipLevel, layer + barrier.baseArrayLayer);
+                if (barrier.srcLayout != barrier.dstLayout)
+                    barrier.image.setImageLayout(
+                      barrier.dstLayout, level + barrier.baseMipLevel, layer + barrier.baseArrayLayer);
+            }
+        }
 
         if (location == BarrierLocation::BeforeCopy)
             preImageBarriers.emplace_back(barrier);
@@ -169,9 +191,10 @@ namespace sol
         if (barrier)
         {
             stage(BufferBarrier{.buffer    = copy.dstBuffer,
+                                .srcFamily = barrier->srcFamily,
                                 .dstFamily = copy.dstOnDedicatedTransfer ?
                                                &getMemoryManager().getTransferQueue().getFamily() :
-                                               nullptr,
+                                               barrier->srcFamily,
                                 .srcStage  = barrier->srcStage,
                                 .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                 .srcAccess = barrier->srcAccess,
@@ -185,11 +208,11 @@ namespace sol
         // Memory barrier that will get the destination buffer from the transfer state to its final state.
         if (barrier)
         {
-            const auto* dstFamily = barrier->dstFamily;
-            if (copy.dstOnDedicatedTransfer && !dstFamily) dstFamily = &copy.dstBuffer.getQueueFamily();
-
             stage(BufferBarrier{.buffer    = copy.dstBuffer,
-                                .dstFamily = dstFamily,
+                                .srcFamily = copy.dstOnDedicatedTransfer ?
+                                               &getMemoryManager().getTransferQueue().getFamily() :
+                                               barrier->srcFamily,
+                                .dstFamily = barrier->dstFamily,
                                 .srcStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                 .dstStage  = barrier->dstStage,
                                 .srcAccess = VK_ACCESS_2_TRANSFER_WRITE_BIT,
@@ -277,9 +300,10 @@ namespace sol
         if (srcBarrier)
         {
             stage(BufferBarrier{.buffer    = copy.srcBuffer,
+                                .srcFamily = srcBarrier->srcFamily,
                                 .dstFamily = copy.srcOnDedicatedTransfer ?
                                                &getMemoryManager().getTransferQueue().getFamily() :
-                                               nullptr,
+                                               srcBarrier->srcFamily,
                                 .srcStage  = srcBarrier->srcStage,
                                 .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                 .srcAccess = srcBarrier->srcAccess,
@@ -291,9 +315,10 @@ namespace sol
         if (dstBarrier)
         {
             stage(BufferBarrier{.buffer    = copy.dstBuffer,
+                                .srcFamily = dstBarrier->srcFamily,
                                 .dstFamily = copy.dstOnDedicatedTransfer ?
                                                &getMemoryManager().getTransferQueue().getFamily() :
-                                               nullptr,
+                                               dstBarrier->srcFamily,
                                 .srcStage  = dstBarrier->srcStage,
                                 .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                 .srcAccess = dstBarrier->srcAccess,
@@ -307,11 +332,11 @@ namespace sol
         // Memory barrier that will get the source buffer from the transfer read state to its final state.
         if (srcBarrier)
         {
-            const auto* dstFamily = srcBarrier->dstFamily;
-            if (copy.dstOnDedicatedTransfer && !dstFamily) dstFamily = &copy.dstBuffer.getQueueFamily();
-
             stage(BufferBarrier{.buffer    = copy.srcBuffer,
-                                .dstFamily = dstFamily,
+                                .srcFamily = copy.srcOnDedicatedTransfer ?
+                                               &getMemoryManager().getTransferQueue().getFamily() :
+                                               srcBarrier->srcFamily,
+                                .dstFamily = srcBarrier->dstFamily,
                                 .srcStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                 .dstStage  = srcBarrier->dstStage,
                                 .srcAccess = VK_ACCESS_2_TRANSFER_READ_BIT,
@@ -322,11 +347,11 @@ namespace sol
         // Memory barrier that will get the destination buffer from the transfer state to its final state.
         if (dstBarrier)
         {
-            const auto* dstFamily = dstBarrier->dstFamily;
-            if (copy.dstOnDedicatedTransfer && !dstFamily) dstFamily = &copy.dstBuffer.getQueueFamily();
-
             stage(BufferBarrier{.buffer    = copy.dstBuffer,
-                                .dstFamily = dstFamily,
+                                .srcFamily = copy.dstOnDedicatedTransfer ?
+                                               &getMemoryManager().getTransferQueue().getFamily() :
+                                               dstBarrier->srcFamily,
+                                .dstFamily = dstBarrier->dstFamily,
                                 .srcStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                 .dstStage  = dstBarrier->dstStage,
                                 .srcAccess = VK_ACCESS_2_TRANSFER_WRITE_BIT,
@@ -366,9 +391,10 @@ namespace sol
         if (dstBarrier)
         {
             stage(BufferBarrier{.buffer    = copy.dstBuffer,
+                                .srcFamily = dstBarrier->srcFamily,
                                 .dstFamily = copy.dstOnDedicatedTransfer ?
                                                &getMemoryManager().getTransferQueue().getFamily() :
-                                               nullptr,
+                                               dstBarrier->srcFamily,
                                 .srcStage  = dstBarrier->srcStage,
                                 .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                 .srcAccess = dstBarrier->srcAccess,
@@ -402,11 +428,11 @@ namespace sol
         // Memory barrier that will get the destination buffer from the transfer state to its final state.
         if (dstBarrier)
         {
-            const auto* dstFamily = dstBarrier->dstFamily;
-            if (copy.dstOnDedicatedTransfer && !dstFamily) dstFamily = &copy.dstBuffer.getQueueFamily();
-
             stage(BufferBarrier{.buffer    = copy.dstBuffer,
-                                .dstFamily = dstFamily,
+                                .srcFamily = copy.dstOnDedicatedTransfer ?
+                                               &getMemoryManager().getTransferQueue().getFamily() :
+                                               dstBarrier->srcFamily,
+                                .dstFamily = dstBarrier->dstFamily,
                                 .srcStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                 .dstStage  = dstBarrier->dstStage,
                                 .srcAccess = VK_ACCESS_2_TRANSFER_WRITE_BIT,
@@ -455,13 +481,13 @@ namespace sol
 
         for (const auto& barrier : preBufferBarriers)
         {
-            const auto& srcFamily = barrier.buffer.getQueueFamily();
-            const auto& dstFamily = barrier.dstFamily ? *barrier.dstFamily : srcFamily;
+            const auto* srcFamily = barrier.srcFamily;
+            const auto* dstFamily = barrier.dstFamily;
 
-            // Source and destionation family are the same. Only an acquire on the destination queue is needed.
-            if (&srcFamily == &dstFamily)
+            // Source and destination family are the same. Only an acquire on the destination queue is needed.
+            if (srcFamily == dstFamily)
             {
-                preCopyAcquireBufferBarriers[dstFamily.getIndex()].emplace_back(
+                preCopyAcquireBufferBarriers[dstFamily->getIndex()].emplace_back(
                   VkBufferMemoryBarrier2{.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
                                          .pNext               = nullptr,
                                          .srcStageMask        = barrier.srcStage,
@@ -477,46 +503,43 @@ namespace sol
             // Source and destination family are different. Release and acquire are needed.
             else
             {
-                preCopyReleaseBufferBarriers[srcFamily.getIndex()].emplace_back(
+                preCopyReleaseBufferBarriers[srcFamily->getIndex()].emplace_back(
                   VkBufferMemoryBarrier2{.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
                                          .pNext               = nullptr,
                                          .srcStageMask        = barrier.srcStage,
                                          .srcAccessMask       = barrier.srcAccess,
                                          .dstStageMask        = VK_PIPELINE_STAGE_2_NONE,
                                          .dstAccessMask       = VK_ACCESS_2_NONE,
-                                         .srcQueueFamilyIndex = srcFamily.getIndex(),
-                                         .dstQueueFamilyIndex = dstFamily.getIndex(),
+                                         .srcQueueFamilyIndex = srcFamily->getIndex(),
+                                         .dstQueueFamilyIndex = dstFamily->getIndex(),
                                          .buffer              = barrier.buffer.getBuffer().get(),
                                          .offset              = barrier.buffer.getBufferOffset(),
                                          .size                = barrier.buffer.getBufferSize()});
 
-                preCopyAcquireBufferBarriers[dstFamily.getIndex()].emplace_back(
+                preCopyAcquireBufferBarriers[dstFamily->getIndex()].emplace_back(
                   VkBufferMemoryBarrier2{.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
                                          .pNext               = nullptr,
                                          .srcStageMask        = VK_PIPELINE_STAGE_2_NONE,
                                          .srcAccessMask       = VK_ACCESS_2_NONE,
                                          .dstStageMask        = barrier.dstStage,
                                          .dstAccessMask       = barrier.dstAccess,
-                                         .srcQueueFamilyIndex = srcFamily.getIndex(),
-                                         .dstQueueFamilyIndex = dstFamily.getIndex(),
+                                         .srcQueueFamilyIndex = srcFamily->getIndex(),
+                                         .dstQueueFamilyIndex = dstFamily->getIndex(),
                                          .buffer              = barrier.buffer.getBuffer().get(),
                                          .offset              = barrier.buffer.getBufferOffset(),
                                          .size                = barrier.buffer.getBufferSize()});
-
-                // Update queue family.
-                barrier.buffer.setQueueFamily(dstFamily);
             }
         }
 
         for (const auto& barrier : postBufferBarriers)
         {
-            const auto& srcFamily = barrier.buffer.getQueueFamily();
-            const auto& dstFamily = barrier.dstFamily ? *barrier.dstFamily : srcFamily;
+            const auto* srcFamily = barrier.srcFamily;
+            const auto* dstFamily = barrier.dstFamily;
 
-            // Source and destionation family are the same. Only an acquire on the destination queue is needed.
-            if (&srcFamily == &dstFamily)
+            // Source and destination family are the same. Only an acquire on the destination queue is needed.
+            if (srcFamily == dstFamily)
             {
-                postCopyAcquireBufferBarriers[dstFamily.getIndex()].emplace_back(
+                postCopyAcquireBufferBarriers[dstFamily->getIndex()].emplace_back(
                   VkBufferMemoryBarrier2{.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
                                          .pNext               = nullptr,
                                          .srcStageMask        = barrier.srcStage,
@@ -532,34 +555,31 @@ namespace sol
             // Source and destination family are different. Release and acquire are needed.
             else
             {
-                postCopyReleaseBufferBarriers[srcFamily.getIndex()].emplace_back(
+                postCopyReleaseBufferBarriers[srcFamily->getIndex()].emplace_back(
                   VkBufferMemoryBarrier2{.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
                                          .pNext               = nullptr,
                                          .srcStageMask        = barrier.srcStage,
                                          .srcAccessMask       = barrier.srcAccess,
                                          .dstStageMask        = VK_PIPELINE_STAGE_2_NONE,
                                          .dstAccessMask       = VK_ACCESS_2_NONE,
-                                         .srcQueueFamilyIndex = srcFamily.getIndex(),
-                                         .dstQueueFamilyIndex = dstFamily.getIndex(),
+                                         .srcQueueFamilyIndex = srcFamily->getIndex(),
+                                         .dstQueueFamilyIndex = dstFamily->getIndex(),
                                          .buffer              = barrier.buffer.getBuffer().get(),
                                          .offset              = barrier.buffer.getBufferOffset(),
                                          .size                = barrier.buffer.getBufferSize()});
 
-                postCopyAcquireBufferBarriers[dstFamily.getIndex()].emplace_back(
+                postCopyAcquireBufferBarriers[dstFamily->getIndex()].emplace_back(
                   VkBufferMemoryBarrier2{.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
                                          .pNext               = nullptr,
                                          .srcStageMask        = VK_PIPELINE_STAGE_2_NONE,
                                          .srcAccessMask       = VK_ACCESS_2_NONE,
                                          .dstStageMask        = barrier.dstStage,
                                          .dstAccessMask       = barrier.dstAccess,
-                                         .srcQueueFamilyIndex = srcFamily.getIndex(),
-                                         .dstQueueFamilyIndex = dstFamily.getIndex(),
+                                         .srcQueueFamilyIndex = srcFamily->getIndex(),
+                                         .dstQueueFamilyIndex = dstFamily->getIndex(),
                                          .buffer              = barrier.buffer.getBuffer().get(),
                                          .offset              = barrier.buffer.getBufferOffset(),
                                          .size                = barrier.buffer.getBufferSize()});
-
-                // Update queue family.
-                barrier.buffer.setQueueFamily(dstFamily);
             }
         }
 
@@ -568,7 +588,7 @@ namespace sol
             const auto* srcFamily = barrier.srcFamily;
             const auto* dstFamily = barrier.dstFamily ? barrier.dstFamily : srcFamily;
 
-            // Source and destionation family are the same. Only an acquire on the destination queue is needed.
+            // Source and destination family are the same. Only an acquire on the destination queue is needed.
             if (srcFamily == dstFamily)
             {
                 preCopyAcquireImageBarriers[dstFamily->getIndex()].emplace_back(VkImageMemoryBarrier2{
@@ -635,7 +655,7 @@ namespace sol
             const auto* srcFamily = barrier.srcFamily;
             const auto* dstFamily = barrier.dstFamily ? barrier.dstFamily : srcFamily;
 
-            // Source and destionation family are the same. Only an acquire on the destination queue is needed.
+            // Source and destination family are the same. Only an acquire on the destination queue is needed.
             if (srcFamily == dstFamily)
             {
                 postCopyAcquireImageBarriers[dstFamily->getIndex()].emplace_back(VkImageMemoryBarrier2{
@@ -741,16 +761,10 @@ namespace sol
         // Don't forget second loop for the copy infos a bit below.
 
         // Collect copies from images to images.
-        for (const auto& copy : i2iCopies)
-        {
-            static_cast<void>(copy);
-        }
+        for (const auto& copy : i2iCopies) { static_cast<void>(copy); }
 
         // Collect copies from buffers to images.
-        for (const auto& copy : b2iCopies)
-        {
-            static_cast<void>(copy);
-        }
+        for (const auto& copy : b2iCopies) { static_cast<void>(copy); }
 
         // Collect copies from images to buffers.
         for (const auto& [srcImage, dstBuffer, regions, dstOnDedicatedTransfer] : i2bCopies)

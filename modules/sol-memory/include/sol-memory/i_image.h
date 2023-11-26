@@ -140,6 +140,14 @@ namespace sol
 
         [[nodiscard]] VkSubresourceLayout getSubresourceLayout(uint32_t level, uint32_t layer) const;
 
+        ////////////////////////////////////////////////////////////////
+        // Setters.
+        ////////////////////////////////////////////////////////////////
+
+        virtual void setQueueFamily(const VulkanQueueFamily& family, uint32_t level, uint32_t layer) = 0;
+
+        virtual void setImageLayout(VkImageLayout layout, uint32_t level, uint32_t layer) = 0;
+
     private:
         ////////////////////////////////////////////////////////////////
         // Member variables.

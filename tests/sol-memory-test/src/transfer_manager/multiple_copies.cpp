@@ -61,18 +61,21 @@ void MultipleCopies::operator()()
         const sol::StagingBufferCopy copy2{
           .dstBuffer = *srcBuffer2, .data = data2.data(), .size = VK_WHOLE_SIZE, .offset = 0};
         const sol::BufferBarrier barrier0{.buffer    = *srcBuffer0,
+                                          .srcFamily = nullptr,
                                           .dstFamily = nullptr,
                                           .srcStage  = 0,
                                           .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                           .srcAccess = 0,
                                           .dstAccess = VK_ACCESS_2_TRANSFER_READ_BIT};
         const sol::BufferBarrier barrier1{.buffer    = *srcBuffer1,
+                                          .srcFamily = nullptr,
                                           .dstFamily = nullptr,
                                           .srcStage  = 0,
                                           .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                           .srcAccess = 0,
                                           .dstAccess = VK_ACCESS_2_TRANSFER_READ_BIT};
         const sol::BufferBarrier barrier2{.buffer    = *srcBuffer2,
+                                          .srcFamily = nullptr,
                                           .dstFamily = nullptr,
                                           .srcStage  = 0,
                                           .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
@@ -110,26 +113,44 @@ void MultipleCopies::operator()()
                                             .dstOffset              = 0,
                                             .srcOnDedicatedTransfer = false,
                                             .dstOnDedicatedTransfer = false};
-        const sol::BufferBarrier      srcBarrier0{
-               .buffer = *srcBuffer0, .dstFamily = nullptr, .srcStage = 0, .dstStage = 0, .srcAccess = 0, .dstAccess = 0};
-        const sol::BufferBarrier srcBarrier1{
-          .buffer = *srcBuffer1, .dstFamily = nullptr, .srcStage = 0, .dstStage = 0, .srcAccess = 0, .dstAccess = 0};
-        const sol::BufferBarrier srcBarrier2{
-          .buffer = *srcBuffer2, .dstFamily = nullptr, .srcStage = 0, .dstStage = 0, .srcAccess = 0, .dstAccess = 0};
-        const sol::BufferBarrier dstBarrier0{.buffer    = *dstBuffer0,
-                                             .dstFamily = nullptr,
-                                             .srcStage  = 0,
-                                             .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,
-                                             .srcAccess = 0,
-                                             .dstAccess = VK_ACCESS_2_HOST_READ_BIT};
-        const sol::BufferBarrier dstBarrier1{.buffer    = *dstBuffer1,
-                                             .dstFamily = nullptr,
-                                             .srcStage  = 0,
-                                             .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,
-                                             .srcAccess = 0,
-                                             .dstAccess = VK_ACCESS_2_HOST_READ_BIT};
+        const sol::BufferBarrier      srcBarrier0{.buffer    = *srcBuffer0,
+                                                  .srcFamily = nullptr,
+                                                  .dstFamily = nullptr,
+                                                  .srcStage  = 0,
+                                                  .dstStage  = 0,
+                                                  .srcAccess = 0,
+                                                  .dstAccess = 0};
+        const sol::BufferBarrier      srcBarrier1{.buffer    = *srcBuffer1,
+                                                  .srcFamily = nullptr,
+                                                  .dstFamily = nullptr,
+                                                  .srcStage  = 0,
+                                                  .dstStage  = 0,
+                                                  .srcAccess = 0,
+                                                  .dstAccess = 0};
+        const sol::BufferBarrier      srcBarrier2{.buffer    = *srcBuffer2,
+                                                  .srcFamily = nullptr,
+                                                  .dstFamily = nullptr,
+                                                  .srcStage  = 0,
+                                                  .dstStage  = 0,
+                                                  .srcAccess = 0,
+                                                  .dstAccess = 0};
+        const sol::BufferBarrier      dstBarrier0{.buffer    = *dstBuffer0,
+                                                  .srcFamily = nullptr,
+                                                  .dstFamily = nullptr,
+                                                  .srcStage  = 0,
+                                                  .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,
+                                                  .srcAccess = 0,
+                                                  .dstAccess = VK_ACCESS_2_HOST_READ_BIT};
+        const sol::BufferBarrier      dstBarrier1{.buffer    = *dstBuffer1,
+                                                  .srcFamily = nullptr,
+                                                  .dstFamily = nullptr,
+                                                  .srcStage  = 0,
+                                                  .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,
+                                                  .srcAccess = 0,
+                                                  .dstAccess = VK_ACCESS_2_HOST_READ_BIT};
         transaction->stage(copy0, srcBarrier0, dstBarrier0);
         const sol::BufferBarrier dstBarrier2{.buffer    = *dstBuffer2,
+                                             .srcFamily = nullptr,
                                              .dstFamily = nullptr,
                                              .srcStage  = 0,
                                              .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,

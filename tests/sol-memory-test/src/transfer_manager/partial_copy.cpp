@@ -45,6 +45,7 @@ void PartialCopy::operator()()
         const sol::StagingBufferCopy copy{
           .dstBuffer = *srcBuffer, .data = data.data(), .size = VK_WHOLE_SIZE, .offset = 0};
         const sol::BufferBarrier barrier{.buffer    = *srcBuffer,
+                                         .srcFamily = nullptr,
                                          .dstFamily = nullptr,
                                          .srcStage  = 0,
                                          .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
@@ -67,12 +68,14 @@ void PartialCopy::operator()()
                                            .srcOnDedicatedTransfer = false,
                                            .dstOnDedicatedTransfer = false};
         const sol::BufferBarrier      srcBarrier{.buffer    = *srcBuffer,
+                                                 .srcFamily = nullptr,
                                                  .dstFamily = nullptr,
                                                  .srcStage  = 0,
                                                  .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                                  .srcAccess = 0,
                                                  .dstAccess = VK_ACCESS_2_TRANSFER_READ_BIT};
         const sol::BufferBarrier      dstBarrier{.buffer    = *dstBuffer,
+                                                 .srcFamily = nullptr,
                                                  .dstFamily = nullptr,
                                                  .srcStage  = 0,
                                                  .dstStage = VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_TRANSFER_BIT,
@@ -100,14 +103,20 @@ void PartialCopy::operator()()
                                            .dstOffset              = sizeof(uint32_t) * 256 * 1,
                                            .srcOnDedicatedTransfer = false,
                                            .dstOnDedicatedTransfer = false};
-        const sol::BufferBarrier      srcBarrier{
-               .buffer = *srcBuffer, .dstFamily = nullptr, .srcStage = 0, .dstStage = 0, .srcAccess = 0, .dstAccess = 0};
-        const sol::BufferBarrier dstBarrier{.buffer    = *dstBuffer,
-                                            .dstFamily = nullptr,
-                                            .srcStage  = 0,
-                                            .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,
-                                            .srcAccess = 0,
-                                            .dstAccess = VK_ACCESS_2_HOST_READ_BIT};
+        const sol::BufferBarrier      srcBarrier{.buffer    = *srcBuffer,
+                                                 .srcFamily = nullptr,
+                                                 .dstFamily = nullptr,
+                                                 .srcStage  = 0,
+                                                 .dstStage  = 0,
+                                                 .srcAccess = 0,
+                                                 .dstAccess = 0};
+        const sol::BufferBarrier      dstBarrier{.buffer    = *dstBuffer,
+                                                 .srcFamily = nullptr,
+                                                 .dstFamily = nullptr,
+                                                 .srcStage  = 0,
+                                                 .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,
+                                                 .srcAccess = 0,
+                                                 .dstAccess = VK_ACCESS_2_HOST_READ_BIT};
         transaction->stage(copy, srcBarrier, dstBarrier);
         transaction->commit();
         transaction->wait();
@@ -130,14 +139,20 @@ void PartialCopy::operator()()
                                            .dstOffset              = sizeof(uint32_t) * 256,
                                            .srcOnDedicatedTransfer = false,
                                            .dstOnDedicatedTransfer = false};
-        const sol::BufferBarrier      srcBarrier{
-               .buffer = *srcBuffer, .dstFamily = nullptr, .srcStage = 0, .dstStage = 0, .srcAccess = 0, .dstAccess = 0};
-        const sol::BufferBarrier dstBarrier{.buffer    = *dstBuffer,
-                                            .dstFamily = nullptr,
-                                            .srcStage  = 0,
-                                            .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,
-                                            .srcAccess = 0,
-                                            .dstAccess = VK_ACCESS_2_HOST_READ_BIT};
+        const sol::BufferBarrier      srcBarrier{.buffer    = *srcBuffer,
+                                                 .srcFamily = nullptr,
+                                                 .dstFamily = nullptr,
+                                                 .srcStage  = 0,
+                                                 .dstStage  = 0,
+                                                 .srcAccess = 0,
+                                                 .dstAccess = 0};
+        const sol::BufferBarrier      dstBarrier{.buffer    = *dstBuffer,
+                                                 .srcFamily = nullptr,
+                                                 .dstFamily = nullptr,
+                                                 .srcStage  = 0,
+                                                 .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,
+                                                 .srcAccess = 0,
+                                                 .dstAccess = VK_ACCESS_2_HOST_READ_BIT};
         transaction->stage(copy, srcBarrier, dstBarrier);
         transaction->commit();
         transaction->wait();
@@ -156,6 +171,7 @@ void PartialCopy::operator()()
 
         expectNoThrow([&] {
             const sol::BufferBarrier before{.buffer    = *srcBuffer,
+                                            .srcFamily = nullptr,
                                             .dstFamily = nullptr,
                                             .srcStage  = 0,
                                             .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
@@ -166,6 +182,7 @@ void PartialCopy::operator()()
 
         expectNoThrow([&] {
             const sol::BufferBarrier before{.buffer    = *dstBuffer,
+                                            .srcFamily = nullptr,
                                             .dstFamily = nullptr,
                                             .srcStage  = 0,
                                             .dstStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
@@ -200,6 +217,7 @@ void PartialCopy::operator()()
 
         expectNoThrow([&] {
             const sol::BufferBarrier after{.buffer    = *dstBuffer,
+                                           .srcFamily = nullptr,
                                            .dstFamily = nullptr,
                                            .srcStage  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                            .dstStage  = VK_PIPELINE_STAGE_2_HOST_BIT,
