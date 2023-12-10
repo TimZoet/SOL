@@ -1,144 +1,106 @@
 #pragma once
 
 ////////////////////////////////////////////////////////////////
-// Module includes.
+// Standard includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-core/fwd.h"
+#include <unordered_map>
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-mesh/i_mesh.h"
+#include "sol-mesh/mesh.h"
 
 namespace sol
 {
-    class IndexedMesh final : public IMesh
+    class MeshCollection
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        IndexedMesh();
+        MeshCollection() = delete;
 
-        /**
-         * \brief Construct an IndexedMesh.
-         * \param manager MeshManager.
-         * \param id Identifier.
-         */
-        IndexedMesh(MeshManager& manager, uuids::uuid id);
+        explicit MeshCollection(GeometryBufferAllocator& alloc);
 
-        IndexedMesh(const IndexedMesh&) = delete;
+        MeshCollection(const MeshCollection&) = delete;
 
-        IndexedMesh(IndexedMesh&&) = delete;
+        MeshCollection(MeshCollection&&) = delete;
 
-        ~IndexedMesh() noexcept override;
+        ~MeshCollection() noexcept;
 
-        IndexedMesh& operator=(const IndexedMesh&) = delete;
+        MeshCollection& operator=(const MeshCollection&) = delete;
 
-        IndexedMesh& operator=(IndexedMesh&&) = delete;
+        MeshCollection& operator=(MeshCollection&&) = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] MeshType getType() const noexcept override;
+        /**
+         * \brief Get the geometry buffer allocator this mesh collection is using.
+         * \return GeometryBufferAllocator.
+         */
+        [[nodiscard]] GeometryBufferAllocator& getAllocator() noexcept;
 
-        [[nodiscard]] bool isValid() const noexcept override;
-
-        [[nodiscard]] bool isIndexed() const noexcept override;
-
-        void getVertexBufferHandles(std::vector<VkBuffer>& handles) const override;
-
-        void getVertexBufferOffsets(std::vector<size_t>& offsets) const override;
-
-        [[nodiscard]] size_t getVertexBufferCount() const noexcept override;
-
-        [[nodiscard]] VkBuffer getIndexBufferHandle() const noexcept override;
-
-        [[nodiscard]] size_t getIndexBufferOffset() const noexcept override;
-
-        [[nodiscard]] VkIndexType getIndexType() const noexcept override;
-
-        [[nodiscard]] uint32_t getVertexCount() const noexcept override;
-
-        [[nodiscard]] uint32_t getFirstVertex() const noexcept override;
-
-        [[nodiscard]] uint32_t getIndexCount() const noexcept override;
-
-        [[nodiscard]] uint32_t getFirstIndex() const noexcept override;
-
-        [[nodiscard]] int32_t getVertexOffset() const noexcept override;
-
-        [[nodiscard]] std::vector<VkAccessFlags> getVertexBufferAccessFlags() const noexcept override;
-
-        [[nodiscard]] VkAccessFlags getIndexBufferAccessFlags() const noexcept override;
-
-        [[nodiscard]] VulkanBuffer* getVertexBuffer() const noexcept;
-
-        [[nodiscard]] size_t getVertexBufferOffset() const noexcept;
-
-        [[nodiscard]] VulkanBuffer* getIndexBuffer() const noexcept;
+        /**
+         * \brief Get the geometry buffer allocator this mesh collection is using.
+         * \return GeometryBufferAllocator.
+         */
+        [[nodiscard]] const GeometryBufferAllocator& getAllocator() const noexcept;
 
         ////////////////////////////////////////////////////////////////
-        // Setters.
+        // Meshes.
         ////////////////////////////////////////////////////////////////
 
-        void setVertexBuffer(VulkanBufferPtr buffer) noexcept;
+        /**
+         * \brief Allocate a new vertex buffer. Reroutes call to the internal allocator.
+         * \param count Number of vertices.
+         * \param size Size of each vertex in bytes. Ignored if strategy == Global.
+         * \return Vertex buffer.
+         */
+        [[nodiscard]] VertexBufferPtr allocateVertexBuffer(size_t count, size_t size = 0) const;
 
-        void setVertexBufferOffset(size_t offset) noexcept;
+        /**
+         * \brief Allocate a new index buffer. Reroutes call to the internal allocator.
+         * \param count Number of indices.
+         * \param size Size of each index in bytes. Ignored if strategy == Global.
+         * \return Index buffer.
+         */
+        [[nodiscard]] IndexBufferPtr allocateIndexBuffer(size_t count, size_t size = 0) const;
 
-        void setVertexCount(uint32_t count) noexcept;
+        /**
+         * \brief Create a new mesh.
+         * \param vertexBuffer Vertex buffer.
+         * \param indexBuffer Optional index buffer.
+         * \param vertexBuffers List of additional vertex buffers.
+         * \return Mesh.
+         */
+        template<std::same_as<VertexBufferPtr>... Ts>
+        [[nodiscard]] Mesh& createMesh(VertexBufferPtr vertexBuffer, IndexBufferPtr indexBuffer, Ts&&... vertexBuffers)
+        {
+            auto& mesh = createMeshImpl();
+            mesh.vertexBuffers.reserve(sizeof...(Ts) + 1);
+            (mesh.vertexBuffers.push_back(std::move(vertexBuffer)),
+             ...,
+             mesh.vertexBuffers.push_back(std::move(vertexBuffers)));
+            mesh.indexBuffer = std::move(indexBuffer);
+            return mesh;
+        }
 
-        void setIndexBuffer(VulkanBufferPtr buffer) noexcept;
-
-        void setIndexBufferOffset(size_t offset) noexcept;
-
-        void setIndexType(VkIndexType type) noexcept;
-
-        void setIndexCount(uint32_t count) noexcept;
-
-        void setFirstIndex(uint32_t index) noexcept;
-
-        void setVertexOffset(int32_t offset) noexcept;
-
-        void setVertexAccessFlags(VkAccessFlags flags) noexcept;
-
-        void setIndexAccessFlags(VkAccessFlags flags) noexcept;
-
-        ////////////////////////////////////////////////////////////////
-        // Update.
-        ////////////////////////////////////////////////////////////////
-
-        void update(MeshDescriptionPtr desc) override;
+        void destroyMesh(const Mesh& mesh);
 
     private:
+        [[nodiscard]] Mesh& createMeshImpl();
+
         ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        VulkanBufferPtr vertexBuffer;
+        GeometryBufferAllocator* allocator = nullptr;
 
-        VulkanBufferPtr indexBuffer;
-
-        size_t vertexBufferOffset = 0;
-
-        size_t indexBufferOffset = 0;
-
-        VkIndexType indexType = VK_INDEX_TYPE_MAX_ENUM;
-
-        uint32_t indexCount = 0;
-
-        uint32_t firstIndex = 0;
-
-        int32_t vertexOffset = 0;
-
-        uint32_t vertexCount = 0;
-
-        VkAccessFlags vertexAccessFlags = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
-
-        VkAccessFlags indexAccessFlags = VK_ACCESS_INDEX_READ_BIT;
+        std::unordered_map<uuids::uuid, MeshPtr> meshes;
     };
 }  // namespace sol

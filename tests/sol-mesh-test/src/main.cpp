@@ -12,6 +12,8 @@
 
 #include "sol-mesh-test/geometry_buffer_allocator.h"
 #include "sol-mesh-test/index_buffer.h"
+#include "sol-mesh-test/mesh.h"
+#include "sol-mesh-test/mesh_collection.h"
 #include "sol-mesh-test/vertex_buffer.h"
 
 #ifdef WIN32
@@ -31,5 +33,5 @@ int main(int argc, char** argv)
     }
 #endif
 
-    return bt::run<GeometryBufferAllocator, IndexBuffer, VertexBuffer>(argc, argv, "sol-mesh");
+    return bt::run<GeometryBufferAllocator, IndexBuffer, Mesh, MeshCollection, VertexBuffer>(argc, argv, "sol-mesh");
 }
