@@ -48,6 +48,9 @@ namespace sol
 
     using VulkanPhysicalDeviceFeatures2Ptr = std::unique_ptr<RootVulkanPhysicalDeviceFeatures2>;
 
+    /*
+     * Core.
+     */
 
     using VulkanPhysicalDeviceVulkan11Features =
       VulkanPhysicalDeviceFeature<VkPhysicalDeviceVulkan11Features,
@@ -58,6 +61,11 @@ namespace sol
     using VulkanPhysicalDeviceVulkan13Features =
       VulkanPhysicalDeviceFeature<VkPhysicalDeviceVulkan13Features,
                                   VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES>;
+
+    /*
+     * KHR.
+     */
+
     using VulkanPhysicalDeviceAccelerationStructureFeaturesKHR =
       VulkanPhysicalDeviceFeature<VkPhysicalDeviceAccelerationStructureFeaturesKHR,
                                   VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR>;
@@ -67,6 +75,14 @@ namespace sol
     using VulkanPhysicalDeviceRayTracingPipelineFeaturesKHR =
       VulkanPhysicalDeviceFeature<VkPhysicalDeviceRayTracingPipelineFeaturesKHR,
                                   VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR>;
+
+    /*
+     * EXT.
+     */
+
+    using VulkanPhysicalDeviceDescriptorBufferFeaturesEXT =
+      VulkanPhysicalDeviceFeature<VkPhysicalDeviceDescriptorBufferFeaturesEXT,
+                                  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT>;
 
     template<typename...>
     struct VulkanPhysicalDeviceFeatures2 : RootVulkanPhysicalDeviceFeatures2

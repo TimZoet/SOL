@@ -108,6 +108,8 @@ namespace sol
          */
         [[nodiscard]] const VkAccelerationStructureKHR& get() const noexcept;
 
+        [[nodiscard]] VkDeviceAddress getDeviceAddress() const noexcept;
+
     private:
         [[nodiscard]] static std::pair<VkAccelerationStructureKHR, VulkanBufferPtr>
           createImpl(const Settings& settings);
