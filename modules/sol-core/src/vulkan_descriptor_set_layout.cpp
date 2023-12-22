@@ -55,7 +55,7 @@ namespace sol
     {
         VkDescriptorSetLayoutCreateInfo layoutInfo{};
         layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layoutInfo.flags        = 0;
+        layoutInfo.flags        = settings.flags;
         layoutInfo.bindingCount = static_cast<uint32_t>(settings.bindings.size());
         layoutInfo.pBindings    = settings.bindings.data();
 

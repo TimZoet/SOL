@@ -198,4 +198,6 @@ namespace sol
     {
         return accelerationStructure;
     }
+
+    VkDeviceAddress VulkanTopLevelAccelerationStructure::getDeviceAddress() const noexcept { return deviceAddress; }
 }  // namespace sol

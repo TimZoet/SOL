@@ -35,6 +35,11 @@ namespace sol
             ObjectRefSetting<VulkanDevice> device;
 
             /**
+             * \brief Flags.
+             */
+            VkDescriptorSetLayoutCreateFlags flags = 0;
+
+            /**
              * \brief Bindings.
              */
             std::vector<VkDescriptorSetLayoutBinding> bindings;

@@ -43,7 +43,7 @@ namespace
     uint32_t                                   imageIndex = 0;
     std::vector<sol::GraphicsRenderingInfoPtr> renderingInfos;
     sol::MemoryManagerPtr                      memoryManager;
-    sol::TransactionManagerPtr                    transferManager;
+    sol::TransactionManagerPtr                 transferManager;
 
     void createDefaultWindow() { window = std::make_unique<sol::Window>(std::array{1024, 512}, "Test"); }
 
@@ -61,7 +61,8 @@ namespace
         supportedFeatures =
           std::make_unique<sol::VulkanPhysicalDeviceFeatures2<sol::VulkanPhysicalDeviceVulkan11Features,
                                                               sol::VulkanPhysicalDeviceVulkan12Features,
-                                                              sol::VulkanPhysicalDeviceVulkan13Features>>();
+                                                              sol::VulkanPhysicalDeviceVulkan13Features,
+                                                              sol::VulkanPhysicalDeviceDescriptorBufferFeaturesEXT>>();
     }
 
     void createEnabledFeatures()
@@ -69,13 +70,15 @@ namespace
         enabledFeatures =
           std::make_unique<sol::VulkanPhysicalDeviceFeatures2<sol::VulkanPhysicalDeviceVulkan11Features,
                                                               sol::VulkanPhysicalDeviceVulkan12Features,
-                                                              sol::VulkanPhysicalDeviceVulkan13Features>>();
+                                                              sol::VulkanPhysicalDeviceVulkan13Features,
+                                                              sol::VulkanPhysicalDeviceDescriptorBufferFeaturesEXT>>();
 
-        enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan12Features>()->bufferDeviceAddress = VK_TRUE;
-        enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan12Features>()->descriptorIndexing  = VK_TRUE;
-        enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan12Features>()->timelineSemaphore   = VK_TRUE;
-        enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan13Features>()->dynamicRendering    = VK_TRUE;
-        enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan13Features>()->synchronization2    = VK_TRUE;
+        enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan12Features>()->bufferDeviceAddress         = VK_TRUE;
+        enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan12Features>()->descriptorIndexing          = VK_TRUE;
+        enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan12Features>()->timelineSemaphore           = VK_TRUE;
+        enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan13Features>()->dynamicRendering            = VK_TRUE;
+        enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan13Features>()->synchronization2            = VK_TRUE;
+        enabledFeatures->getAs<sol::VulkanPhysicalDeviceDescriptorBufferFeaturesEXT>()->descriptorBuffer = VK_TRUE;
     }
 
     void createDefaultSurface()
@@ -93,6 +96,7 @@ namespace
         sol::VulkanPhysicalDevice::Settings settings;
         settings.instance = instance;
         settings.surface  = surface;
+        settings.extensions.emplace_back(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
         if (enableFrame) settings.extensions.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
         settings.propertyFilter = [](const VkPhysicalDeviceProperties& props) {
             return props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
@@ -105,6 +109,7 @@ namespace
             if (!features.getAs<sol::VulkanPhysicalDeviceVulkan12Features>()->timelineSemaphore) return false;
             if (!features.getAs<sol::VulkanPhysicalDeviceVulkan13Features>()->dynamicRendering) return false;
             if (!features.getAs<sol::VulkanPhysicalDeviceVulkan13Features>()->synchronization2) return false;
+            if (!features.getAs<sol::VulkanPhysicalDeviceDescriptorBufferFeaturesEXT>()->descriptorBuffer) return false;
             return true;
         };
         settings.queueFamilyFilter = [](const std::vector<sol::VulkanQueueFamily>& queues) {

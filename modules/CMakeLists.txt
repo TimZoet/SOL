@@ -1,6 +1,7 @@
 add_subdirectory(sol-command)
 add_subdirectory(sol-core)
 add_subdirectory(sol-error)
+add_subdirectory(sol-descriptor)
 add_subdirectory(sol-generated)
 add_subdirectory(sol-material)
 add_subdirectory(sol-memory)
