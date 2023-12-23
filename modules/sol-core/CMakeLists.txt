@@ -28,6 +28,11 @@ set(HEADERS
     ${INCLUDE_DIR}/vulkan_fence.h
     ${INCLUDE_DIR}/vulkan_frame_buffer.h
     ${INCLUDE_DIR}/vulkan_graphics_pipeline.h
+    ${INCLUDE_DIR}/vulkan_graphics_pipeline2.h
+    ${INCLUDE_DIR}/vulkan_graphics_pipeline_fragment.h
+    ${INCLUDE_DIR}/vulkan_graphics_pipeline_fragment_output.h
+    ${INCLUDE_DIR}/vulkan_graphics_pipeline_pre_rasterization.h
+    ${INCLUDE_DIR}/vulkan_graphics_pipeline_vertex_input.h
     ${INCLUDE_DIR}/vulkan_image.h
     ${INCLUDE_DIR}/vulkan_image_view.h
     ${INCLUDE_DIR}/vulkan_instance.h
@@ -35,6 +40,7 @@ set(HEADERS
     ${INCLUDE_DIR}/vulkan_memory_pool.h
     ${INCLUDE_DIR}/vulkan_physical_device.h
     ${INCLUDE_DIR}/vulkan_physical_device_features.h
+    ${INCLUDE_DIR}/vulkan_pipeline_layout.h
     ${INCLUDE_DIR}/vulkan_queue.h
     ${INCLUDE_DIR}/vulkan_queue_family.h
     ${INCLUDE_DIR}/vulkan_ray_tracing_pipeline.h
@@ -71,12 +77,18 @@ set(SOURCES
     ${SRC_DIR}/vulkan_fence.cpp
     ${SRC_DIR}/vulkan_frame_buffer.cpp
     ${SRC_DIR}/vulkan_graphics_pipeline.cpp
+    ${SRC_DIR}/vulkan_graphics_pipeline2.cpp
+    ${SRC_DIR}/vulkan_graphics_pipeline_fragment.cpp
+    ${SRC_DIR}/vulkan_graphics_pipeline_fragment_output.cpp
+    ${SRC_DIR}/vulkan_graphics_pipeline_pre_rasterization.cpp
+    ${SRC_DIR}/vulkan_graphics_pipeline_vertex_input.cpp
     ${SRC_DIR}/vulkan_image.cpp
     ${SRC_DIR}/vulkan_image_view.cpp
     ${SRC_DIR}/vulkan_instance.cpp
     ${SRC_DIR}/vulkan_memory_allocator.cpp
     ${SRC_DIR}/vulkan_memory_pool.cpp
     ${SRC_DIR}/vulkan_physical_device.cpp
+    ${SRC_DIR}/vulkan_pipeline_layout.cpp
     ${SRC_DIR}/vulkan_queue.cpp
     ${SRC_DIR}/vulkan_queue_family.cpp
     ${SRC_DIR}/vulkan_ray_tracing_pipeline.cpp
