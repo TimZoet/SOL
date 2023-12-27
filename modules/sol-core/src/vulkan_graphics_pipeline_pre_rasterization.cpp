@@ -75,6 +75,7 @@ namespace sol
             stage.pNext = &module;
             stage.flags = shader.stageFlags;
             stage.stage = flag;
+            stage.pName = shader.entrypoint.c_str();
         };
 
         if (!settings.vertexShader.code.empty()) addStage(settings.vertexShader, VK_SHADER_STAGE_VERTEX_BIT);
@@ -124,6 +125,7 @@ namespace sol
         pipelineInfo.flags               = flags;
         pipelineInfo.stageCount          = static_cast<uint32_t>(shaderStages.size());
         pipelineInfo.pStages             = shaderStages.data();
+        pipelineInfo.pViewportState      = &viewportInfo;
         pipelineInfo.pRasterizationState = &rasterizationInfo;
         pipelineInfo.pDynamicState       = &dynamicStateInfo;
         pipelineInfo.layout              = settings.layout;
@@ -156,4 +158,9 @@ namespace sol
     }
 
     const VkPipeline& VulkanGraphicsPipelinePreRasterization::get() const noexcept { return pipeline; }
+
+    const std::vector<VkDynamicState>& VulkanGraphicsPipelinePreRasterization::getDynamicStates() const noexcept
+    {
+        return settings.enabledDynamicStates;
+    }
 }  // namespace sol

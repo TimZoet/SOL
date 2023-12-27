@@ -1,5 +1,6 @@
 #add_subdirectory(sol-core-test)
 add_subdirectory(sol-descriptor-test)
+add_subdirectory(sol-material-test)
 add_subdirectory(sol-memory-test)
 add_subdirectory(sol-mesh-test)
 add_subdirectory(sol-texture-test)

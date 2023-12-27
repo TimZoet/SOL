@@ -11,6 +11,7 @@
 ////////////////////////////////////////////////////////////////
 
 #include "sol-core/fwd.h"
+#include "sol-descriptor/fwd.h"
 #include "sol-memory/fwd.h"
 
 class BasicFixture
@@ -40,6 +41,9 @@ public:
      * \brief Runs a fake frame so that profiling tools can attach.
      */
     static void frame();
+
+    [[nodiscard]] std::pair<sol::VulkanGraphicsPipeline2Ptr, std::vector<sol::DescriptorLayoutPtr>>
+      createSimpleGraphicsPipeline() const;
 };
 
 class ImageDataGeneration

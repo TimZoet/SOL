@@ -60,8 +60,9 @@ namespace sol
         // Reserving for stable pointers.
         shaderModules.reserve(1);
 
-        const auto addStage = [&shaderModules, &shaderStages](const Settings::Shader&     shader,
-                                                              const VkShaderStageFlagBits flag) {
+        const auto addStage = [&shaderModules,
+                               &shaderStages](const VulkanGraphicsPipelinePreRasterization::Settings::Shader& shader,
+                                              const VkShaderStageFlagBits                                     flag) {
             auto& module    = shaderModules.emplace_back();
             module.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
             module.flags    = shader.moduleFlags;
@@ -73,6 +74,7 @@ namespace sol
             stage.pNext = &module;
             stage.flags = shader.stageFlags;
             stage.stage = flag;
+            stage.pName = shader.entrypoint.c_str();
         };
 
         if (!settings.fragmentShader.code.empty()) addStage(settings.fragmentShader, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -135,4 +137,10 @@ namespace sol
     }
 
     const VkPipeline& VulkanGraphicsPipelineFragment::get() const noexcept { return pipeline; }
+
+    const std::vector<VkDynamicState>& VulkanGraphicsPipelineFragment::getDynamicStates() const noexcept
+    {
+        return settings.enabledDynamicStates;
+    }
+
 }  // namespace sol

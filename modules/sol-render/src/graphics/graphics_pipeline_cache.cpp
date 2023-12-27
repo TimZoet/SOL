@@ -117,10 +117,10 @@ namespace sol
         {
             switch (layout.getCullMode())
             {
-            case CullMode::None: settings.rasterization.cullMode = VK_CULL_MODE_NONE; break;
-            case CullMode::Front: settings.rasterization.cullMode = VK_CULL_MODE_FRONT_BIT; break;
-            case CullMode::Back: settings.rasterization.cullMode = VK_CULL_MODE_BACK_BIT; break;
-            case CullMode::Both: settings.rasterization.cullMode = VK_CULL_MODE_FRONT_AND_BACK; break;
+            case ECullMode::None: settings.rasterization.cullMode = VK_CULL_MODE_NONE; break;
+            case ECullMode::Front: settings.rasterization.cullMode = VK_CULL_MODE_FRONT_BIT; break;
+            case ECullMode::Back: settings.rasterization.cullMode = VK_CULL_MODE_BACK_BIT; break;
+            case ECullMode::Both: settings.rasterization.cullMode = VK_CULL_MODE_FRONT_AND_BACK; break;
             }
         }
 
@@ -132,8 +132,8 @@ namespace sol
         {
             switch (layout.getFrontFace())
             {
-            case FrontFace::Clockwise: settings.rasterization.frontFace = VK_FRONT_FACE_CLOCKWISE; break;
-            case FrontFace::CounterClockwise: settings.rasterization.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE; break;
+            case EFrontFace::Clockwise: settings.rasterization.frontFace = VK_FRONT_FACE_CLOCKWISE; break;
+            case EFrontFace::CounterClockwise: settings.rasterization.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE; break;
             }
         }
 
@@ -145,9 +145,9 @@ namespace sol
         {
             switch (layout.getPolygonMode())
             {
-            case PolygonMode::Fill: settings.rasterization.polygonMode = VK_POLYGON_MODE_FILL; break;
-            case PolygonMode::Line: settings.rasterization.polygonMode = VK_POLYGON_MODE_LINE; break;
-            case PolygonMode::Point: settings.rasterization.polygonMode = VK_POLYGON_MODE_POINT; break;
+            case EPolygonMode::Fill: settings.rasterization.polygonMode = VK_POLYGON_MODE_FILL; break;
+            case EPolygonMode::Line: settings.rasterization.polygonMode = VK_POLYGON_MODE_LINE; break;
+            case EPolygonMode::Point: settings.rasterization.polygonMode = VK_POLYGON_MODE_POINT; break;
             }
         }
 

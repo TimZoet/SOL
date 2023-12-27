@@ -61,12 +61,14 @@ namespace sol
                 VkPipelineViewportStateCreateFlags flags = 0;
 
                 /**
-                 * \brief List of viewports. Ignored if this state is dynamic.
+                 * \brief List of viewports. Contents are ignored if this state is dynamic,
+                 * though you should still resize to the appropriate count.
                  */
                 std::vector<VkViewport> viewports;
 
                 /**
-                 * \brief List of scissors. Ignored if this state is dynamic.
+                 * \brief List of scissors. Contents are ignored if this state is dynamic,
+                 * though you should still resize to the appropriate count.
                  */
                 std::vector<VkRect2D> scissors;
             } viewport;
@@ -172,6 +174,12 @@ namespace sol
          * \return Pipeline handle.
          */
         [[nodiscard]] const VkPipeline& get() const noexcept;
+
+        /**
+         * \brief Get the list of enabled dynamic states.
+         * \return List of dynamic states.
+         */
+        [[nodiscard]] const std::vector<VkDynamicState>& getDynamicStates() const noexcept;
 
     private:
         [[nodiscard]] static VkPipeline createImpl(const Settings& settings);

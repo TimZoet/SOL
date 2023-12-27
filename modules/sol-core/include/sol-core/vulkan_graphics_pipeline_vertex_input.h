@@ -113,6 +113,12 @@ namespace sol
          */
         [[nodiscard]] const VkPipeline& get() const noexcept;
 
+        /**
+         * \brief Get the list of enabled dynamic states.
+         * \return List of dynamic states.
+         */
+        [[nodiscard]] const std::vector<VkDynamicState>& getDynamicStates() const noexcept;
+
     private:
         [[nodiscard]] static VkPipeline createImpl(const Settings& settings);
 

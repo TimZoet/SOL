@@ -69,6 +69,9 @@ namespace sol
     using VulkanPhysicalDeviceAccelerationStructureFeaturesKHR =
       VulkanPhysicalDeviceFeature<VkPhysicalDeviceAccelerationStructureFeaturesKHR,
                                   VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR>;
+    using VulkanPhysicalDeviceMaintenance5FeaturesKHR =
+      VulkanPhysicalDeviceFeature<VkPhysicalDeviceMaintenance5FeaturesKHR,
+                                  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES_KHR>;
     using VulkanPhysicalDeviceRayQueryFeaturesKHR =
       VulkanPhysicalDeviceFeature<VkPhysicalDeviceRayQueryFeaturesKHR,
                                   VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR>;
@@ -83,6 +86,10 @@ namespace sol
     using VulkanPhysicalDeviceDescriptorBufferFeaturesEXT =
       VulkanPhysicalDeviceFeature<VkPhysicalDeviceDescriptorBufferFeaturesEXT,
                                   VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT>;
+
+    using VulkanPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT =
+      VulkanPhysicalDeviceFeature<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT,
+                                  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GRAPHICS_PIPELINE_LIBRARY_FEATURES_EXT>;
 
     template<typename...>
     struct VulkanPhysicalDeviceFeatures2 : RootVulkanPhysicalDeviceFeatures2

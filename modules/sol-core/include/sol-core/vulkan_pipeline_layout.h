@@ -40,7 +40,7 @@ namespace sol
             ObjectRefListSetting<VulkanDescriptorSetLayout> descriptors;
 
             /**
-             * \brief Enable independent descriptor set layouts.
+             * \brief Enable independent descriptor set layouts for pipeline libraries.
              */
             bool independentDescriptors = false;
 

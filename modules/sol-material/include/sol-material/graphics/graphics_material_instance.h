@@ -76,13 +76,13 @@ namespace sol
          * \brief Get the dynamic cull mode state.
          * \return State.
          */
-        [[nodiscard]] std::optional<CullMode> getCullMode() const noexcept;
+        [[nodiscard]] std::optional<ECullMode> getCullMode() const noexcept;
 
         /**
          * \brief Get the dynamic front face state.
          * \return State.
          */
-        [[nodiscard]] std::optional<FrontFace> getFrontFace() const noexcept;
+        [[nodiscard]] std::optional<EFrontFace> getFrontFace() const noexcept;
 
         /**
          * \brief Get the dynamic viewport state.
@@ -100,7 +100,7 @@ namespace sol
          * \brief Get the dynamic polygon mode state.
          * \return State.
          */
-        [[nodiscard]] std::optional<PolygonMode> getPolygonMode() const noexcept;
+        [[nodiscard]] std::optional<EPolygonMode> getPolygonMode() const noexcept;
 
 
 
@@ -116,13 +116,13 @@ namespace sol
          * \brief Set the dynamic cull mode state. Does not have any effect if the dynamic state was not enabled in the material layout.
          * \param value New state.
          */
-        void setCullMode(std::optional<CullMode> value) noexcept;
+        void setCullMode(std::optional<ECullMode> value) noexcept;
 
         /**
          * \brief Set the dynamic front face state. Does not have any effect if the dynamic state was not enabled in the material layout.
          * \param value New state.
          */
-        void setFrontFace(std::optional<FrontFace> value) noexcept;
+        void setFrontFace(std::optional<EFrontFace> value) noexcept;
 
         /**
          * \brief Set the dynamic viewport state. Does not have any effect if the dynamic state was not enabled in the material layout.
@@ -140,7 +140,7 @@ namespace sol
          * \brief Set the dynamic polygon mode state. Does not have any effect if the dynamic state was not enabled in the material layout.
          * \param value New state.
          */
-        void setPolygonMode(std::optional<PolygonMode> value) noexcept;
+        void setPolygonMode(std::optional<EPolygonMode> value) noexcept;
 
     private:
         ////////////////////////////////////////////////////////////////
@@ -155,10 +155,10 @@ namespace sol
 
         std::optional<std::vector<VkRect2D>> scissors;
 
-        std::optional<CullMode> cullMode;
+        std::optional<ECullMode> cullMode;
 
-        std::optional<FrontFace> frontFace;
+        std::optional<EFrontFace> frontFace;
 
-        std::optional<PolygonMode> polygonMode;
+        std::optional<EPolygonMode> polygonMode;
     };
 }  // namespace sol
