@@ -23,7 +23,7 @@ namespace sol
 
         GraphicsMaterialInstance2(GraphicsMaterialInstance2&&) = delete;
 
-        ~GraphicsMaterialInstance2() override;
+        ~GraphicsMaterialInstance2() noexcept override;
 
         GraphicsMaterialInstance2& operator=(const GraphicsMaterialInstance2&) = delete;
 

@@ -61,6 +61,8 @@ namespace sol
 
     struct CullMode final : GraphicsDynamicState
     {
+        static constexpr auto type = StateType::CullMode;
+
         enum class Value
         {
             None  = 0,
@@ -69,26 +71,30 @@ namespace sol
             Both  = Front | Back
         };
 
-        [[nodiscard]] StateType getType() const noexcept override { return StateType::CullMode; }
+        [[nodiscard]] StateType getType() const noexcept override { return type; }
 
         Value value = Value::None;
     };
 
     struct FrontFace final : GraphicsDynamicState
     {
+        static constexpr auto type = StateType::FrontFace;
+
         enum class Value
         {
             Clockwise        = 1,
             CounterClockwise = 2
         };
 
-        [[nodiscard]] StateType getType() const noexcept override { return StateType::FrontFace; }
+        [[nodiscard]] StateType getType() const noexcept override { return type; }
 
         Value value = Value::Clockwise;
     };
 
     struct PolygonMode final : GraphicsDynamicState
     {
+        static constexpr auto type = StateType::PolygonMode;
+
         enum class Value
         {
             Fill  = 0,
@@ -96,20 +102,22 @@ namespace sol
             Point = 2
         };
 
-        [[nodiscard]] StateType getType() const noexcept override { return StateType::PolygonMode; }
+        [[nodiscard]] StateType getType() const noexcept override { return type; }
 
         Value value = Value::Fill;
     };
 
     struct Scissor final : GraphicsDynamicState
     {
+        static constexpr auto type = StateType::Scissor;
+
         struct Value
         {
             std::pair<int32_t, int32_t>   offset;
             std::pair<uint32_t, uint32_t> extent;
         };
 
-        [[nodiscard]] StateType getType() const noexcept override { return StateType::Scissor; }
+        [[nodiscard]] StateType getType() const noexcept override { return type; }
 
         std::vector<Value> values;
 
@@ -117,6 +125,8 @@ namespace sol
 
     struct Viewport final : GraphicsDynamicState
     {
+        static constexpr auto type = StateType::Viewport;
+
         struct Value
         {
             float x;
@@ -127,7 +137,7 @@ namespace sol
             float maxDepth;
         };
 
-        [[nodiscard]] StateType getType() const noexcept override { return StateType::Viewport; }
+        [[nodiscard]] StateType getType() const noexcept override { return type; }
 
         std::vector<Value> values;
     };
