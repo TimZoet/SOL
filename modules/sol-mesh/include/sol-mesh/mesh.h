@@ -23,15 +23,37 @@ namespace sol
     class Mesh
     {
     public:
-        friend class MeshCollection;
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         Mesh();
 
-        Mesh(MeshCollection& collection, uuids::uuid id);
+        explicit Mesh(VertexBufferPtr vb0);
+
+        Mesh(VertexBufferPtr vb0, VertexBufferPtr vb1);
+
+        Mesh(VertexBufferPtr vb0, VertexBufferPtr vb1, VertexBufferPtr vb2);
+
+        Mesh(VertexBufferPtr vb0, IndexBufferPtr ib);
+
+        Mesh(VertexBufferPtr vb0, VertexBufferPtr vb1, IndexBufferPtr ib);
+
+        Mesh(VertexBufferPtr vb0, VertexBufferPtr vb1, VertexBufferPtr vb2, IndexBufferPtr ib);
+
+        explicit Mesh(uuids::uuid id);
+
+        Mesh(uuids::uuid id, VertexBufferPtr vb0);
+
+        Mesh(uuids::uuid id, VertexBufferPtr vb0, VertexBufferPtr vb1);
+
+        Mesh(uuids::uuid id, VertexBufferPtr vb0, VertexBufferPtr vb1, VertexBufferPtr vb2);
+
+        Mesh(uuids::uuid id, VertexBufferPtr vb0, IndexBufferPtr ib);
+
+        Mesh(uuids::uuid id, VertexBufferPtr vb0, VertexBufferPtr vb1, IndexBufferPtr ib);
+
+        Mesh(uuids::uuid id, VertexBufferPtr vb0, VertexBufferPtr vb1, VertexBufferPtr vb2, IndexBufferPtr ib);
 
         Mesh(const Mesh&) = delete;
 
@@ -46,18 +68,6 @@ namespace sol
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
-
-        /**
-         * \brief Get the mesh collection this image is in.
-         * \return MeshCollection.
-         */
-        [[nodiscard]] MeshCollection& getMeshCollection() noexcept;
-
-        /**
-         * \brief Get the mesh collection this image is in.
-         * \return MeshCollection.
-         */
-        [[nodiscard]] const MeshCollection& getMeshCollection() const noexcept;
 
         /**
          * \brief Get the UUID.
@@ -81,7 +91,19 @@ namespace sol
          * \brief Get the vertex buffers.
          * \return List of vertex buffers.
          */
+        [[nodiscard]] std::vector<VertexBufferPtr>& getVertexBuffers() noexcept;
+
+        /**
+         * \brief Get the vertex buffers.
+         * \return List of vertex buffers.
+         */
         [[nodiscard]] const std::vector<VertexBufferPtr>& getVertexBuffers() const noexcept;
+
+        /**
+         * \brief Get the index buffer, if any.
+         * \return Index buffer or null.
+         */
+        [[nodiscard]] IndexBufferPtr& getIndexBuffer() noexcept;
 
         /**
          * \brief Get the index buffer, if any.
@@ -93,11 +115,6 @@ namespace sol
         ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////
-
-        /**
-         * \brief Mesh collection this image is in.
-         */
-        MeshCollection* meshCollection = nullptr;
 
         /**
          * \brief UUID.
