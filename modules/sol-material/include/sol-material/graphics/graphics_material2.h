@@ -94,6 +94,20 @@ namespace sol
         }
 
         /**
+         * \brief Create a new material instance for this material.
+         * \tparam T Material instance type.
+         * \tparam Args Additional constructor argument types.
+         * \param id Explicit UUID.
+         * \param args Additional constructor arguments.
+         * \return New material instance.
+         */
+        template<std::derived_from<GraphicsMaterialInstance2> T, typename... Args>
+        [[nodiscard]] std::unique_ptr<T> createInstance(const uuids::uuid id, Args&&... args)
+        {
+            return std::make_unique<T>(id, *this, std::forward<Args>(args)...);
+        }
+
+        /**
          * \brief Create a new dynamic state object. While the state object is not explicitly linked to this material,
          * trying to create a dynamic state type that was not enabled will throw.
          * \tparam T Dynamic state type.
