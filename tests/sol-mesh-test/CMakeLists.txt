@@ -9,7 +9,6 @@ set(HEADERS
     ${INCLUDE_DIR}/geometry_buffer_allocator.h
     ${INCLUDE_DIR}/index_buffer.h
     ${INCLUDE_DIR}/mesh.h
-    ${INCLUDE_DIR}/mesh_collection.h
     ${INCLUDE_DIR}/vertex_buffer.h
 )
 
@@ -19,7 +18,6 @@ set(SOURCES
     ${SRC_DIR}/geometry_buffer_allocator.cpp
     ${SRC_DIR}/index_buffer.cpp
     ${SRC_DIR}/mesh.cpp
-    ${SRC_DIR}/mesh_collection.cpp
     ${SRC_DIR}/vertex_buffer.cpp
 )
 

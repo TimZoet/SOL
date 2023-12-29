@@ -16,7 +16,6 @@ namespace sol
     class IndexBuffer;
     class IndexedMesh;
     class Mesh;
-    class MeshCollection;
     class MeshDescription;
     class MeshLayout;
     class MeshManager;
@@ -34,8 +33,6 @@ namespace sol
     using IndexBufferSharedPtr             = std::shared_ptr<IndexBuffer>;
     using MeshPtr                          = std::unique_ptr<Mesh>;
     using MeshSharedPtr                    = std::shared_ptr<Mesh>;
-    using MeshCollectionPtr                = std::unique_ptr<MeshCollection>;
-    using MeshCollectionSharedPtr          = std::shared_ptr<MeshCollection>;
     using MeshDescriptionPtr               = std::unique_ptr<MeshDescription>;
     using MeshDescriptionSharedPtr         = std::shared_ptr<MeshDescription>;
     using MeshLayoutPtr                    = std::unique_ptr<MeshLayout>;
