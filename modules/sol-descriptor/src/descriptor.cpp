@@ -24,6 +24,8 @@ namespace sol
 
     const DescriptorBuffer& Descriptor::getBuffer() const { return *descriptorBuffer; }
 
+    const DescriptorLayout& Descriptor::getLayout() const { return *descriptorLayout; }
+
     ////////////////////////////////////////////////////////////////
     // Setters.
     ////////////////////////////////////////////////////////////////

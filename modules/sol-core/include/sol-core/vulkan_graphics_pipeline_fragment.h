@@ -18,6 +18,7 @@
 
 #include "sol-core/fwd.h"
 #include "sol-core/object_ref_setting.h"
+#include "sol-core/vulkan_graphics_pipeline_pre_rasterization.h"
 
 namespace sol
 {
@@ -31,24 +32,7 @@ namespace sol
         {
             ObjectRefSetting<VulkanPipelineLayout> layout;
 
-            struct Shader
-            {
-                VkPipelineShaderStageCreateFlags stageFlags = 0;
-
-                VkShaderModuleCreateFlags moduleFlags = 0;
-
-                /**
-                 * \brief Entry point name.
-                 */
-                std::string entrypoint = "main";
-
-                /**
-                 * \brief If not empty, this shader stage is enabled.
-                 */
-                std::vector<std::byte> code;
-            };
-
-            Shader fragmentShader;
+            VulkanGraphicsPipelinePreRasterization::Settings::Shader fragmentShader;
 
             struct
             {
@@ -73,6 +57,7 @@ namespace sol
                 float maxDepthBounds = 0;
 
             } depthStencil;
+
             /**
              * \brief List of all enabled dynamic states.
              */
@@ -146,6 +131,12 @@ namespace sol
          * \return Pipeline handle.
          */
         [[nodiscard]] const VkPipeline& get() const noexcept;
+
+        /**
+         * \brief Get the list of enabled dynamic states.
+         * \return List of dynamic states.
+         */
+        [[nodiscard]] const std::vector<VkDynamicState>& getDynamicStates() const noexcept;
 
     private:
         [[nodiscard]] static VkPipeline createImpl(const Settings& settings);

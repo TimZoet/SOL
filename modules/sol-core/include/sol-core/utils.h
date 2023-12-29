@@ -4,6 +4,8 @@
 // Standard includes.
 ////////////////////////////////////////////////////////////////
 
+#include <memory>
+#include <ranges>
 #include <string>
 #include <vector>
 
@@ -22,5 +24,12 @@ namespace sol
             return true;
 
         return false;
+    }
+
+    template<typename T>
+    [[nodiscard]] std::vector<const T*> raw(const std::vector<std::unique_ptr<T>>& vec)
+    {
+        return vec | std::views::transform([](const auto& v) { return v.get(); }) |
+               std::ranges::to<std::vector<const T*>>();
     }
 }  // namespace sol

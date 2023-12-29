@@ -34,6 +34,18 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
+    VulkanDescriptorSetLayout& DescriptorLayout::getLayout()
+    {
+        requireFinalized();
+        return *layout;
+    }
+
+    const VulkanDescriptorSetLayout& DescriptorLayout::getLayout() const
+    {
+        requireFinalized();
+        return *layout;
+    }
+
     size_t DescriptorLayout::getLayoutSize() const
     {
         requireFinalized();
@@ -182,7 +194,7 @@ namespace sol
 
         VulkanDescriptorSetLayout::Settings settings;
         settings.device = *device;
-        settings.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+        settings.flags  = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
 
         // Collect bindings.
 

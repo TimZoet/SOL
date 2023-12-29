@@ -18,6 +18,10 @@
 
 #include "sol-core/fwd.h"
 #include "sol-core/object_ref_setting.h"
+#include "sol-core/vulkan_graphics_pipeline_fragment.h"
+#include "sol-core/vulkan_graphics_pipeline_fragment_output.h"
+#include "sol-core/vulkan_graphics_pipeline_pre_rasterization.h"
+#include "sol-core/vulkan_graphics_pipeline_vertex_input.h"
 
 namespace sol
 {
@@ -55,6 +59,17 @@ namespace sol
             ObjectRefSetting<VulkanGraphicsPipelineFragmentOutput> fragmentOutputPipeline;
         };
 
+        /**
+         * \brief VulkanGraphicsPipeline2 settings.
+         */
+        struct Settings2
+        {
+            VulkanGraphicsPipelineVertexInput::Settings      vertexInput;
+            VulkanGraphicsPipelinePreRasterization::Settings preRasterization;
+            VulkanGraphicsPipelineFragment::Settings         fragment;
+            VulkanGraphicsPipelineFragmentOutput::Settings   fragmentOutput;
+        };
+
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
@@ -62,6 +77,8 @@ namespace sol
         VulkanGraphicsPipeline2() = delete;
 
         VulkanGraphicsPipeline2(Settings set, VkPipeline vkPipeline);
+
+        VulkanGraphicsPipeline2(Settings2 set, VkPipeline vkPipeline);
 
         VulkanGraphicsPipeline2(const VulkanGraphicsPipeline2&) = delete;
 
@@ -78,7 +95,7 @@ namespace sol
         ////////////////////////////////////////////////////////////////
 
         /**
-         * \brief Create a new Vulkan graphics pipeline.
+         * \brief Create a new Vulkan graphics pipeline. Uses previously created pipeline libraries.
          * \param settings Settings.
          * \throws VulkanError Thrown if pipeline creation failed.
          * \return Vulkan graphics pipeline.
@@ -86,12 +103,28 @@ namespace sol
         [[nodiscard]] static VulkanGraphicsPipeline2Ptr create(const Settings& settings);
 
         /**
-         * \brief Create a new Vulkan graphics pipeline.
+         * \brief Create a new Vulkan graphics pipeline. Creates a complete pipeline.
+         * \param settings Settings.
+         * \throws VulkanError Thrown if pipeline creation failed.
+         * \return Vulkan graphics pipeline.
+         */
+        [[nodiscard]] static VulkanGraphicsPipeline2Ptr create2(const Settings2& settings);
+
+        /**
+         * \brief Create a new Vulkan graphics pipeline. Uses previously created pipeline libraries.
          * \param settings Settings.
          * \throws VulkanError Thrown if pipeline creation failed.
          * \return Vulkan graphics pipeline.
          */
         [[nodiscard]] static VulkanGraphicsPipeline2SharedPtr createShared(const Settings& settings);
+
+        /**
+         * \brief Create a new Vulkan graphics pipeline. Creates a complete pipeline.
+         * \param settings Settings.
+         * \throws VulkanError Thrown if pipeline creation failed.
+         * \return Vulkan graphics pipeline.
+         */
+        [[nodiscard]] static VulkanGraphicsPipeline2SharedPtr createShared2(const Settings2& settings);
 
         ////////////////////////////////////////////////////////////////
         // Getters.
@@ -103,6 +136,8 @@ namespace sol
          * \return Settings.
          */
         [[nodiscard]] const Settings& getSettings() const noexcept;
+
+        [[nodiscard]] const Settings2& getSettings2() const noexcept;
 #endif
 
         /**
@@ -123,17 +158,32 @@ namespace sol
          */
         [[nodiscard]] const VkPipeline& get() const noexcept;
 
+        /**
+         * \brief Get the list of enabled dynamic states.
+         * \return List of dynamic states.
+         */
+        [[nodiscard]] const std::vector<VkDynamicState>& getDynamicStates() const noexcept;
+
     private:
         [[nodiscard]] static VkPipeline createImpl(const Settings& settings);
+
+        [[nodiscard]] static VkPipeline createImpl2(const Settings2& settings);
 
         /**
          * \brief Settings with which this object was created.
          */
-        Settings settings;
+        std::optional<Settings> settings;
+
+        std::optional<Settings2> settings2;
 
         /**
          * \brief Vulkan graphics pipeline.
          */
         VkPipeline pipeline = VK_NULL_HANDLE;
+
+        /**
+         * \brief Union of the dynamic states of all pipeline libraries making up this complete pipeline.
+         */
+        std::vector<VkDynamicState> dynamicStates;
     };
 }  // namespace sol

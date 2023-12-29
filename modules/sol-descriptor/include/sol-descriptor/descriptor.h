@@ -82,6 +82,8 @@ namespace sol
 
         [[nodiscard]] const DescriptorBuffer& getBuffer() const;
 
+        [[nodiscard]] const DescriptorLayout& getLayout() const;
+
         ////////////////////////////////////////////////////////////////
         // Setters.
         ////////////////////////////////////////////////////////////////

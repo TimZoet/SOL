@@ -4,6 +4,7 @@
 // Standard includes.
 ////////////////////////////////////////////////////////////////
 
+#include <fstream>
 #include <ranges>
 
 ////////////////////////////////////////////////////////////////
@@ -13,15 +14,23 @@
 #include "sol-core/vulkan_command_buffer.h"
 #include "sol-core/vulkan_device.h"
 #include "sol-core/vulkan_fence.h"
+#include "sol-core/vulkan_graphics_pipeline2.h"
+#include "sol-core/vulkan_graphics_pipeline_fragment.h"
+#include "sol-core/vulkan_graphics_pipeline_fragment_output.h"
+#include "sol-core/vulkan_graphics_pipeline_pre_rasterization.h"
+#include "sol-core/vulkan_graphics_pipeline_vertex_input.h"
 #include "sol-core/vulkan_instance.h"
 #include "sol-core/vulkan_memory_allocator.h"
 #include "sol-core/vulkan_physical_device.h"
+#include "sol-core/vulkan_pipeline_layout.h"
 #include "sol-core/vulkan_queue.h"
 #include "sol-core/vulkan_surface.h"
 #include "sol-core/vulkan_swapchain.h"
+#include "sol-descriptor/descriptor_layout.h"
 #include "sol-error/vulkan_error_handler.h"
 #include "sol-memory/memory_manager.h"
 #include "sol-memory/transaction_manager.h"
+#include "sol-mesh/mesh_layout.h"
 #include "sol-render/graphics/fwd.h"
 #include "sol-render/graphics/graphics_rendering_info.h"
 #include "sol-window/fwd.h"
@@ -58,27 +67,34 @@ namespace
 
     void createSupportedFeatures()
     {
-        supportedFeatures =
-          std::make_unique<sol::VulkanPhysicalDeviceFeatures2<sol::VulkanPhysicalDeviceVulkan11Features,
-                                                              sol::VulkanPhysicalDeviceVulkan12Features,
-                                                              sol::VulkanPhysicalDeviceVulkan13Features,
-                                                              sol::VulkanPhysicalDeviceDescriptorBufferFeaturesEXT>>();
+        supportedFeatures = std::make_unique<
+          sol::VulkanPhysicalDeviceFeatures2<sol::VulkanPhysicalDeviceVulkan11Features,
+                                             sol::VulkanPhysicalDeviceVulkan12Features,
+                                             sol::VulkanPhysicalDeviceVulkan13Features,
+                                             sol::VulkanPhysicalDeviceMaintenance5FeaturesKHR,
+                                             sol::VulkanPhysicalDeviceDescriptorBufferFeaturesEXT,
+                                             sol::VulkanPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>>();
     }
 
     void createEnabledFeatures()
     {
-        enabledFeatures =
-          std::make_unique<sol::VulkanPhysicalDeviceFeatures2<sol::VulkanPhysicalDeviceVulkan11Features,
-                                                              sol::VulkanPhysicalDeviceVulkan12Features,
-                                                              sol::VulkanPhysicalDeviceVulkan13Features,
-                                                              sol::VulkanPhysicalDeviceDescriptorBufferFeaturesEXT>>();
+        enabledFeatures = std::make_unique<
+          sol::VulkanPhysicalDeviceFeatures2<sol::VulkanPhysicalDeviceVulkan11Features,
+                                             sol::VulkanPhysicalDeviceVulkan12Features,
+                                             sol::VulkanPhysicalDeviceVulkan13Features,
+                                             sol::VulkanPhysicalDeviceMaintenance5FeaturesKHR,
+                                             sol::VulkanPhysicalDeviceDescriptorBufferFeaturesEXT,
+                                             sol::VulkanPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>>();
 
         enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan12Features>()->bufferDeviceAddress         = VK_TRUE;
         enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan12Features>()->descriptorIndexing          = VK_TRUE;
         enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan12Features>()->timelineSemaphore           = VK_TRUE;
         enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan13Features>()->dynamicRendering            = VK_TRUE;
         enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan13Features>()->synchronization2            = VK_TRUE;
+        enabledFeatures->getAs<sol::VulkanPhysicalDeviceMaintenance5FeaturesKHR>()->maintenance5         = VK_TRUE;
         enabledFeatures->getAs<sol::VulkanPhysicalDeviceDescriptorBufferFeaturesEXT>()->descriptorBuffer = VK_TRUE;
+        /* enabledFeatures->getAs<sol::VulkanPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>()->graphicsPipelineLibrary =
+          VK_TRUE;*/
     }
 
     void createDefaultSurface()
@@ -97,6 +113,8 @@ namespace
         settings.instance = instance;
         settings.surface  = surface;
         settings.extensions.emplace_back(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+        settings.extensions.emplace_back(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+        //settings.extensions.emplace_back(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
         if (enableFrame) settings.extensions.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
         settings.propertyFilter = [](const VkPhysicalDeviceProperties& props) {
             return props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
@@ -109,7 +127,11 @@ namespace
             if (!features.getAs<sol::VulkanPhysicalDeviceVulkan12Features>()->timelineSemaphore) return false;
             if (!features.getAs<sol::VulkanPhysicalDeviceVulkan13Features>()->dynamicRendering) return false;
             if (!features.getAs<sol::VulkanPhysicalDeviceVulkan13Features>()->synchronization2) return false;
+            if (!features.getAs<sol::VulkanPhysicalDeviceMaintenance5FeaturesKHR>()->maintenance5) return false;
             if (!features.getAs<sol::VulkanPhysicalDeviceDescriptorBufferFeaturesEXT>()->descriptorBuffer) return false;
+            // Cannot enable this on AMD Windows. Ugh...
+            /*if (!features.getAs<sol::VulkanPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>()->graphicsPipelineLibrary)
+                return false;*/
             return true;
         };
         settings.queueFamilyFilter = [](const std::vector<sol::VulkanQueueFamily>& queues) {
@@ -229,8 +251,17 @@ namespace
         auto& pool      = memoryManager->createRingBufferMemoryPool("transfer", info);
         transferManager = std::make_unique<sol::TransactionManager>(*memoryManager, pool);
     }
-}  // namespace
 
+    [[nodiscard]] std::vector<std::byte> loadShaderBytecode(const std::string& name)
+    {
+        std::ifstream          file(name, std::ios::binary | std::ios::ate);
+        const auto             size = file.tellg();
+        std::vector<std::byte> code(size);
+        file.seekg(std::ios::beg);
+        file.read(reinterpret_cast<char*>(code.data()), size);
+        return code;
+    }
+}  // namespace
 
 
 BasicFixture::BasicFixture(const bool enableFrame)
@@ -335,6 +366,80 @@ void BasicFixture::frame()
     acquire();
     render();
     present();
+}
+
+std::pair<sol::VulkanGraphicsPipeline2Ptr, std::vector<sol::DescriptorLayoutPtr>>
+  BasicFixture::createSimpleGraphicsPipeline() const
+{
+    std::vector<sol::DescriptorLayoutPtr> descriptorLayouts;
+
+    descriptorLayouts.emplace_back(std::make_unique<sol::DescriptorLayout>(getDevice()));
+    descriptorLayouts.back()->add(sol::DescriptorLayout::UniformBufferBinding{
+      .binding = 0, .size = sizeof(float) * 16, .count = 1, .stages = VK_SHADER_STAGE_VERTEX_BIT});
+    descriptorLayouts.back()->finalize();
+
+    descriptorLayouts.emplace_back(std::make_unique<sol::DescriptorLayout>(getDevice()));
+    descriptorLayouts.back()->add(
+      sol::DescriptorLayout::SampledImageBinding{.binding = 0, .count = 1, .stages = VK_SHADER_STAGE_FRAGMENT_BIT});
+    descriptorLayouts.back()->add(
+      sol::DescriptorLayout::SamplerBinding{.binding = 1, .count = 1, .stages = VK_SHADER_STAGE_FRAGMENT_BIT});
+    descriptorLayouts.back()->finalize();
+
+    sol::VulkanPipelineLayout::Settings layoutSettings;
+    layoutSettings.device = getDevice();
+    layoutSettings.descriptors += descriptorLayouts[0]->getLayout();
+    layoutSettings.descriptors += descriptorLayouts[1]->getLayout();
+    auto layout = sol::VulkanPipelineLayout::create(layoutSettings);
+
+    sol::VulkanGraphicsPipelineVertexInput::Settings vertexInputSettings;
+    vertexInputSettings.device = getDevice();
+    vertexInputSettings.vertexAttributes.emplace_back(0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0);
+    vertexInputSettings.vertexAttributes.emplace_back(1, 0, VK_FORMAT_R32G32_SFLOAT, 12);
+    vertexInputSettings.vertexBindings.emplace_back(0, 20, VK_VERTEX_INPUT_RATE_VERTEX);
+
+
+    sol::VulkanGraphicsPipelinePreRasterization::Settings preRastSettings;
+    preRastSettings.layout            = layout;
+    preRastSettings.vertexShader.code = loadShaderBytecode("simple_vs.spv");
+    preRastSettings.enabledDynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+    preRastSettings.enabledDynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
+
+
+    sol::VulkanGraphicsPipelineFragment::Settings fragmentSettings;
+    fragmentSettings.layout              = layout;
+    fragmentSettings.fragmentShader.code = loadShaderBytecode("simple_ps.spv");
+
+
+    sol::VulkanGraphicsPipelineFragmentOutput::Settings fragOutSettings;
+    fragOutSettings.device = getDevice();
+    fragOutSettings.colorBlend.attachments.emplace_back(VK_FALSE);
+    fragOutSettings.colorAttachmentFormats.push_back(VK_FORMAT_R8G8B8A8_SRGB);
+    fragOutSettings.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT;
+
+    // graphics_pipeline_library is not enabled by default, so creating complete pipeline for now.
+#if 0
+    auto preRastPipeline = sol::VulkanGraphicsPipelinePreRasterization::create(preRastSettings);
+    auto vertexInputPipeline = sol::VulkanGraphicsPipelineVertexInput::create(vertexInputSettings);
+    auto fragPipeline = sol::VulkanGraphicsPipelineFragment::create(fragmentSettings);
+    auto fragOutPipeline = sol::VulkanGraphicsPipelineFragmentOutput::create(fragOutSettings);
+
+    sol::VulkanGraphicsPipeline2::Settings pipelineSettings;
+    pipelineSettings.device                   = getDevice();
+    pipelineSettings.vertexInputPipeline      = vertexInputPipeline;
+    pipelineSettings.preRasterizationPipeline = preRastPipeline;
+    pipelineSettings.fragmentPipeline         = fragPipeline;
+    pipelineSettings.fragmentOutputPipeline   = fragOutPipeline;
+    auto pipeline                             = sol::VulkanGraphicsPipeline2::create(pipelineSettings);
+#else
+    sol::VulkanGraphicsPipeline2::Settings2 pipelineSettings;
+    pipelineSettings.vertexInput      = vertexInputSettings;
+    pipelineSettings.preRasterization = preRastSettings;
+    pipelineSettings.fragment         = fragmentSettings;
+    pipelineSettings.fragmentOutput   = fragOutSettings;
+    auto pipeline                     = sol::VulkanGraphicsPipeline2::create2(pipelineSettings);
+#endif
+
+    return {std::move(pipeline), std::move(descriptorLayouts)};
 }
 
 std::vector<uint32_t> ImageDataGeneration::genR8G8B8A8W256H256Gradient()

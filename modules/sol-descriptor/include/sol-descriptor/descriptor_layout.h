@@ -222,6 +222,10 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+        [[nodiscard]] VulkanDescriptorSetLayout& getLayout();
+
+        [[nodiscard]] const VulkanDescriptorSetLayout& getLayout() const;
+
         [[nodiscard]] size_t getLayoutSize() const;
 
         [[nodiscard]] const std::vector<AccelerationStructureBinding>& getAccelerationStructures() const noexcept;

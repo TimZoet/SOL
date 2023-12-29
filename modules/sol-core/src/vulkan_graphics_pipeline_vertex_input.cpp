@@ -103,4 +103,9 @@ namespace sol
     const VulkanDevice& VulkanGraphicsPipelineVertexInput::getDevice() const noexcept { return settings.device(); }
 
     const VkPipeline& VulkanGraphicsPipelineVertexInput::get() const noexcept { return pipeline; }
+
+    const std::vector<VkDynamicState>& VulkanGraphicsPipelineVertexInput::getDynamicStates() const noexcept
+    {
+        return settings.enabledDynamicStates;
+    }
 }  // namespace sol
