@@ -1,12 +1,6 @@
 #include "sol-material/material_instance2.h"
 
 ////////////////////////////////////////////////////////////////
-// External includes.
-////////////////////////////////////////////////////////////////
-
-#include "uuid_system_generator.h"
-
-////////////////////////////////////////////////////////////////
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
@@ -26,9 +20,8 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    MaterialInstance2::MaterialInstance2(Material2& mtl) : material(&mtl)
+    MaterialInstance2::MaterialInstance2(const uuids::uuid id, Material2& mtl) : uuid(id), material(&mtl)
     {
-        uuid = uuids::uuid_system_generator{}();
         descriptors.resize(material->getDescriptorLayouts().size());
     }
 

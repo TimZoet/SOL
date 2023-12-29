@@ -23,11 +23,16 @@ void MaterialInstance::operator()()
 
     // Create material from pipeline and descriptor layouts.
     sol::GraphicsMaterial2Ptr material;
-    expectNoThrow([&] { material = std::make_unique<sol::GraphicsMaterial2>(std::move(pipeline), layouts); });
+    expectNoThrow([&] {
+        material =
+          std::make_unique<sol::GraphicsMaterial2>(uuids::uuid_system_generator{}(), std::move(pipeline), layouts);
+    });
 
     // Create material instance.
     sol::MaterialInstance2Ptr instance;
-    expectNoThrow([&] { instance = std::make_unique<sol::GraphicsMaterialInstance2>(*material); });
+    expectNoThrow([&] {
+        instance = std::make_unique<sol::GraphicsMaterialInstance2>(uuids::uuid_system_generator{}(), *material);
+    });
     compareEQ(&getDevice(), &instance->getDevice());
     compareNE(uuids::uuid{}, instance->getUuid());
     compareEQ("", instance->getName());

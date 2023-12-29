@@ -17,7 +17,7 @@ namespace sol
 
         GraphicsMaterialInstance2() = delete;
 
-        explicit GraphicsMaterialInstance2(GraphicsMaterial2& mtl);
+        GraphicsMaterialInstance2(uuids::uuid id, GraphicsMaterial2& mtl);
 
         GraphicsMaterialInstance2(const GraphicsMaterialInstance2&) = delete;
 

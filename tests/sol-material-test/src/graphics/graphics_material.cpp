@@ -18,7 +18,10 @@ void GraphicsMaterial::operator()()
 
     // Create material from pipeline and descriptor layouts.
     sol::GraphicsMaterial2Ptr material;
-    expectNoThrow([&] { material = std::make_unique<sol::GraphicsMaterial2>(std::move(pipeline), layouts); });
+    expectNoThrow([&] {
+        material =
+          std::make_unique<sol::GraphicsMaterial2>(uuids::uuid_system_generator{}(), std::move(pipeline), layouts);
+    });
 
     compareEQ(layouts, material->getDescriptorLayouts());
 

@@ -12,7 +12,10 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    GraphicsMaterialInstance2::GraphicsMaterialInstance2(GraphicsMaterial2& mtl) : MaterialInstance2(mtl) {}
+    GraphicsMaterialInstance2::GraphicsMaterialInstance2(const uuids::uuid id, GraphicsMaterial2& mtl) :
+        MaterialInstance2(id, mtl)
+    {
+    }
 
     GraphicsMaterialInstance2::~GraphicsMaterialInstance2() noexcept = default;
 

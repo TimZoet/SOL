@@ -84,7 +84,7 @@ namespace sol
 
         MaterialInstance2() = delete;
 
-        explicit MaterialInstance2(Material2& mtl);
+        MaterialInstance2(uuids::uuid id, Material2& mtl);
 
         MaterialInstance2(const MaterialInstance2&) = delete;
 

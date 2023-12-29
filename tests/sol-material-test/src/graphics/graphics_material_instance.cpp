@@ -13,11 +13,14 @@ void GraphicsMaterialInstance::operator()()
 {
     // Use utility function to create a simple pipeline.
     auto [pipeline, descriptorLayouts] = createSimpleGraphicsPipeline();
-    const auto layouts = sol::raw(descriptorLayouts);
+    const auto layouts                 = sol::raw(descriptorLayouts);
 
     // Create material from pipeline and descriptor layouts.
     sol::GraphicsMaterial2Ptr material;
-    expectNoThrow([&] { material = std::make_unique<sol::GraphicsMaterial2>(std::move(pipeline), layouts); });
+    expectNoThrow([&] {
+        material =
+          std::make_unique<sol::GraphicsMaterial2>(uuids::uuid_system_generator{}(), std::move(pipeline), layouts);
+    });
 
     // Create material instance.
     sol::GraphicsMaterialInstance2Ptr instance;

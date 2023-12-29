@@ -10,6 +10,12 @@
 #include <vector>
 
 ////////////////////////////////////////////////////////////////
+// External includes.
+////////////////////////////////////////////////////////////////
+
+#include "uuid_system_generator.h"
+
+////////////////////////////////////////////////////////////////
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
@@ -35,7 +41,9 @@ namespace sol
 
         GraphicsMaterial2() = delete;
 
-        GraphicsMaterial2(VulkanGraphicsPipeline2Ptr graphicsPipeline, std::vector<const DescriptorLayout*> layouts);
+        GraphicsMaterial2(uuids::uuid                          id,
+                          VulkanGraphicsPipeline2Ptr           graphicsPipeline,
+                          std::vector<const DescriptorLayout*> layouts);
 
         GraphicsMaterial2(const GraphicsMaterial2&) = delete;
 
@@ -80,7 +88,7 @@ namespace sol
         template<std::derived_from<GraphicsMaterialInstance2> T, typename... Args>
         [[nodiscard]] std::unique_ptr<T> createInstance(Args&&... args)
         {
-            return std::make_unique<T>(*this, std::forward<Args>(args)...);
+            return std::make_unique<T>(uuids::uuid_system_generator{}(), *this, std::forward<Args>(args)...);
         }
 
         /**
