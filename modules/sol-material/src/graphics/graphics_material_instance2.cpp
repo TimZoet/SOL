@@ -17,6 +17,8 @@ namespace sol
     {
     }
 
+    GraphicsMaterialInstance2::GraphicsMaterialInstance2(GraphicsMaterial2& mtl) : MaterialInstance2(mtl) {}
+
     GraphicsMaterialInstance2::~GraphicsMaterialInstance2() noexcept = default;
 
     ////////////////////////////////////////////////////////////////

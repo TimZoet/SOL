@@ -9,7 +9,14 @@ namespace sol
     GraphicsMaterial2::GraphicsMaterial2(const uuids::uuid                    id,
                                          VulkanGraphicsPipeline2Ptr           graphicsPipeline,
                                          std::vector<const DescriptorLayout*> layouts) :
-        Material2(graphicsPipeline->getDevice(), id, std::move(layouts)), pipeline(std::move(graphicsPipeline))
+        Material2(id, graphicsPipeline->getDevice(), std::move(layouts)), pipeline(std::move(graphicsPipeline))
+    {
+        for (const auto d : pipeline->getDynamicStates()) dynamicStates.insert(fromVulkanEnum(d));
+    }
+
+    GraphicsMaterial2::GraphicsMaterial2(VulkanGraphicsPipeline2Ptr           graphicsPipeline,
+                                         std::vector<const DescriptorLayout*> layouts) :
+        Material2(graphicsPipeline->getDevice(), std::move(layouts)), pipeline(std::move(graphicsPipeline))
     {
         for (const auto d : pipeline->getDynamicStates()) dynamicStates.insert(fromVulkanEnum(d));
     }

@@ -86,6 +86,8 @@ namespace sol
 
         MaterialInstance2(uuids::uuid id, Material2& mtl);
 
+        explicit MaterialInstance2(Material2& mtl);
+
         MaterialInstance2(const MaterialInstance2&) = delete;
 
         MaterialInstance2(MaterialInstance2&&) = delete;
@@ -198,13 +200,13 @@ namespace sol
          */
         uuids::uuid uuid;
 
+        Material2* material = nullptr;
+
+        std::vector<DescriptorPtr> descriptors;
+
         /**
          * \brief User friendly name.
          */
         std::string name;
-
-        Material2* material = nullptr;
-
-        std::vector<DescriptorPtr> descriptors;
     };
 }  // namespace sol

@@ -45,6 +45,8 @@ namespace sol
                           VulkanGraphicsPipeline2Ptr           graphicsPipeline,
                           std::vector<const DescriptorLayout*> layouts);
 
+        GraphicsMaterial2(VulkanGraphicsPipeline2Ptr graphicsPipeline, std::vector<const DescriptorLayout*> layouts);
+
         GraphicsMaterial2(const GraphicsMaterial2&) = delete;
 
         GraphicsMaterial2(GraphicsMaterial2&&) = delete;

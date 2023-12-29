@@ -1,13 +1,24 @@
 #include "sol-material/material2.h"
 
+////////////////////////////////////////////////////////////////
+// External includes.
+////////////////////////////////////////////////////////////////
+
+#include "uuid_system_generator.h"
+
 namespace sol
 {
     ////////////////////////////////////////////////////////////////
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    Material2::Material2(VulkanDevice& device, const uuids::uuid id, std::vector<const DescriptorLayout*> layouts) :
-        device(&device), uuid(id), descriptorLayouts(std::move(layouts))
+    Material2::Material2(const uuids::uuid id, VulkanDevice& device, std::vector<const DescriptorLayout*> layouts) :
+        uuid(id), device(&device), descriptorLayouts(std::move(layouts))
+    {
+    }
+
+    Material2::Material2(VulkanDevice& device, std::vector<const DescriptorLayout*> layouts) :
+        uuid(uuids::uuid_system_generator{}()), device(&device), descriptorLayouts(std::move(layouts))
     {
     }
 

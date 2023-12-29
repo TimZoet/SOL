@@ -30,7 +30,9 @@ namespace sol
 
         Material2() = delete;
 
-        Material2(VulkanDevice& device, uuids::uuid id, std::vector<const DescriptorLayout*> layouts);
+        Material2(uuids::uuid id, VulkanDevice& device, std::vector<const DescriptorLayout*> layouts);
+
+        Material2(VulkanDevice& device, std::vector<const DescriptorLayout*> layouts);
 
         Material2(const Material2&) = delete;
 
@@ -67,12 +69,12 @@ namespace sol
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        VulkanDevice* device = nullptr;
-
         /**
          * \brief UUID.
          */
         uuids::uuid uuid;
+
+        VulkanDevice* device = nullptr;
 
         std::vector<const DescriptorLayout*> descriptorLayouts;
     };
