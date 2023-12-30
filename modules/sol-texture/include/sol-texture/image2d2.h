@@ -18,6 +18,7 @@
 ////////////////////////////////////////////////////////////////
 
 #include "sol-core/fwd.h"
+#include "sol-core/object_ref_setting.h"
 #include "sol-memory/i_image.h"
 #include "sol-memory/transaction.h"
 
@@ -32,6 +33,57 @@ namespace sol
     class Image2D2 : public IImage
     {
     public:
+        ////////////////////////////////////////////////////////////////
+        // Types.
+        ////////////////////////////////////////////////////////////////
+
+        struct Settings
+        {
+            ObjectRefSetting<MemoryManager> memoryManager;
+
+            /**
+             * \brief Image size in pixels.
+             */
+            std::array<uint32_t, 2> size;
+
+            /**
+             * \brief Image format.
+             */
+            VkFormat format;
+
+            /**
+             * \brief Number of mip levels.
+             * If == 0, the number of mips is calculated automatically as log_2 of the size.
+             * If == 1, no mips are used. If > 1, the value is used explicitly.
+             */
+            uint32_t levels;
+
+            /**
+             * \brief Image usage.
+             */
+            VkImageUsageFlags usage;
+
+            /**
+             * \brief Image aspect.
+             */
+            VkImageAspectFlags aspect;
+
+            /**
+             * \brief Initial image layout (can be VK_IMAGE_LAYOUT_UNDEFINED).
+             */
+            VkImageLayout initialLayout;
+
+            /**
+             * \brief Initial queue family that owns the image.
+             */
+            ObjectRefSetting<const VulkanQueueFamily> initialOwner;
+
+            /**
+             * \brief Image tiling.
+             */
+            VkImageTiling tiling;
+        };
+
         struct Barrier
         {
             /**
@@ -88,15 +140,15 @@ namespace sol
             std::array<uint32_t, 2> regionSize = {0, 0};
         };
 
-        friend class TextureCollection;
-
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         Image2D2() = delete;
 
-        Image2D2(TextureCollection& collection, uuids::uuid id);
+        Image2D2(MemoryManager& memoryManager, uuids::uuid id);
+
+        explicit Image2D2(MemoryManager& memoryManager);
 
         Image2D2(const Image2D2&) = delete;
 
@@ -111,18 +163,6 @@ namespace sol
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
-
-        /**
-         * \brief Get the texture collection this image is in.
-         * \return TextureCollection.
-         */
-        [[nodiscard]] TextureCollection& getTextureCollection() noexcept;
-
-        /**
-         * \brief Get the texture collection this image is in.
-         * \return TextureCollection.
-         */
-        [[nodiscard]] const TextureCollection& getTextureCollection() const noexcept;
 
         /**
          * \brief Get the queue family that currently owns this resource.
@@ -196,7 +236,7 @@ namespace sol
 
         /**
          * \brief Get the image tiling mode.
-         * \return VkImageTiling
+         * \return VkImageTiling.
          */
         [[nodiscard]] VkImageTiling getImageTiling() const override;
 
@@ -207,6 +247,18 @@ namespace sol
         void setQueueFamily(const VulkanQueueFamily& family, uint32_t level, uint32_t layer) override;
 
         void setImageLayout(VkImageLayout layout, uint32_t level, uint32_t layer) override;
+
+        ////////////////////////////////////////////////////////////////
+        // Create.
+        ////////////////////////////////////////////////////////////////
+
+        /**
+         * \brief Create a new 2D image.
+         * \param settings Settings.
+         * \param id Identifier. If empty, generated automatically.
+         * \return New Image2D.
+         */
+        [[nodiscard]] static Image2D2Ptr create(const Settings& settings, uuids::uuid id = uuids::uuid{});
 
         ////////////////////////////////////////////////////////////////
         // Transactions.
@@ -257,11 +309,6 @@ namespace sol
         ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////
-
-        /**
-         * \brief Texture collection this image is in.
-         */
-        TextureCollection* textureCollection = nullptr;
 
         /**
          * \brief Queue family that currently owns each mip level.

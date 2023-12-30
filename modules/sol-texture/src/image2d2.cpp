@@ -8,18 +8,21 @@
 #include <format>
 
 ////////////////////////////////////////////////////////////////
+// External includes.
+////////////////////////////////////////////////////////////////
+
+// TODO: This should not be necessary and fixed by the uuid lib.
+#define NOMINMAX
+#include <uuid_system_generator.h>
+
+////////////////////////////////////////////////////////////////
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
 #include "sol-core/vulkan_image.h"
 #include "sol-error/sol_error.h"
 #include "sol-memory/i_buffer.h"
-
-////////////////////////////////////////////////////////////////
-// Current target includes.
-////////////////////////////////////////////////////////////////
-
-#include "sol-texture/texture_collection.h"
+#include "sol-memory/memory_manager.h"
 
 namespace sol
 {
@@ -27,20 +30,15 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    Image2D2::Image2D2(TextureCollection& collection, const uuids::uuid id) :
-        IImage(collection.getMemoryManager(), id), textureCollection(&collection)
-    {
-    }
+    Image2D2::Image2D2(MemoryManager& memoryManager, const uuids::uuid id) : IImage(memoryManager, id) {}
+
+    Image2D2::Image2D2(MemoryManager& memoryManager) : IImage(memoryManager, uuids::uuid_system_generator{}()) {}
 
     Image2D2::~Image2D2() noexcept = default;
 
     ////////////////////////////////////////////////////////////////
     // Getters.
     ////////////////////////////////////////////////////////////////
-
-    TextureCollection& Image2D2::getTextureCollection() noexcept { return *textureCollection; }
-
-    const TextureCollection& Image2D2::getTextureCollection() const noexcept { return *textureCollection; }
 
     const VulkanQueueFamily& Image2D2::getQueueFamily(const uint32_t level, const uint32_t layer) const
     {
@@ -108,6 +106,52 @@ namespace sol
             throw SolError(std::format("Cannot set image layout of layer {}: image is not an array image.", layer));
 
         imageLayout[level] = layout;
+    }
+
+    ////////////////////////////////////////////////////////////////
+    // Create.
+    ////////////////////////////////////////////////////////////////
+
+    Image2D2Ptr Image2D2::create(const Settings& settings, uuids::uuid id)
+    {
+        assert(settings.size[0] > 0 && settings.size[1] > 0);
+
+        // Calculate mips automatically.
+        auto levels = settings.levels;
+        if (settings.levels == 0)
+            levels = static_cast<uint32_t>(std::floor(std::log2(std::max(settings.size[0], settings.size[1])))) + 1;
+
+        VulkanImage::Settings imageSettings;
+        imageSettings.device             = settings.memoryManager().getDevice();
+        imageSettings.format             = settings.format;
+        imageSettings.width              = settings.size[0];
+        imageSettings.height             = settings.size[1];
+        imageSettings.depth              = 1;
+        imageSettings.mipLevels          = levels;
+        imageSettings.arrayLayers        = 1;
+        imageSettings.tiling             = settings.tiling;
+        imageSettings.imageUsage         = settings.usage;
+        imageSettings.sharingMode        = VK_SHARING_MODE_EXCLUSIVE;
+        imageSettings.initialLayout      = settings.initialLayout;
+        imageSettings.allocator          = settings.memoryManager().getAllocator();
+        imageSettings.vma.memoryUsage    = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+        imageSettings.vma.requiredFlags  = 0;
+        imageSettings.vma.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        imageSettings.vma.flags          = 0;
+        auto vulkanImage                 = VulkanImage::create(imageSettings);
+
+        auto image = id.is_nil() ? std::make_unique<Image2D2>(settings.memoryManager()) :
+                                   std::make_unique<Image2D2>(settings.memoryManager(), id);
+        image->queueFamily.resize(levels, &settings.initialOwner());
+        image->imageLayout.resize(levels, settings.initialLayout);
+        image->image       = std::move(vulkanImage);
+        image->format      = settings.format;
+        image->size        = settings.size;
+        image->usageFlags  = settings.usage;
+        image->aspectFlags = settings.aspect;
+        image->tiling      = settings.tiling;
+
+        return image;
     }
 
     ////////////////////////////////////////////////////////////////

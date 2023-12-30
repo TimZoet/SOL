@@ -10,7 +10,6 @@ set(HEADERS
     ${INCLUDE_DIR}/image2d.h
     ${INCLUDE_DIR}/image2d2.h
     ${INCLUDE_DIR}/sampler2d.h
-    ${INCLUDE_DIR}/texture_collection.h
     ${INCLUDE_DIR}/texture_manager.h
     ${INCLUDE_DIR}/texture2d.h
     ${INCLUDE_DIR}/texture2d2.h
@@ -24,7 +23,6 @@ set(SOURCES
     ${SRC_DIR}/image2d.cpp
     ${SRC_DIR}/image2d2.cpp
     ${SRC_DIR}/sampler2d.cpp
-    ${SRC_DIR}/texture_collection.cpp
     ${SRC_DIR}/texture_manager.cpp
     ${SRC_DIR}/texture2d.cpp
     ${SRC_DIR}/texture2d2.cpp
