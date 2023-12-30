@@ -9,7 +9,7 @@
 #include "sol-descriptor/descriptor_buffer.h"
 #include "sol-descriptor/descriptor_layout.h"
 #include "sol-memory/memory_manager.h"
-#include "sol-texture/texture_collection.h"
+#include "sol-texture/image2d2.h"
 #include "sol-texture/texture2d2.h"
 
 void Descriptor::operator()()
@@ -22,17 +22,18 @@ void Descriptor::operator()()
      * Create a bunch of resources to assign.
      */
 
-    const auto textureCollection = std::make_unique<sol::TextureCollection>(getMemoryManager());
-    auto&      image2D           = textureCollection->createImage2D({32, 32},
-                                                     VK_FORMAT_R8G8B8A8_SRGB,
-                                                     1,
-                                                     VK_IMAGE_USAGE_SAMPLED_BIT,
-                                                     VK_IMAGE_ASPECT_COLOR_BIT,
-                                                     VK_IMAGE_LAYOUT_UNDEFINED,
-                                                     getMemoryManager().getGraphicsQueue().getFamily(),
-                                                     VK_IMAGE_TILING_OPTIMAL);
-    auto&      sampler2D         = textureCollection->createSampler2D();
-    auto&      texture2D         = textureCollection->createTexture2D(image2D, sampler2D);
+    auto image2D =
+      sol::Image2D2::create(sol::Image2D2::Settings{.memoryManager = getMemoryManager(),
+                                                    .size          = {32u, 32u},
+                                                    .format        = VK_FORMAT_R8G8B8A8_SRGB,
+                                                    .levels        = 1,
+                                                    .usage         = VK_IMAGE_USAGE_SAMPLED_BIT,
+                                                    .aspect        = VK_IMAGE_ASPECT_COLOR_BIT,
+                                                    .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                                                    .initialOwner  = getMemoryManager().getGraphicsQueue().getFamily(),
+                                                    .tiling        = VK_IMAGE_TILING_OPTIMAL});
+    auto sampler2D = sol::Sampler2D::create(sol::Sampler2D::Settings{.device = getDevice()});
+    auto texture2D = sol::Texture2D2::create(sol::Texture2D2::Settings{.image = *image2D, .sampler = *sampler2D});
 
     sol::IBufferAllocator::AllocationInfo alloc{.size        = 1024,
                                                 .bufferUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
@@ -71,35 +72,35 @@ void Descriptor::operator()()
 
         const auto descriptor = buffer->allocateDescriptor(*layout);
 
-        expectNoThrow([&] { descriptor->setSampledImage(texture2D.getImageView(), 0, 0); });
-        expectNoThrow([&] { descriptor->setSampledImage(texture2D.getImageView(), 1, 0); });
-        expectNoThrow([&] { descriptor->setSampledImage(texture2D.getImageView(), 1, 1); });
-        expectNoThrow([&] { descriptor->setSampledImage(texture2D.getImageView(), 1, 2); });
-        expectNoThrow([&] { descriptor->setSampledImage(texture2D.getImageView(), 1, 3); });
-        expectThrow([&] { descriptor->setSampledImage(texture2D.getImageView(), 1, 4); });
-        expectThrow([&] { descriptor->setSampledImage(texture2D.getImageView(), 2, 0); });
+        expectNoThrow([&] { descriptor->setSampledImage(texture2D->getImageView(), 0, 0); });
+        expectNoThrow([&] { descriptor->setSampledImage(texture2D->getImageView(), 1, 0); });
+        expectNoThrow([&] { descriptor->setSampledImage(texture2D->getImageView(), 1, 1); });
+        expectNoThrow([&] { descriptor->setSampledImage(texture2D->getImageView(), 1, 2); });
+        expectNoThrow([&] { descriptor->setSampledImage(texture2D->getImageView(), 1, 3); });
+        expectThrow([&] { descriptor->setSampledImage(texture2D->getImageView(), 1, 4); });
+        expectThrow([&] { descriptor->setSampledImage(texture2D->getImageView(), 2, 0); });
 
-        expectNoThrow([&] { descriptor->setSampledImage(texture2D, 0, 0); });
-        expectNoThrow([&] { descriptor->setSampledImage(texture2D, 1, 0); });
-        expectNoThrow([&] { descriptor->setSampledImage(texture2D, 1, 1); });
-        expectNoThrow([&] { descriptor->setSampledImage(texture2D, 1, 2); });
-        expectNoThrow([&] { descriptor->setSampledImage(texture2D, 1, 3); });
-        expectThrow([&] { descriptor->setSampledImage(texture2D, 1, 4); });
-        expectThrow([&] { descriptor->setSampledImage(texture2D, 2, 0); });
+        expectNoThrow([&] { descriptor->setSampledImage(*texture2D, 0, 0); });
+        expectNoThrow([&] { descriptor->setSampledImage(*texture2D, 1, 0); });
+        expectNoThrow([&] { descriptor->setSampledImage(*texture2D, 1, 1); });
+        expectNoThrow([&] { descriptor->setSampledImage(*texture2D, 1, 2); });
+        expectNoThrow([&] { descriptor->setSampledImage(*texture2D, 1, 3); });
+        expectThrow([&] { descriptor->setSampledImage(*texture2D, 1, 4); });
+        expectThrow([&] { descriptor->setSampledImage(*texture2D, 2, 0); });
 
-        std::array<const sol::VulkanImageView*, 6> views{&texture2D.getImageView(),
-                                                         &texture2D.getImageView(),
-                                                         &texture2D.getImageView(),
-                                                         &texture2D.getImageView(),
-                                                         &texture2D.getImageView(),
-                                                         &texture2D.getImageView()};
+        std::array<const sol::VulkanImageView*, 6> views{&texture2D->getImageView(),
+                                                         &texture2D->getImageView(),
+                                                         &texture2D->getImageView(),
+                                                         &texture2D->getImageView(),
+                                                         &texture2D->getImageView(),
+                                                         &texture2D->getImageView()};
         expectNoThrow([&] { descriptor->setSampledImageRange(std::span(views.begin(), 4), 1, 0); });
         expectNoThrow([&] { descriptor->setSampledImageRange(std::span(views.begin() + 1, 3), 1, 1); });
         expectThrow([&] { descriptor->setSampledImageRange(std::span(views.begin() + 1, 3), 1, 2); });
         expectThrow([&] { descriptor->setSampledImageRange(std::span(views.begin() + 1, 5), 1, 0); });
 
         std::array<const sol::Texture2D2*, 6> textures{
-          &texture2D, &texture2D, &texture2D, &texture2D, &texture2D, &texture2D};
+          texture2D.get(), texture2D.get(), texture2D.get(), texture2D.get(), texture2D.get(), texture2D.get()};
         expectNoThrow([&] { descriptor->setSampledImageRange(std::span(textures.begin(), 4), 1, 0); });
         expectNoThrow([&] { descriptor->setSampledImageRange(std::span(textures.begin() + 1, 3), 1, 1); });
         expectThrow([&] { descriptor->setSampledImageRange(std::span(textures.begin() + 1, 3), 1, 2); });
@@ -120,50 +121,50 @@ void Descriptor::operator()()
 
         const auto descriptor = buffer->allocateDescriptor(*layout);
 
-        expectNoThrow([&] { descriptor->setSampler(sampler2D.getSampler(), 0, 0); });
-        expectNoThrow([&] { descriptor->setSampler(sampler2D.getSampler(), 1, 0); });
-        expectNoThrow([&] { descriptor->setSampler(sampler2D.getSampler(), 1, 1); });
-        expectNoThrow([&] { descriptor->setSampler(sampler2D.getSampler(), 1, 2); });
-        expectNoThrow([&] { descriptor->setSampler(sampler2D.getSampler(), 1, 3); });
-        expectThrow([&] { descriptor->setSampler(sampler2D.getSampler(), 1, 4); });
-        expectThrow([&] { descriptor->setSampler(sampler2D.getSampler(), 2, 0); });
+        expectNoThrow([&] { descriptor->setSampler(sampler2D->getSampler(), 0, 0); });
+        expectNoThrow([&] { descriptor->setSampler(sampler2D->getSampler(), 1, 0); });
+        expectNoThrow([&] { descriptor->setSampler(sampler2D->getSampler(), 1, 1); });
+        expectNoThrow([&] { descriptor->setSampler(sampler2D->getSampler(), 1, 2); });
+        expectNoThrow([&] { descriptor->setSampler(sampler2D->getSampler(), 1, 3); });
+        expectThrow([&] { descriptor->setSampler(sampler2D->getSampler(), 1, 4); });
+        expectThrow([&] { descriptor->setSampler(sampler2D->getSampler(), 2, 0); });
 
-        expectNoThrow([&] { descriptor->setSampler(sampler2D, 0, 0); });
-        expectNoThrow([&] { descriptor->setSampler(sampler2D, 1, 0); });
-        expectNoThrow([&] { descriptor->setSampler(sampler2D, 1, 1); });
-        expectNoThrow([&] { descriptor->setSampler(sampler2D, 1, 2); });
-        expectNoThrow([&] { descriptor->setSampler(sampler2D, 1, 3); });
-        expectThrow([&] { descriptor->setSampler(sampler2D, 1, 4); });
-        expectThrow([&] { descriptor->setSampler(sampler2D, 2, 0); });
+        expectNoThrow([&] { descriptor->setSampler(*sampler2D, 0, 0); });
+        expectNoThrow([&] { descriptor->setSampler(*sampler2D, 1, 0); });
+        expectNoThrow([&] { descriptor->setSampler(*sampler2D, 1, 1); });
+        expectNoThrow([&] { descriptor->setSampler(*sampler2D, 1, 2); });
+        expectNoThrow([&] { descriptor->setSampler(*sampler2D, 1, 3); });
+        expectThrow([&] { descriptor->setSampler(*sampler2D, 1, 4); });
+        expectThrow([&] { descriptor->setSampler(*sampler2D, 2, 0); });
 
-        expectNoThrow([&] { descriptor->setSampler(texture2D, 0, 0); });
-        expectNoThrow([&] { descriptor->setSampler(texture2D, 1, 0); });
-        expectNoThrow([&] { descriptor->setSampler(texture2D, 1, 1); });
-        expectNoThrow([&] { descriptor->setSampler(texture2D, 1, 2); });
-        expectNoThrow([&] { descriptor->setSampler(texture2D, 1, 3); });
-        expectThrow([&] { descriptor->setSampler(texture2D, 1, 4); });
-        expectThrow([&] { descriptor->setSampler(texture2D, 2, 0); });
+        expectNoThrow([&] { descriptor->setSampler(*texture2D, 0, 0); });
+        expectNoThrow([&] { descriptor->setSampler(*texture2D, 1, 0); });
+        expectNoThrow([&] { descriptor->setSampler(*texture2D, 1, 1); });
+        expectNoThrow([&] { descriptor->setSampler(*texture2D, 1, 2); });
+        expectNoThrow([&] { descriptor->setSampler(*texture2D, 1, 3); });
+        expectThrow([&] { descriptor->setSampler(*texture2D, 1, 4); });
+        expectThrow([&] { descriptor->setSampler(*texture2D, 2, 0); });
 
-        std::array<const sol::VulkanSampler*, 6> vsamplers{&sampler2D.getSampler(),
-                                                           &sampler2D.getSampler(),
-                                                           &sampler2D.getSampler(),
-                                                           &sampler2D.getSampler(),
-                                                           &sampler2D.getSampler(),
-                                                           &sampler2D.getSampler()};
+        std::array<const sol::VulkanSampler*, 6> vsamplers{&sampler2D->getSampler(),
+                                                           &sampler2D->getSampler(),
+                                                           &sampler2D->getSampler(),
+                                                           &sampler2D->getSampler(),
+                                                           &sampler2D->getSampler(),
+                                                           &sampler2D->getSampler()};
         expectNoThrow([&] { descriptor->setSamplerRange(std::span(vsamplers.begin(), 4), 1, 0); });
         expectNoThrow([&] { descriptor->setSamplerRange(std::span(vsamplers.begin() + 1, 3), 1, 1); });
         expectThrow([&] { descriptor->setSamplerRange(std::span(vsamplers.begin() + 1, 3), 1, 2); });
         expectThrow([&] { descriptor->setSamplerRange(std::span(vsamplers.begin() + 1, 5), 1, 0); });
 
         std::array<const sol::Sampler2D*, 6> samplers{
-          &sampler2D, &sampler2D, &sampler2D, &sampler2D, &sampler2D, &sampler2D};
+          sampler2D.get(), sampler2D.get(), sampler2D.get(), sampler2D.get(), sampler2D.get(), sampler2D.get()};
         expectNoThrow([&] { descriptor->setSamplerRange(std::span(samplers.begin(), 4), 1, 0); });
         expectNoThrow([&] { descriptor->setSamplerRange(std::span(samplers.begin() + 1, 3), 1, 1); });
         expectThrow([&] { descriptor->setSamplerRange(std::span(samplers.begin() + 1, 3), 1, 2); });
         expectThrow([&] { descriptor->setSamplerRange(std::span(samplers.begin() + 1, 5), 1, 0); });
 
         std::array<const sol::Texture2D2*, 6> textures{
-          &texture2D, &texture2D, &texture2D, &texture2D, &texture2D, &texture2D};
+          texture2D.get(), texture2D.get(), texture2D.get(), texture2D.get(), texture2D.get(), texture2D.get()};
         expectNoThrow([&] { descriptor->setSamplerRange(std::span(textures.begin(), 4), 1, 0); });
         expectNoThrow([&] { descriptor->setSamplerRange(std::span(textures.begin() + 1, 3), 1, 1); });
         expectThrow([&] { descriptor->setSamplerRange(std::span(textures.begin() + 1, 3), 1, 2); });
@@ -218,35 +219,35 @@ void Descriptor::operator()()
 
         const auto descriptor = buffer->allocateDescriptor(*layout);
 
-        expectNoThrow([&] { descriptor->setStorageImage(texture2D.getImageView(), 0, 0); });
-        expectNoThrow([&] { descriptor->setStorageImage(texture2D.getImageView(), 1, 0); });
-        expectNoThrow([&] { descriptor->setStorageImage(texture2D.getImageView(), 1, 1); });
-        expectNoThrow([&] { descriptor->setStorageImage(texture2D.getImageView(), 1, 2); });
-        expectNoThrow([&] { descriptor->setStorageImage(texture2D.getImageView(), 1, 3); });
-        expectThrow([&] { descriptor->setStorageImage(texture2D.getImageView(), 1, 4); });
-        expectThrow([&] { descriptor->setStorageImage(texture2D.getImageView(), 2, 0); });
+        expectNoThrow([&] { descriptor->setStorageImage(texture2D->getImageView(), 0, 0); });
+        expectNoThrow([&] { descriptor->setStorageImage(texture2D->getImageView(), 1, 0); });
+        expectNoThrow([&] { descriptor->setStorageImage(texture2D->getImageView(), 1, 1); });
+        expectNoThrow([&] { descriptor->setStorageImage(texture2D->getImageView(), 1, 2); });
+        expectNoThrow([&] { descriptor->setStorageImage(texture2D->getImageView(), 1, 3); });
+        expectThrow([&] { descriptor->setStorageImage(texture2D->getImageView(), 1, 4); });
+        expectThrow([&] { descriptor->setStorageImage(texture2D->getImageView(), 2, 0); });
 
-        expectNoThrow([&] { descriptor->setStorageImage(texture2D, 0, 0); });
-        expectNoThrow([&] { descriptor->setStorageImage(texture2D, 1, 0); });
-        expectNoThrow([&] { descriptor->setStorageImage(texture2D, 1, 1); });
-        expectNoThrow([&] { descriptor->setStorageImage(texture2D, 1, 2); });
-        expectNoThrow([&] { descriptor->setStorageImage(texture2D, 1, 3); });
-        expectThrow([&] { descriptor->setStorageImage(texture2D, 1, 4); });
-        expectThrow([&] { descriptor->setStorageImage(texture2D, 2, 0); });
+        expectNoThrow([&] { descriptor->setStorageImage(*texture2D, 0, 0); });
+        expectNoThrow([&] { descriptor->setStorageImage(*texture2D, 1, 0); });
+        expectNoThrow([&] { descriptor->setStorageImage(*texture2D, 1, 1); });
+        expectNoThrow([&] { descriptor->setStorageImage(*texture2D, 1, 2); });
+        expectNoThrow([&] { descriptor->setStorageImage(*texture2D, 1, 3); });
+        expectThrow([&] { descriptor->setStorageImage(*texture2D, 1, 4); });
+        expectThrow([&] { descriptor->setStorageImage(*texture2D, 2, 0); });
 
-        std::array<const sol::VulkanImageView*, 6> views{&texture2D.getImageView(),
-                                                         &texture2D.getImageView(),
-                                                         &texture2D.getImageView(),
-                                                         &texture2D.getImageView(),
-                                                         &texture2D.getImageView(),
-                                                         &texture2D.getImageView()};
+        std::array<const sol::VulkanImageView*, 6> views{&texture2D->getImageView(),
+                                                         &texture2D->getImageView(),
+                                                         &texture2D->getImageView(),
+                                                         &texture2D->getImageView(),
+                                                         &texture2D->getImageView(),
+                                                         &texture2D->getImageView()};
         expectNoThrow([&] { descriptor->setStorageImageRange(std::span(views.begin(), 4), 1, 0); });
         expectNoThrow([&] { descriptor->setStorageImageRange(std::span(views.begin() + 1, 3), 1, 1); });
         expectThrow([&] { descriptor->setStorageImageRange(std::span(views.begin() + 1, 3), 1, 2); });
         expectThrow([&] { descriptor->setStorageImageRange(std::span(views.begin() + 1, 5), 1, 0); });
 
         std::array<const sol::Texture2D2*, 6> textures{
-          &texture2D, &texture2D, &texture2D, &texture2D, &texture2D, &texture2D};
+          texture2D.get(), texture2D.get(), texture2D.get(), texture2D.get(), texture2D.get(), texture2D.get()};
         expectNoThrow([&] { descriptor->setStorageImageRange(std::span(textures.begin(), 4), 1, 0); });
         expectNoThrow([&] { descriptor->setStorageImageRange(std::span(textures.begin() + 1, 3), 1, 1); });
         expectThrow([&] { descriptor->setStorageImageRange(std::span(textures.begin() + 1, 3), 1, 2); });

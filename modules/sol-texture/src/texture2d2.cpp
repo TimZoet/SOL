@@ -8,6 +8,12 @@
 #include "sol-core/vulkan_sampler.h"
 
 ////////////////////////////////////////////////////////////////
+// External includes.
+////////////////////////////////////////////////////////////////
+
+#include <uuid_system_generator.h>
+
+////////////////////////////////////////////////////////////////
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
@@ -20,12 +26,13 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    Texture2D2::Texture2D2(TextureCollection& collection,
-                           const uuids::uuid  id,
-                           Image2D2&          image2D,
-                           Sampler2D&         sampler2D,
-                           VulkanImageViewPtr view) :
-        textureCollection(&collection), uuid(id), image(&image2D), sampler(&sampler2D), imageView(std::move(view))
+    Texture2D2::Texture2D2(const uuids::uuid id, Image2D2& image2D, Sampler2D& sampler2D, VulkanImageViewPtr view) :
+        uuid(id), image(&image2D), sampler(&sampler2D), imageView(std::move(view))
+    {
+    }
+
+    Texture2D2::Texture2D2(Image2D2& image2D, Sampler2D& sampler2D, VulkanImageViewPtr view) :
+        uuid(uuids::uuid_system_generator{}()), image(&image2D), sampler(&sampler2D), imageView(std::move(view))
     {
     }
 
@@ -34,10 +41,6 @@ namespace sol
     ////////////////////////////////////////////////////////////////
     // Getters.
     ////////////////////////////////////////////////////////////////
-
-    TextureCollection& Texture2D2::getTextureCollection() noexcept { return *textureCollection; }
-
-    const TextureCollection& Texture2D2::getTextureCollection() const noexcept { return *textureCollection; }
 
     const uuids::uuid& Texture2D2::getUuid() const noexcept { return uuid; }
 
@@ -52,4 +55,23 @@ namespace sol
     VulkanImageView& Texture2D2::getImageView() noexcept { return *imageView; }
 
     const VulkanImageView& Texture2D2::getImageView() const noexcept { return *imageView; }
+
+    ////////////////////////////////////////////////////////////////
+    // Create.
+    ////////////////////////////////////////////////////////////////
+
+    Texture2D2Ptr Texture2D2::create(const Settings& settings, uuids::uuid id)
+    {
+        VulkanImageView::Settings viewSettings;
+        viewSettings.image  = settings.image().getImage();
+        viewSettings.format = settings.format ? *settings.format : settings.image().getFormat();
+        viewSettings.aspect = settings.aspect ? *settings.aspect : settings.image().getImageAspectFlags();
+        auto vulkanView     = VulkanImageView::create(viewSettings);
+
+        if (id.is_nil())
+            return std::make_unique<Texture2D2>(settings.image(), settings.sampler(), std::move(vulkanView));
+
+        return std::make_unique<Texture2D2>(id, settings.image(), settings.sampler(), std::move(vulkanView));
+    }
+
 }  // namespace sol

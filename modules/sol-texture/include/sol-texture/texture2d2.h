@@ -1,16 +1,23 @@
 #pragma once
+////////////////////////////////////////////////////////////////
+// Standard includes.
+////////////////////////////////////////////////////////////////
+
+#include <optional>
 
 ////////////////////////////////////////////////////////////////
 // External includes.
 ////////////////////////////////////////////////////////////////
 
 #include <uuid.h>
+#include <vulkan/vulkan.hpp>
 
 ////////////////////////////////////////////////////////////////
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
 #include "sol-core/fwd.h"
+#include "sol-core/object_ref_setting.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
@@ -24,16 +31,40 @@ namespace sol
     {
     public:
         ////////////////////////////////////////////////////////////////
+        // Types.
+        ////////////////////////////////////////////////////////////////
+
+        struct Settings
+        {
+            ObjectRefSetting<Image2D2> image;
+
+            ObjectRefSetting<Sampler2D> sampler;
+
+            /**
+             * \brief Image format. Set to image.getFormat() if left undefined.
+             */
+            std::optional<VkFormat> format = {};
+
+            /**
+             * \brief Image aspect. Set to image.getImageAspectFlags() if left undefined.
+             */
+            std::optional<VkImageAspectFlags> aspect = {};
+
+            VkComponentMapping components = {VK_COMPONENT_SWIZZLE_IDENTITY,
+                                             VK_COMPONENT_SWIZZLE_IDENTITY,
+                                             VK_COMPONENT_SWIZZLE_IDENTITY,
+                                             VK_COMPONENT_SWIZZLE_IDENTITY};
+        };
+
+        ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
         Texture2D2() = delete;
 
-        Texture2D2(TextureCollection& collection,
-                   uuids::uuid        id,
-                   Image2D2&          image2D,
-                   Sampler2D&         sampler2D,
-                   VulkanImageViewPtr view);
+        Texture2D2(uuids::uuid id, Image2D2& image2D, Sampler2D& sampler2D, VulkanImageViewPtr view);
+
+        Texture2D2(Image2D2& image2D, Sampler2D& sampler2D, VulkanImageViewPtr view);
 
         Texture2D2(const Texture2D2&) = delete;
 
@@ -49,18 +80,6 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        /**
-         * \brief Get the texture collection this texture is in.
-         * \return TextureCollection.
-         */
-        [[nodiscard]] TextureCollection& getTextureCollection() noexcept;
-
-        /**
-         * \brief Get the texture collection this texture is in.
-         * \return TextureCollection.
-         */
-        [[nodiscard]] const TextureCollection& getTextureCollection() const noexcept;
-
         [[nodiscard]] const uuids::uuid& getUuid() const noexcept;
 
         [[nodiscard]] Image2D2& getImage() noexcept;
@@ -75,15 +94,22 @@ namespace sol
 
         [[nodiscard]] const VulkanImageView& getImageView() const noexcept;
 
+        ////////////////////////////////////////////////////////////////
+        // Create.
+        ////////////////////////////////////////////////////////////////
+
+        /**
+         * \brief Create a new 2D texture.
+         * \param settings Settings.
+         * \param id Identifier. If empty, generated automatically.
+         * \return New Texture2D.
+         */
+        [[nodiscard]] static Texture2D2Ptr create(const Settings& settings, uuids::uuid id = uuids::uuid{});
+
     private:
         ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////
-
-        /**
-         * \brief Texture collection this sampler is in.
-         */
-        TextureCollection* textureCollection = nullptr;
 
         uuids::uuid uuid;
 

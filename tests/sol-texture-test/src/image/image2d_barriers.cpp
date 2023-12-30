@@ -9,24 +9,22 @@
 #include "sol-memory/transaction.h"
 #include "sol-memory/transaction_manager.h"
 #include "sol-texture/image2d2.h"
-#include "sol-texture/texture_collection.h"
 
 void Image2DBarriers::operator()()
 {
-    const auto collection = std::make_unique<sol::TextureCollection>(getMemoryManager());
-
     // Copy test data into image.
-    sol::Image2D2* image = nullptr;
+    sol::Image2D2Ptr image;
     expectNoThrow([&] {
-        image = &collection->createImage2D({256, 256},
-                                           VK_FORMAT_R8G8B8A8_UINT,
-                                           1,
-                                           VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT |
-                                             VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-                                           VK_IMAGE_ASPECT_COLOR_BIT,
-                                           VK_IMAGE_LAYOUT_UNDEFINED,
-                                           getMemoryManager().getGraphicsQueue().getFamily(),
-                                           VK_IMAGE_TILING_OPTIMAL);
+        image = sol::Image2D2::create(sol::Image2D2::Settings{
+          .memoryManager = getMemoryManager(),
+          .size          = {256u, 256u},
+          .format        = VK_FORMAT_R8G8B8A8_UINT,
+          .levels        = 4,
+          .usage         = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+          .aspect        = VK_IMAGE_ASPECT_COLOR_BIT,
+          .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+          .initialOwner  = getMemoryManager().getGraphicsQueue().getFamily(),
+          .tiling        = VK_IMAGE_TILING_OPTIMAL});
     });
 
     compareEQ(VK_IMAGE_LAYOUT_UNDEFINED, image->getImageLayout(0, 0));

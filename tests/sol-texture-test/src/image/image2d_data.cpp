@@ -11,37 +11,37 @@
 #include "sol-memory/transaction.h"
 #include "sol-memory/transaction_manager.h"
 #include "sol-texture/image2d2.h"
-#include "sol-texture/texture_collection.h"
 
 void Image2DData::operator()()
 {
     // Generate some test data.
     const auto data = genR8G8B8A8W256H256Gradient();
 
-    const auto collection = std::make_unique<sol::TextureCollection>(getMemoryManager());
-
     // Create a 256x256 image and a 512x512 image.
-    sol::Image2D2* image0 = nullptr;
-    sol::Image2D2* image1 = nullptr;
+    sol::Image2D2Ptr image0;
+    sol::Image2D2Ptr image1;
     expectNoThrow([&] {
-        image0 = &collection->createImage2D({256, 256},
-                                            VK_FORMAT_R8G8B8A8_UINT,
-                                            1,
-                                            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                                              VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-                                            VK_IMAGE_ASPECT_COLOR_BIT,
-                                            VK_IMAGE_LAYOUT_UNDEFINED,
-                                            getMemoryManager().getGraphicsQueue().getFamily(),
-                                            VK_IMAGE_TILING_OPTIMAL);
-        image1 = &collection->createImage2D({512, 512},
-                                            VK_FORMAT_R8G8B8A8_UINT,
-                                            1,
-                                            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                                              VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-                                            VK_IMAGE_ASPECT_COLOR_BIT,
-                                            VK_IMAGE_LAYOUT_UNDEFINED,
-                                            getMemoryManager().getGraphicsQueue().getFamily(),
-                                            VK_IMAGE_TILING_OPTIMAL);
+        image0 = sol::Image2D2::create(sol::Image2D2::Settings{
+          .memoryManager = getMemoryManager(),
+          .size          = {256u, 256u},
+          .format        = VK_FORMAT_R8G8B8A8_UINT,
+          .levels        = 1,
+          .usage  = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+          .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+          .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+          .initialOwner  = getMemoryManager().getGraphicsQueue().getFamily(),
+          .tiling        = VK_IMAGE_TILING_OPTIMAL});
+
+        image1 = sol::Image2D2::create(sol::Image2D2::Settings{
+          .memoryManager = getMemoryManager(),
+          .size          = {512u, 512u},
+          .format        = VK_FORMAT_R8G8B8A8_UINT,
+          .levels        = 4,
+          .usage  = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+          .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+          .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+          .initialOwner  = getMemoryManager().getGraphicsQueue().getFamily(),
+          .tiling        = VK_IMAGE_TILING_OPTIMAL});
     });
 
     // Copy test data into images.

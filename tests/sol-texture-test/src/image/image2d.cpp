@@ -7,27 +7,25 @@
 #include "sol-core/vulkan_queue.h"
 #include "sol-memory/memory_manager.h"
 #include "sol-texture/image2d2.h"
-#include "sol-texture/texture_collection.h"
 
 void Image2D::operator()()
 {
     // Create images and verify all properties.
 
-    const auto collection = std::make_unique<sol::TextureCollection>(getMemoryManager());
-
-    sol::Image2D2* image0 = nullptr;
+    sol::Image2D2Ptr image0;
     expectNoThrow([&] {
-        image0 = &collection->createImage2D({256, 256},
-                                            VK_FORMAT_R8G8B8A8_UINT,
-                                            4,
-                                            VK_IMAGE_USAGE_SAMPLED_BIT,
-                                            VK_IMAGE_ASPECT_COLOR_BIT,
-                                            VK_IMAGE_LAYOUT_UNDEFINED,
-                                            getMemoryManager().getGraphicsQueue().getFamily(),
-                                            VK_IMAGE_TILING_OPTIMAL);
+        image0 = sol::Image2D2::create(
+          sol::Image2D2::Settings{.memoryManager = getMemoryManager(),
+                                  .size          = {256u, 256u},
+                                  .format        = VK_FORMAT_R8G8B8A8_UINT,
+                                  .levels        = 4,
+                                  .usage         = VK_IMAGE_USAGE_SAMPLED_BIT,
+                                  .aspect        = VK_IMAGE_ASPECT_COLOR_BIT,
+                                  .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                                  .initialOwner  = getMemoryManager().getGraphicsQueue().getFamily(),
+                                  .tiling        = VK_IMAGE_TILING_OPTIMAL});
     });
 
-    compareEQ(collection.get(), &image0->getTextureCollection());
     compareEQ(&getMemoryManager().getGraphicsQueue().getFamily(), &image0->getQueueFamily(0, 0));
     expectThrow([&] { static_cast<void>(image0->getQueueFamily(4, 0)); });
     expectThrow([&] { static_cast<void>(image0->getQueueFamily(0, 1)); });
@@ -47,19 +45,20 @@ void Image2D::operator()()
     expectThrow([&] { static_cast<void>(image0->getSubresourceLayout(0, 0)); });
     compareEQ(VK_IMAGE_TILING_OPTIMAL, image0->getImageTiling());
 
-    sol::Image2D2* image1 = nullptr;
+    sol::Image2D2Ptr image1;
     expectNoThrow([&] {
-        image1 = &collection->createImage2D({1024, 256},
-                                            VK_FORMAT_R32G32B32A32_SFLOAT,
-                                            1,
-                                            VK_IMAGE_USAGE_STORAGE_BIT,
-                                            VK_IMAGE_ASPECT_COLOR_BIT,
-                                            VK_IMAGE_LAYOUT_UNDEFINED,
-                                            getMemoryManager().getTransferQueue().getFamily(),
-                                            VK_IMAGE_TILING_LINEAR);
+        image1 = sol::Image2D2::create(
+          sol::Image2D2::Settings{.memoryManager = getMemoryManager(),
+                                  .size          = {1024u, 256u},
+                                  .format        = VK_FORMAT_R32G32B32A32_SFLOAT,
+                                  .levels        = 1,
+                                  .usage         = VK_IMAGE_USAGE_STORAGE_BIT,
+                                  .aspect        = VK_IMAGE_ASPECT_COLOR_BIT,
+                                  .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                                  .initialOwner  = getMemoryManager().getTransferQueue().getFamily(),
+                                  .tiling        = VK_IMAGE_TILING_LINEAR});
     });
 
-    compareEQ(collection.get(), &image1->getTextureCollection());
     compareEQ(&getMemoryManager().getTransferQueue().getFamily(), &image1->getQueueFamily(0, 0));
     expectThrow([&] { static_cast<void>(image1->getQueueFamily(1, 0)); });
     expectThrow([&] { static_cast<void>(image1->getQueueFamily(0, 1)); });
@@ -80,7 +79,4 @@ void Image2D::operator()()
     expectThrow([&] { static_cast<void>(image1->getSubresourceLayout(1, 0)); });
     expectThrow([&] { static_cast<void>(image1->getSubresourceLayout(0, 1)); });
     compareEQ(VK_IMAGE_TILING_LINEAR, image1->getImageTiling());
-
-    expectNoThrow([&] { collection->destroyImage(*image0); });
-    expectNoThrow([&] { collection->destroyImage(*image1); });
 }
