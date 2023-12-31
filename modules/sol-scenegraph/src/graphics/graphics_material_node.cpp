@@ -6,10 +6,18 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    GraphicsMaterialNode::GraphicsMaterialNode(GraphicsMaterialInstance& materialInstance) :
-        Node(), material(&materialInstance)
+    GraphicsMaterialNode::GraphicsMaterialNode() = default;
+
+    GraphicsMaterialNode::GraphicsMaterialNode(const uuids::uuid id) : Node(id) {}
+
+    GraphicsMaterialNode::GraphicsMaterialNode(GraphicsMaterialInstance2& m) : material(&m) {}
+
+    GraphicsMaterialNode::GraphicsMaterialNode(const uuids::uuid id, GraphicsMaterialInstance2& m) :
+        Node(id), material(&m)
     {
     }
+
+    GraphicsMaterialNode::~GraphicsMaterialNode() noexcept = default;
 
     ////////////////////////////////////////////////////////////////
     // Getters.
@@ -17,21 +25,11 @@ namespace sol
 
     Node::Type GraphicsMaterialNode::getType() const noexcept { return Type::GraphicsMaterial; }
 
-    GraphicsMaterialInstance* GraphicsMaterialNode::getMaterial() const noexcept { return material; }
+    GraphicsMaterialInstance2* GraphicsMaterialNode::getMaterial() const noexcept { return material; }
 
     ////////////////////////////////////////////////////////////////
     // Setters.
     ////////////////////////////////////////////////////////////////
 
-    void GraphicsMaterialNode::setMaterial(GraphicsMaterialInstance* mtl) noexcept { material = mtl; }
-
-    ////////////////////////////////////////////////////////////////
-    // Debugging and visualization.
-    ////////////////////////////////////////////////////////////////
-
-    std::string GraphicsMaterialNode::getVizLabel() const { return "GraphicsMaterial"; }
-
-    std::string GraphicsMaterialNode::getVizShape() const { return "circle"; }
-
-    std::string GraphicsMaterialNode::getVizFillColor() const { return material ? "white" : "red"; }
+    void GraphicsMaterialNode::setMaterial(GraphicsMaterialInstance2* mtl) noexcept { material = mtl; }
 }  // namespace sol

@@ -14,6 +14,7 @@ namespace sol
     class ComputeMaterialInstance;
     class ComputeMaterialLayout;
     class IComputeMaterialManager;
+    struct GraphicsDynamicState;
     class GraphicsMaterial;
     class GraphicsMaterial2;
     class GraphicsMaterialInstance;
@@ -37,6 +38,8 @@ namespace sol
     using ComputeMaterialInstanceSharedPtr    = std::shared_ptr<ComputeMaterialInstance>;
     using IComputeMaterialManagerPtr          = std::unique_ptr<IComputeMaterialManager>;
     using IComputeMaterialManagerSharedPtr    = std::shared_ptr<IComputeMaterialManager>;
+    using GraphicsDynamicStatePtr             = std::unique_ptr<GraphicsDynamicState>;
+    using GraphicsDynamicStateSharedPtr       = std::shared_ptr<GraphicsDynamicState>;
     using GraphicsMaterialPtr                 = std::unique_ptr<GraphicsMaterial>;
     using GraphicsMaterialSharedPtr           = std::shared_ptr<GraphicsMaterial>;
     using GraphicsMaterial2Ptr                = std::unique_ptr<GraphicsMaterial2>;

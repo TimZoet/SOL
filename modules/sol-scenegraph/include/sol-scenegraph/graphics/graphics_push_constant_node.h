@@ -27,15 +27,19 @@ namespace sol
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        GraphicsPushConstantNode() = default;
+        GraphicsPushConstantNode();
 
-        GraphicsPushConstantNode(GraphicsMaterial& mtl);
+        explicit GraphicsPushConstantNode(uuids::uuid id);
+
+        explicit GraphicsPushConstantNode(GraphicsMaterial2& mtl);
+
+        GraphicsPushConstantNode(uuids::uuid id, GraphicsMaterial2& mtl);
 
         GraphicsPushConstantNode(const GraphicsPushConstantNode&) = delete;
 
         GraphicsPushConstantNode(GraphicsPushConstantNode&&) = delete;
 
-        ~GraphicsPushConstantNode() noexcept override = default;
+        ~GraphicsPushConstantNode() noexcept override;
 
         GraphicsPushConstantNode& operator=(const GraphicsPushConstantNode&) = delete;
 
@@ -51,14 +55,18 @@ namespace sol
          * \brief Get material.
          * \return GraphicsMaterial.
          */
-        [[nodiscard]] const GraphicsMaterial& getMaterial() const noexcept;
+        [[nodiscard]] const GraphicsMaterial2* getMaterial() const noexcept;
 
         /**
          * \brief Get push constant data range.
-         * \return Range.
+         * \return {offset, size}.
          */
         [[nodiscard]] virtual std::pair<uint32_t, uint32_t> getRange() const noexcept = 0;
 
+        /**
+         * \brief Get stages to which the push constant data applies.
+         * \return Stages.
+         */
         [[nodiscard]] virtual VkShaderStageFlags getStageFlags() const noexcept = 0;
 
         /**
@@ -68,20 +76,16 @@ namespace sol
         [[nodiscard]] virtual const void* getData() const = 0;
 
         ////////////////////////////////////////////////////////////////
-        // Debugging and visualization.
+        // Setters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] std::string getVizLabel() const override;
-
-        [[nodiscard]] std::string getVizShape() const override;
-
-        [[nodiscard]] std::string getVizFillColor() const override;
+        void setMaterial(GraphicsMaterial2* mtl);
 
     private:
         ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        GraphicsMaterial* material = nullptr;
+        GraphicsMaterial2* material = nullptr;
     };
 }  // namespace sol
