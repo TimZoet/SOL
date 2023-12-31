@@ -24,14 +24,4 @@ namespace sol
     ////////////////////////////////////////////////////////////////
 
     void RayTracingMaterialNode::setMaterial(RayTracingMaterialInstance* mtl) noexcept { material = mtl; }
-
-    ////////////////////////////////////////////////////////////////
-    // Debugging and visualization.
-    ////////////////////////////////////////////////////////////////
-
-    std::string RayTracingMaterialNode::getVizLabel() const { return "RayTracingMaterial"; }
-
-    std::string RayTracingMaterialNode::getVizShape() const { return "circle"; }
-
-    std::string RayTracingMaterialNode::getVizFillColor() const { return material ? "white" : "red"; }
 }  // namespace sol

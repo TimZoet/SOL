@@ -18,7 +18,7 @@ set(DEPS_PUBLIC
     sol-core
     sol-material
     sol-memory
-    sol-render
+    #sol-render
     sol-window
 )
 

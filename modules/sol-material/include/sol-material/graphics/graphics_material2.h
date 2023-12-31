@@ -87,7 +87,7 @@ namespace sol
          * \param args Additional constructor arguments.
          * \return New material instance.
          */
-        template<std::derived_from<GraphicsMaterialInstance2> T, typename... Args>
+        template<std::derived_from<GraphicsMaterialInstance2> T = GraphicsMaterialInstance2, typename... Args>
         [[nodiscard]] std::unique_ptr<T> createInstance(Args&&... args)
         {
             return std::make_unique<T>(uuids::uuid_system_generator{}(), *this, std::forward<Args>(args)...);
@@ -101,7 +101,7 @@ namespace sol
          * \param args Additional constructor arguments.
          * \return New material instance.
          */
-        template<std::derived_from<GraphicsMaterialInstance2> T, typename... Args>
+        template<std::derived_from<GraphicsMaterialInstance2> T = GraphicsMaterialInstance2, typename... Args>
         [[nodiscard]] std::unique_ptr<T> createInstance(const uuids::uuid id, Args&&... args)
         {
             return std::make_unique<T>(id, *this, std::forward<Args>(args)...);

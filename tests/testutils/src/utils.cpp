@@ -31,8 +31,10 @@
 #include "sol-memory/memory_manager.h"
 #include "sol-memory/transaction_manager.h"
 #include "sol-mesh/mesh_layout.h"
+#if 0
 #include "sol-render/graphics/fwd.h"
 #include "sol-render/graphics/graphics_rendering_info.h"
+#endif
 #include "sol-window/fwd.h"
 #include "sol-window/window.h"
 
@@ -50,7 +52,9 @@ namespace
     sol::VulkanFencePtr                        acquireFence;
     sol::VulkanFencePtr                        presentFence;
     uint32_t                                   imageIndex = 0;
+#if 0
     std::vector<sol::GraphicsRenderingInfoPtr> renderingInfos;
+#endif
     sol::MemoryManagerPtr                      memoryManager;
     sol::TransactionManagerPtr                 transferManager;
 
@@ -181,6 +185,7 @@ namespace
 
     void createRenderingInfos()
     {
+#if 0
         for (size_t i = 0; i < swapchain->getImageCount(); i++)
         {
             auto info = std::make_unique<sol::GraphicsRenderingInfo>();
@@ -212,6 +217,7 @@ namespace
             info->finalize();
             renderingInfos.emplace_back(std::move(info));
         }
+#endif
     }
 
     void createPresentFence()
@@ -288,7 +294,9 @@ BasicFixture::~BasicFixture() noexcept
 {
     vkDeviceWaitIdle(device->get());
     transferManager.reset();
+#if 0
     renderingInfos.clear();
+#endif
     presentFence.reset();
     acquireFence.reset();
     swapchainCommandBuffer.reset();
@@ -325,6 +333,7 @@ void BasicFixture::acquire()
 
 void BasicFixture::render()
 {
+#if 0
     const VkFence f = acquireFence->get();
     vkWaitForFences(device->get(), 1, &f, true, UINT64_MAX);
     vkResetFences(device->get(), 1, &f);
@@ -342,6 +351,7 @@ void BasicFixture::render()
     submitInfo.pCommandBuffers    = &swapchainCommandBuffer->get();
 
     sol::handleVulkanError(vkQueueSubmit(memoryManager->getGraphicsQueue().get(), 1, &submitInfo, presentFence->get()));
+#endif
 }
 
 void BasicFixture::present()

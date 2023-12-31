@@ -4,15 +4,19 @@
 // Standard includes.
 ////////////////////////////////////////////////////////////////
 
-#include <cassert>
-#include <string>
 #include <vector>
+
+////////////////////////////////////////////////////////////////
+// External includes.
+////////////////////////////////////////////////////////////////
+
+#include <uuid.h>
 
 ////////////////////////////////////////////////////////////////
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
-//#include "dot/graph.h"
+#include "sol-core/utils.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
@@ -25,21 +29,55 @@ namespace sol
     class Node
     {
     public:
+        friend class Scenegraph;
+
         ////////////////////////////////////////////////////////////////
         // Types.
         ////////////////////////////////////////////////////////////////
 
-        // TODO: Set explicit values to allow reordering down the line?
-        enum class Type
+        enum class Type : uint32_t
         {
-            Empty,
-            Mesh,
-            GraphicsMaterial,
-            GraphicsPushConstant,
-            ComputeMaterial,
-            Dispatch,
-            RayTracingMaterial,
-            TraceRays,
+            Empty = 0,
+
+            GraphicsDynamicState = 100,
+            GraphicsMaterial     = 101,
+            GraphicsPushConstant = 102,
+
+            ComputeMaterial = 200,
+            ComputeDispatch = 201,
+
+            RayTracingMaterial = 300,
+            RayTracingDispatch = 301,
+
+            Mesh = 400,
+        };
+
+        enum class ChildAction
+        {
+            /**
+             * \brief Remove child nodes completely.
+             */
+            Remove,
+
+            /**
+             * \brief Extract child nodes together with node.
+             */
+            Extract,
+
+            /**
+             * \brief Add child nodes to the beginning of the list of children of the node's parent.
+             */
+            Prepend,
+
+            /**
+             * \brief Insert child nodes into the list of children of the node's parent at the same position.
+             */
+            Insert,
+
+            /**
+             * \brief Add child nodes to the end of the list of children of the node's parent.
+             */
+            Append
         };
 
         ////////////////////////////////////////////////////////////////
@@ -47,6 +85,8 @@ namespace sol
         ////////////////////////////////////////////////////////////////
 
         Node();
+
+        explicit Node(uuids::uuid id);
 
         Node(const Node&) = delete;
 
@@ -61,6 +101,12 @@ namespace sol
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
+
+        /**
+         * \brief Get the UUID.
+         * \return UUID.
+         */
+        [[nodiscard]] const uuids::uuid& getUuid() const noexcept;
 
         [[nodiscard]] virtual Type getType() const noexcept;
 
@@ -83,42 +129,69 @@ namespace sol
         void setTypeMask(uint64_t value) noexcept;
 
         ////////////////////////////////////////////////////////////////
-        // Child nodes.
+        // Children.
         ////////////////////////////////////////////////////////////////
 
+        [[nodiscard]] VectorUniquePtrIterator<Node> begin();
+
+        [[nodiscard]] VectorUniquePtrIterator<Node> end();
+
+        [[nodiscard]] Node& operator[](size_t index);
+
+        [[nodiscard]] const Node& operator[](size_t index) const;
+
+        /**
+         * \brief Add a node to the list of children.
+         * \tparam T Node type.
+         * \param child Node.
+         * \return Node.
+         */
         template<std::derived_from<Node> T>
         T& addChild(std::unique_ptr<T> child)
         {
-            assert(child->parent == nullptr && child->scenegraph == nullptr);
-
-            auto& ref         = *child;
-            child->parent     = this;
-            child->scenegraph = scenegraph;
-            children.emplace_back(std::move(child));
-
+            auto& ref = *child;
+            addChildImpl(std::move(child));
             return ref;
         }
 
+        /**
+         * \brief Insert a child node into the list of children.
+         * \tparam T Node type.
+         * \param child Node.
+         * \param index Index into list. If index exceeds size of list, the child is added to the end of the list.
+         * \return Node.
+         */
+        template<std::derived_from<Node> T>
+        T& insertChild(std::unique_ptr<T> child, const size_t index)
+        {
+            auto& ref = *child;
+            insertChildImpl(std::move(child), index);
+            return ref;
+        }
+
+        /**
+         * \brief Remove / delete node.
+         * \param action What to do with any child nodes.
+         */
+        void remove(ChildAction action);
+
+        //[[nodiscard]] NodePtr extract(ChildAction action);
+
+        /**
+         * \brief Recursively clear child nodes.
+         */
         void clearChildren();
 
-        ////////////////////////////////////////////////////////////////
-        // Debugging and visualization.
-        ////////////////////////////////////////////////////////////////
-
-        //void visualize(dot::Graph& graph, dot::Node* parentDotNode) const;
-
-        [[nodiscard]] virtual std::string getVizLabel() const;
-
-        [[nodiscard]] virtual std::string getVizShape() const;
-
-        [[nodiscard]] virtual std::string getVizFillColor() const;
-
-        [[nodiscard]] virtual std::string getVizOutlineColor() const;
-
     protected:
+        void addChildImpl(NodePtr child);
+
+        void insertChildImpl(NodePtr child, size_t index);
+
         ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////
+
+        uuids::uuid uuid;
 
         Scenegraph* scenegraph = nullptr;
 

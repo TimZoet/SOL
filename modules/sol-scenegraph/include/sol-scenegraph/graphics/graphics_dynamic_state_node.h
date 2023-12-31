@@ -4,7 +4,14 @@
 // Standard includes.
 ////////////////////////////////////////////////////////////////
 
-#include <array>
+#include <vector>
+
+////////////////////////////////////////////////////////////////
+// Module includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-core/utils.h"
+#include "sol-material/fwd.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
@@ -14,28 +21,26 @@
 
 namespace sol
 {
-    class DispatchNode final : public Node
+    class GraphicsDynamicStateNode : public Node
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        DispatchNode() = default;
+        GraphicsDynamicStateNode();
 
-        explicit DispatchNode(std::array<uint32_t, 3> value);
+        explicit GraphicsDynamicStateNode(uuids::uuid id);
 
-        DispatchNode(uint32_t x, uint32_t y, uint32_t z);
+        GraphicsDynamicStateNode(const GraphicsDynamicStateNode&) = delete;
 
-        DispatchNode(const DispatchNode&) = delete;
+        GraphicsDynamicStateNode(GraphicsDynamicStateNode&&) = delete;
 
-        DispatchNode(DispatchNode&&) = delete;
+        ~GraphicsDynamicStateNode() noexcept override;
 
-        ~DispatchNode() noexcept override = default;
+        GraphicsDynamicStateNode& operator=(const GraphicsDynamicStateNode&) = delete;
 
-        DispatchNode& operator=(const DispatchNode&) = delete;
-
-        DispatchNode& operator=(DispatchNode&&) = delete;
+        GraphicsDynamicStateNode& operator=(GraphicsDynamicStateNode&&) = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
@@ -43,21 +48,15 @@ namespace sol
 
         [[nodiscard]] Type getType() const noexcept override;
 
-        [[nodiscard]] std::array<uint32_t, 3> getGroupCount() const noexcept;
+        [[nodiscard]] std::vector<GraphicsDynamicStatePtr>& getStates() noexcept;
 
-        ////////////////////////////////////////////////////////////////
-        // Setters.
-        ////////////////////////////////////////////////////////////////
-
-        void setGroupCount(std::array<uint32_t, 3> value) noexcept;
-
-        void setGroupCount(uint32_t x, uint32_t y, uint32_t z) noexcept;
+        [[nodiscard]] const std::vector<GraphicsDynamicStatePtr>& getStates() const noexcept;
 
     protected:
         ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        std::array<uint32_t, 3> count{0, 0, 0};
+        std::vector<GraphicsDynamicStatePtr> states;
     };
 }  // namespace sol

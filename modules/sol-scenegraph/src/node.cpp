@@ -1,10 +1,23 @@
 #include "sol-scenegraph/node.h"
 
 ////////////////////////////////////////////////////////////////
-// Current target includes.
+// Standard includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-scenegraph/scenegraph.h"
+#include <iterator>
+#include <cassert>
+
+////////////////////////////////////////////////////////////////
+// External includes.
+////////////////////////////////////////////////////////////////
+
+#include <uuid_system_generator.h>
+
+////////////////////////////////////////////////////////////////
+// Module includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-error/sol_error.h"
 
 namespace sol
 {
@@ -12,13 +25,17 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    Node::Node() = default;
+    Node::Node() : uuid(uuids::uuid_system_generator{}()) {}
+
+    Node::Node(const uuids::uuid id) : uuid(id) {}
 
     Node::~Node() noexcept = default;
 
     ////////////////////////////////////////////////////////////////
     // Getters.
     ////////////////////////////////////////////////////////////////
+
+    const uuids::uuid& Node::getUuid() const noexcept { return uuid; }
 
     Node::Type Node::getType() const noexcept { return Type::Empty; }
 
@@ -41,35 +58,73 @@ namespace sol
     void Node::setTypeMask(const uint64_t value) noexcept { typeMask = value; }
 
     ////////////////////////////////////////////////////////////////
-    // ...
+    // Children.
     ////////////////////////////////////////////////////////////////
+
+    VectorUniquePtrIterator<Node> Node::begin() { return VectorUniquePtrIterator(children.data()); }
+
+    VectorUniquePtrIterator<Node> Node::end() { return VectorUniquePtrIterator(children.data() + children.size()); }
+
+    Node& Node::operator[](const size_t index) { return *children.at(index); }
+
+    const Node& Node::operator[](const size_t index) const { return *children.at(index); }
 
     void Node::clearChildren() { children.clear(); }
 
-    ////////////////////////////////////////////////////////////////
-    // Debugging and visualization.
-    ////////////////////////////////////////////////////////////////
+    void Node::addChildImpl(NodePtr child)
+    {
+        assert(child->parent == nullptr && child->scenegraph == nullptr);
+        child->parent     = this;
+        child->scenegraph = scenegraph;
 
-    //void Node::visualize(dot::Graph& graph, dot::Node* parentDotNode) const
-    //{
-    //    // Create node.
-    //    auto& node = graph.createNode();
-    //    node.setLabel(getVizLabel());
-    //    node.setShape(getVizShape());
+        children.emplace_back(std::move(child));
+    }
 
-    //    // Create edge between parent and this node.
-    //    if (parentDotNode) graph.createEdge(*parentDotNode, node);
+    void Node::insertChildImpl(NodePtr child, const size_t index)
+    {
+        child->parent     = this;
+        child->scenegraph = scenegraph;
 
-    //    // Visualize children.
-    //    for (const auto& child : children) child->visualize(graph, &node);
-    //}
+        if (index >= children.size())
+            children.push_back(std::move(child));
+        else
+            children.insert(children.begin() + index, std::move(child));
+    }
 
-    std::string Node::getVizLabel() const { return ""; }
+    void Node::remove(const ChildAction action)
+    {
+        if (!parent) throw SolError("Cannot remove node without a parent.");
 
-    std::string Node::getVizShape() const { return "square"; }
+        const auto it     = std::ranges::find_if(parent->children, [this](const auto& n) { return n.get() == this; });
+        auto       offset = it - parent->children.begin();
 
-    std::string Node::getVizFillColor() const { return "white"; }
+        switch (action)
+        {
+        case ChildAction::Remove: break;
+        case ChildAction::Extract: throw SolError("Cannot remove node with ChildAction::Extract.");
+        case ChildAction::Append:
+            for (const auto& c : children) c->parent = parent;
+            parent->children.insert(parent->children.end(),
+                                    std::make_move_iterator(children.begin()),
+                                    std::make_move_iterator(children.end()));
+            break;
+        case ChildAction::Insert:
+            for (const auto& c : children) c->parent = parent;
+            offset += children.size();
+            parent->children.insert(
+              it, std::make_move_iterator(children.begin()), std::make_move_iterator(children.end()));
+            break;
+        case ChildAction::Prepend:
+            for (const auto& c : children) c->parent = parent;
+            offset += children.size();
+            parent->children.insert(parent->children.begin(),
+                                    std::make_move_iterator(children.begin()),
+                                    std::make_move_iterator(children.end()));
+            break;
+        }
 
-    std::string Node::getVizOutlineColor() const { return "black"; }
+        // Remove self.
+        parent->children.erase(parent->children.begin() + offset);
+    }
 
 }  // namespace sol
