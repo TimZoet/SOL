@@ -4,8 +4,9 @@
 // Standard includes.
 ////////////////////////////////////////////////////////////////
 
-#include <iterator>
 #include <cassert>
+#include <iterator>
+#include <format>
 
 ////////////////////////////////////////////////////////////////
 // External includes.
@@ -37,8 +38,6 @@ namespace sol
 
     const uuids::uuid& Node::getUuid() const noexcept { return uuid; }
 
-    Node::Type Node::getType() const noexcept { return Type::Empty; }
-
     Scenegraph& Node::getScenegraph() noexcept { return *scenegraph; }
 
     const Scenegraph& Node::getScenegraph() const noexcept { return *scenegraph; }
@@ -56,6 +55,29 @@ namespace sol
     void Node::setGeneralMask(const uint64_t value) noexcept { generalMask = value; }
 
     void Node::setTypeMask(const uint64_t value) noexcept { typeMask = value; }
+
+    ////////////////////////////////////////////////////////////////
+    // Casting.
+    ////////////////////////////////////////////////////////////////
+
+    bool Node::supportsType(const Type type) const noexcept
+    {
+        if (type == Type::Empty) return true;
+        return supportsTypeImpl(type);
+    }
+
+    void* Node::getAs(const Type type)
+    {
+        if (!supportsType(type))
+            throw SolError(
+              std::format("Cannot get node as unsupported Type {}.", static_cast<std::underlying_type_t<Type>>(type)));
+        if (type == Type::Empty) return this;
+        return getAsImpl(type);
+    }
+
+    bool Node::supportsTypeImpl(const Type) const noexcept { return false; }
+
+    void* Node::getAsImpl(const Type) { return nullptr; }
 
     ////////////////////////////////////////////////////////////////
     // Children.

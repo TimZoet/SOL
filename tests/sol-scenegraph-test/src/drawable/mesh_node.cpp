@@ -54,7 +54,10 @@ void MeshNode::operator()()
 
     {
         const auto node = std::make_unique<sol::MeshNode>();
-        compareEQ(sol::Node::Type::Mesh, node->getType());
+        compareTrue(node->supportsType(sol::Node::Type::Empty));
+        compareTrue(node->supportsType(sol::Node::Type::Mesh));
+        compareEQ(node.get(), node->getAs(sol::Node::Type::Empty));
+        compareEQ(node.get(), node->getAs(sol::Node::Type::Mesh));
         compareEQ(nullptr, node->getMesh());
         expectNoThrow([&] { node->setMesh(mesh.get()); });
         compareEQ(mesh.get(), node->getMesh());

@@ -55,7 +55,10 @@ void GraphicsMaterialNode::operator()()
 
     {
         const auto node = std::make_unique<sol::GraphicsMaterialNode>();
-        compareEQ(sol::Node::Type::GraphicsMaterial, node->getType());
+        compareTrue(node->supportsType(sol::Node::Type::Empty));
+        compareTrue(node->supportsType(sol::Node::Type::GraphicsMaterial));
+        compareEQ(node.get(), node->getAs(sol::Node::Type::Empty));
+        compareEQ(node.get(), node->getAs(sol::Node::Type::GraphicsMaterial));
         compareEQ(nullptr, node->getMaterial());
         expectNoThrow([&] { node->setMaterial(instance.get()); });
         compareEQ(instance.get(), node->getMaterial());

@@ -38,7 +38,10 @@ void GraphicsDynamicStateNode::operator()()
 
     {
         const auto node = std::make_unique<sol::GraphicsDynamicStateNode>();
-        compareEQ(sol::Node::Type::GraphicsDynamicState, node->getType());
+        compareTrue(node->supportsType(sol::Node::Type::Empty));
+        compareTrue(node->supportsType(sol::Node::Type::GraphicsDynamicState));
+        compareEQ(node.get(), node->getAs(sol::Node::Type::Empty));
+        compareEQ(node.get(), node->getAs(sol::Node::Type::GraphicsDynamicState));
         compareTrue(node->getStates().empty());
         expectNoThrow([&] { node->getStates().push_back(std::make_unique<sol::CullMode>()); });
         expectNoThrow([&] { node->getStates().push_back(std::make_unique<sol::Viewport>()); });

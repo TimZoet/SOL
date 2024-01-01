@@ -109,7 +109,10 @@ void GraphicsPushConstantNode::operator()()
 
     {
         const std::unique_ptr<sol::GraphicsPushConstantNode> node = std::make_unique<TestNode>();
-        compareEQ(sol::Node::Type::GraphicsPushConstant, node->getType());
+        compareTrue(node->supportsType(sol::Node::Type::Empty));
+        compareTrue(node->supportsType(sol::Node::Type::GraphicsPushConstant));
+        compareEQ(node.get(), node->getAs(sol::Node::Type::Empty));
+        compareEQ(node.get(), node->getAs(sol::Node::Type::GraphicsPushConstant));
         compareEQ(nullptr, node->getMaterial());
         expectNoThrow([&] { node->setMaterial(material.get()); });
         compareEQ(material.get(), node->getMaterial());

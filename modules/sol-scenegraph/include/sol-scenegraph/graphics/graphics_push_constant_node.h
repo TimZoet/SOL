@@ -49,8 +49,6 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] Type getType() const noexcept override;
-
         /**
          * \brief Get material.
          * \return GraphicsMaterial.
@@ -82,6 +80,14 @@ namespace sol
         void setMaterial(GraphicsMaterial2* mtl);
 
     private:
+        ////////////////////////////////////////////////////////////////
+        // Casting.
+        ////////////////////////////////////////////////////////////////
+
+        bool supportsTypeImpl(Type type) const noexcept override;
+
+        void* getAsImpl(Type type) override;
+
         ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////

@@ -108,8 +108,6 @@ namespace sol
          */
         [[nodiscard]] const uuids::uuid& getUuid() const noexcept;
 
-        [[nodiscard]] virtual Type getType() const noexcept;
-
         [[nodiscard]] Scenegraph& getScenegraph() noexcept;
 
         [[nodiscard]] const Scenegraph& getScenegraph() const noexcept;
@@ -128,6 +126,20 @@ namespace sol
 
         void setTypeMask(uint64_t value) noexcept;
 
+        ////////////////////////////////////////////////////////////////
+        // Casting.
+        ////////////////////////////////////////////////////////////////
+
+        [[nodiscard]] bool supportsType(Type type) const noexcept;
+
+        [[nodiscard]] void* getAs(Type type);
+
+    protected:
+        [[nodiscard]] virtual bool supportsTypeImpl(Type type) const noexcept;
+
+        [[nodiscard]] virtual void* getAsImpl(Type type);
+
+    public:
         ////////////////////////////////////////////////////////////////
         // Children.
         ////////////////////////////////////////////////////////////////
