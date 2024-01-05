@@ -40,23 +40,23 @@
 
 namespace
 {
-    sol::WindowPtr                             window;
-    sol::VulkanInstancePtr                     instance;
-    sol::VulkanPhysicalDeviceFeatures2Ptr      supportedFeatures;
-    sol::VulkanPhysicalDeviceFeatures2Ptr      enabledFeatures;
-    sol::VulkanSurfacePtr                      surface;
-    sol::VulkanPhysicalDevicePtr               physicalDevice;
-    sol::VulkanDevicePtr                       device;
-    sol::VulkanSwapchainPtr                    swapchain;
-    sol::VulkanCommandBufferPtr                swapchainCommandBuffer;
-    sol::VulkanFencePtr                        acquireFence;
-    sol::VulkanFencePtr                        presentFence;
-    uint32_t                                   imageIndex = 0;
+    sol::WindowPtr                        window;
+    sol::VulkanInstancePtr                instance;
+    sol::VulkanPhysicalDeviceFeatures2Ptr supportedFeatures;
+    sol::VulkanPhysicalDeviceFeatures2Ptr enabledFeatures;
+    sol::VulkanSurfacePtr                 surface;
+    sol::VulkanPhysicalDevicePtr          physicalDevice;
+    sol::VulkanDevicePtr                  device;
+    sol::VulkanSwapchainPtr               swapchain;
+    sol::VulkanCommandBufferPtr           swapchainCommandBuffer;
+    sol::VulkanFencePtr                   acquireFence;
+    sol::VulkanFencePtr                   presentFence;
+    uint32_t                              imageIndex = 0;
 #if 0
     std::vector<sol::GraphicsRenderingInfoPtr> renderingInfos;
 #endif
-    sol::MemoryManagerPtr                      memoryManager;
-    sol::TransactionManagerPtr                 transferManager;
+    sol::MemoryManagerPtr      memoryManager;
+    sol::TransactionManagerPtr transferManager;
 
     void createDefaultWindow() { window = std::make_unique<sol::Window>(std::array{1024, 512}, "Test"); }
 
@@ -258,15 +258,7 @@ namespace
         transferManager = std::make_unique<sol::TransactionManager>(*memoryManager, pool);
     }
 
-    [[nodiscard]] std::vector<std::byte> loadShaderBytecode(const std::string& name)
-    {
-        std::ifstream          file(name, std::ios::binary | std::ios::ate);
-        const auto             size = file.tellg();
-        std::vector<std::byte> code(size);
-        file.seekg(std::ios::beg);
-        file.read(reinterpret_cast<char*>(code.data()), size);
-        return code;
-    }
+    
 }  // namespace
 
 
@@ -378,6 +370,7 @@ void BasicFixture::frame()
     present();
 }
 
+#if 0
 std::pair<sol::VulkanGraphicsPipeline2Ptr, std::vector<sol::DescriptorLayoutPtr>>
   BasicFixture::createSimpleGraphicsPipeline() const
 {
@@ -451,6 +444,7 @@ std::pair<sol::VulkanGraphicsPipeline2Ptr, std::vector<sol::DescriptorLayoutPtr>
 
     return {std::move(pipeline), std::move(descriptorLayouts)};
 }
+#endif
 
 std::vector<uint32_t> ImageDataGeneration::genR8G8B8A8W256H256Gradient()
 {

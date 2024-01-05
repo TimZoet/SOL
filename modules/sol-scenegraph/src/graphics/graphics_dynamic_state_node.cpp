@@ -35,7 +35,7 @@ namespace sol
         return type == Type::GraphicsDynamicState;
     }
 
-    void* GraphicsDynamicStateNode::getAsImpl(const Type type)
+    const void* GraphicsDynamicStateNode::getAsImpl(const Type type) const
     {
         if (type == Type::GraphicsDynamicState) return this;
         return nullptr;

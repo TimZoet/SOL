@@ -10,14 +10,16 @@
 #include "sol-material/graphics/graphics_material2.h"
 #include "sol-scenegraph/graphics/graphics_material_node.h"
 
+////////////////////////////////////////////////////////////////
+// Current target includes.
+////////////////////////////////////////////////////////////////
+
+#include "testutils/materials.h"
+
 void GraphicsMaterialNode::operator()()
 {
-    // Use utility function to create a simple material instance.
-    auto [pipeline, descriptorLayouts] = createSimpleGraphicsPipeline();
-    const auto layouts                 = sol::raw(descriptorLayouts);
-    const auto material =
-      std::make_unique<sol::GraphicsMaterial2>(uuids::uuid_system_generator{}(), std::move(pipeline), layouts);
-    const auto instance = material->createInstance();
+    const auto [descriptorLayouts, material] = Materials::load(Materials::Graphics::Name::Simple, getDevice());
+    const auto instance                      = material->createInstance();
 
     /*
      * Test all constructors.

@@ -55,9 +55,9 @@ namespace sol
         // Casting.
         ////////////////////////////////////////////////////////////////
 
-        bool supportsTypeImpl(Type type) const noexcept override;
+        [[nodiscard]] bool supportsTypeImpl(Type type) const noexcept override;
 
-        void* getAsImpl(Type type) override;
+        [[nodiscard]] const void* getAsImpl(Type type) const override;
 
         ////////////////////////////////////////////////////////////////
         // Member variables.

@@ -38,4 +38,18 @@ namespace sol
     {
         return descriptorLayouts;
     }
+
+    size_t Material2::getPushConstantSize() const noexcept
+    {
+        // Calculate if not initialized yet.
+        if (pushConstantSize == ~0ULL)
+        {
+            const auto& elem = std::ranges::max_element(
+              getPushConstantRanges(), {}, [](const auto& range) { return range.offset + range.size; });
+            pushConstantSize = elem->offset + elem->size;
+        }
+
+        return pushConstantSize;
+    }
+
 }  // namespace sol

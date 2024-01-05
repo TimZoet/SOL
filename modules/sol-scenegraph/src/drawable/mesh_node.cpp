@@ -34,7 +34,7 @@ namespace sol
 
     bool MeshNode::supportsTypeImpl(const Type type) const noexcept { return type == Type::Mesh; }
 
-    void* MeshNode::getAsImpl(const Type type)
+    const void* MeshNode::getAsImpl(const Type type) const
     {
         if (type == Type::Mesh) return this;
         return nullptr;

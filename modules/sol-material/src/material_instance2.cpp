@@ -138,7 +138,21 @@ namespace sol
         return end();
     }
 
+    MaterialInstance2::DescriptorIterator MaterialInstance2::begin() const
+    {
+        // Look for first enabled descriptor.
+        for (size_t i = 0; i < descriptors.size(); i++)
+            if (descriptors[i]) return DescriptorIterator(*this, i);
+
+        return end();
+    }
+
     MaterialInstance2::DescriptorIterator MaterialInstance2::end()
+    {
+        return DescriptorIterator(*this, descriptors.size());
+    }
+
+    MaterialInstance2::DescriptorIterator MaterialInstance2::end() const
     {
         return DescriptorIterator(*this, descriptors.size());
     }

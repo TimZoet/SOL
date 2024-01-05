@@ -19,6 +19,12 @@
 
 #include "sol-error/sol_error.h"
 
+////////////////////////////////////////////////////////////////
+// Current target includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-material/fwd.h"
+
 namespace sol
 {
     struct GraphicsDynamicState
@@ -52,6 +58,8 @@ namespace sol
 
         GraphicsDynamicState& operator=(GraphicsDynamicState&&) = default;
 
+        [[nodiscard]] virtual GraphicsDynamicStatePtr clone() const = 0;
+
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
@@ -71,6 +79,8 @@ namespace sol
             Both  = Front | Back
         };
 
+        [[nodiscard]] GraphicsDynamicStatePtr clone() const override { return std::make_unique<CullMode>(*this); }
+
         [[nodiscard]] StateType getType() const noexcept override { return type; }
 
         Value value = Value::None;
@@ -85,6 +95,8 @@ namespace sol
             Clockwise        = 1,
             CounterClockwise = 2
         };
+
+        [[nodiscard]] GraphicsDynamicStatePtr clone() const override { return std::make_unique<FrontFace>(*this); }
 
         [[nodiscard]] StateType getType() const noexcept override { return type; }
 
@@ -102,6 +114,8 @@ namespace sol
             Point = 2
         };
 
+        [[nodiscard]] GraphicsDynamicStatePtr clone() const override { return std::make_unique<PolygonMode>(*this); }
+
         [[nodiscard]] StateType getType() const noexcept override { return type; }
 
         Value value = Value::Fill;
@@ -117,10 +131,11 @@ namespace sol
             std::pair<uint32_t, uint32_t> extent;
         };
 
+        [[nodiscard]] GraphicsDynamicStatePtr clone() const override { return std::make_unique<Scissor>(*this); }
+
         [[nodiscard]] StateType getType() const noexcept override { return type; }
 
         std::vector<Value> values;
-
     };
 
     struct Viewport final : GraphicsDynamicState
@@ -136,6 +151,8 @@ namespace sol
             float minDepth;
             float maxDepth;
         };
+
+        [[nodiscard]] GraphicsDynamicStatePtr clone() const override { return std::make_unique<Viewport>(*this); }
 
         [[nodiscard]] StateType getType() const noexcept override { return type; }
 

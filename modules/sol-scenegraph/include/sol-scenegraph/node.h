@@ -132,21 +132,31 @@ namespace sol
 
         [[nodiscard]] bool supportsType(Type type) const noexcept;
 
-        [[nodiscard]] void* getAs(Type type);
+        [[nodiscard]] const void* getAs(Type type) const;
 
     protected:
         [[nodiscard]] virtual bool supportsTypeImpl(Type type) const noexcept;
 
-        [[nodiscard]] virtual void* getAsImpl(Type type);
+        [[nodiscard]] virtual const void* getAsImpl(Type type) const;
 
     public:
+        ////////////////////////////////////////////////////////////////
+        // Hierarchy.
+        ////////////////////////////////////////////////////////////////
+
+        [[nodiscard]] bool isDescendantOf(const Node& other) const noexcept;
+
         ////////////////////////////////////////////////////////////////
         // Children.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] VectorUniquePtrIterator<Node> begin();
+        [[nodiscard]] VectorUniquePtrIterator<Node> begin() noexcept;
 
-        [[nodiscard]] VectorUniquePtrIterator<Node> end();
+        [[nodiscard]] VectorUniquePtrIterator<Node> begin() const noexcept;
+
+        [[nodiscard]] VectorUniquePtrIterator<Node> end() noexcept;
+
+        [[nodiscard]] VectorUniquePtrIterator<Node> end() const noexcept;
 
         [[nodiscard]] Node& operator[](size_t index);
 
@@ -198,6 +208,10 @@ namespace sol
         void addChildImpl(NodePtr child);
 
         void insertChildImpl(NodePtr child, size_t index);
+
+        virtual void updateScenegraph(Scenegraph* s);
+
+        virtual void updateParent(Node* p);
 
         ////////////////////////////////////////////////////////////////
         // Member variables.

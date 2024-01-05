@@ -27,6 +27,11 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
+    const std::vector<VkPushConstantRange>& GraphicsMaterial2::getPushConstantRanges() const noexcept
+    {
+        return pipeline->getPushConstantRanges();
+    }
+
     const VulkanGraphicsPipeline2& GraphicsMaterial2::getPipeline() const noexcept { return *pipeline; }
 
     const std::set<GraphicsDynamicState::StateType>& GraphicsMaterial2::getDynamicStates() const noexcept
@@ -38,5 +43,4 @@ namespace sol
     {
         return dynamicStates.contains(state);
     }
-
 }  // namespace sol

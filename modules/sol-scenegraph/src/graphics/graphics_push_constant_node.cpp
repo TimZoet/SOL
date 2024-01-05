@@ -35,9 +35,12 @@ namespace sol
     // Casting.
     ////////////////////////////////////////////////////////////////
 
-    bool GraphicsPushConstantNode::supportsTypeImpl(const Type type) const noexcept { return type == Type::GraphicsPushConstant; }
+    bool GraphicsPushConstantNode::supportsTypeImpl(const Type type) const noexcept
+    {
+        return type == Type::GraphicsPushConstant;
+    }
 
-    void* GraphicsPushConstantNode::getAsImpl(const Type type)
+    const void* GraphicsPushConstantNode::getAsImpl(const Type type) const
     {
         if (type == Type::GraphicsPushConstant) return this;
         return nullptr;

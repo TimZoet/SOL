@@ -58,7 +58,7 @@ namespace sol
 
         bool supportsTypeImpl(Type type) const noexcept override;
 
-        void* getAsImpl(Type type) override;
+        const void* getAsImpl(Type type) const override;
 
         ////////////////////////////////////////////////////////////////
         // Member variables.

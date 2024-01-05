@@ -10,6 +10,12 @@
 #include "sol-material/graphics/graphics_material_instance2.h"
 #include "sol-scenegraph/graphics/graphics_push_constant_node.h"
 
+////////////////////////////////////////////////////////////////
+// Current target includes.
+////////////////////////////////////////////////////////////////
+
+#include "testutils/materials.h"
+
 namespace
 {
     class TestNode : public sol::GraphicsPushConstantNode
@@ -41,7 +47,7 @@ namespace
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] std::pair<uint32_t, uint32_t> getRange() const noexcept override { return {0u, 32u}; }
+        [[nodiscard]] size_t getRangeIndex() const noexcept override { return 0; }
 
         [[nodiscard]] VkShaderStageFlags getStageFlags() const noexcept override
         {
@@ -61,11 +67,7 @@ namespace
 
 void GraphicsPushConstantNode::operator()()
 {
-    // Use utility function to create a simple material.
-    auto [pipeline, descriptorLayouts] = createSimpleGraphicsPipeline();
-    const auto layouts                 = sol::raw(descriptorLayouts);
-    auto       material =
-      std::make_unique<sol::GraphicsMaterial2>(uuids::uuid_system_generator{}(), std::move(pipeline), layouts);
+    const auto [descriptorLayouts, material] = Materials::load(Materials::Graphics::Name::Simple, getDevice());
 
     /*
      * Test all constructors.
@@ -116,7 +118,7 @@ void GraphicsPushConstantNode::operator()()
         compareEQ(nullptr, node->getMaterial());
         expectNoThrow([&] { node->setMaterial(material.get()); });
         compareEQ(material.get(), node->getMaterial());
-        compareEQ(std::make_pair(0u, 32u), node->getRange());
+        compareEQ(0, node->getRangeIndex());
         compareEQ(VK_SHADER_STAGE_ALL_GRAPHICS, node->getStageFlags());
         compareNE(nullptr, node->getData());
     }

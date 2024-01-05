@@ -42,8 +42,8 @@ public:
      */
     static void frame();
 
-    [[nodiscard]] std::pair<sol::VulkanGraphicsPipeline2Ptr, std::vector<sol::DescriptorLayoutPtr>>
-      createSimpleGraphicsPipeline() const;
+    //[[nodiscard]] std::pair<sol::VulkanGraphicsPipeline2Ptr, std::vector<sol::DescriptorLayoutPtr>>
+    //  createSimpleGraphicsPipeline() const;
 };
 
 class ImageDataGeneration

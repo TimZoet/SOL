@@ -35,9 +35,12 @@ namespace sol
     // Casting.
     ////////////////////////////////////////////////////////////////
 
-    bool GraphicsMaterialNode::supportsTypeImpl(const Type type) const noexcept { return type == Type::GraphicsMaterial; }
+    bool GraphicsMaterialNode::supportsTypeImpl(const Type type) const noexcept
+    {
+        return type == Type::GraphicsMaterial;
+    }
 
-    void* GraphicsMaterialNode::getAsImpl(const Type type)
+    const void* GraphicsMaterialNode::getAsImpl(const Type type) const
     {
         if (type == Type::GraphicsMaterial) return this;
         return nullptr;

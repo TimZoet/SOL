@@ -4,6 +4,7 @@
 // Standard includes.
 ////////////////////////////////////////////////////////////////
 
+#include <optional>
 #include <vector>
 
 ////////////////////////////////////////////////////////////////
@@ -11,13 +12,14 @@
 ////////////////////////////////////////////////////////////////
 
 #include "uuid.h"
+#include <vulkan/vulkan.hpp>
 
 ////////////////////////////////////////////////////////////////
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
 #include "sol-core/fwd.h"
-#include "sol-descriptor/fwd.h"
+#include "sol-descriptor/descriptor_layout.h"
 
 namespace sol
 {
@@ -64,6 +66,10 @@ namespace sol
          */
         [[nodiscard]] const std::vector<const DescriptorLayout*>& getDescriptorLayouts() const noexcept;
 
+        [[nodiscard]] virtual const std::vector<VkPushConstantRange>& getPushConstantRanges() const noexcept = 0;
+
+        [[nodiscard]] size_t getPushConstantSize() const noexcept;
+
     private:
         ////////////////////////////////////////////////////////////////
         // Member variables.
@@ -77,5 +83,7 @@ namespace sol
         VulkanDevice* device = nullptr;
 
         std::vector<const DescriptorLayout*> descriptorLayouts;
+
+        mutable size_t pushConstantSize = ~0ULL;
     };
 }  // namespace sol

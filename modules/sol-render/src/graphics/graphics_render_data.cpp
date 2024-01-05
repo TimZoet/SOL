@@ -1,16 +1,10 @@
 #include "sol-render/graphics/graphics_render_data.h"
 
 ////////////////////////////////////////////////////////////////
-// Standard includes.
-////////////////////////////////////////////////////////////////
-
-#include <ranges>
-
-////////////////////////////////////////////////////////////////
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-material/graphics/graphics_material.h"
+#include "sol-material/graphics/graphics_dynamic_state.h"
 
 namespace sol
 {
@@ -29,20 +23,11 @@ namespace sol
     void GraphicsRenderData::clear()
     {
         drawables.clear();
-        materialInstances.clear();
+        descriptors.clear();
         pushConstantRanges.clear();
         pushConstantData.clear();
-    }
-
-    ////////////////////////////////////////////////////////////////
-    // Sorting.
-    ////////////////////////////////////////////////////////////////
-
-    void GraphicsRenderData::sortDrawablesByLayer()
-    {
-        std::ranges::sort(drawables, [](const Drawable& lhs, const Drawable& rhs) {
-            return lhs.material->getLayer() < rhs.material->getLayer();
-        });
+        dynamicStates.clear();
+        dynamicStateReferences.clear();
     }
 
 }  // namespace sol

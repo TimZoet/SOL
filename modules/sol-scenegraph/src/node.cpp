@@ -4,7 +4,6 @@
 // Standard includes.
 ////////////////////////////////////////////////////////////////
 
-#include <cassert>
 #include <iterator>
 #include <format>
 
@@ -66,7 +65,7 @@ namespace sol
         return supportsTypeImpl(type);
     }
 
-    void* Node::getAs(const Type type)
+    const void* Node::getAs(const Type type) const
     {
         if (!supportsType(type))
             throw SolError(
@@ -77,41 +76,47 @@ namespace sol
 
     bool Node::supportsTypeImpl(const Type) const noexcept { return false; }
 
-    void* Node::getAsImpl(const Type) { return nullptr; }
+    const void* Node::getAsImpl(const Type) const { return nullptr; }
+
+    ////////////////////////////////////////////////////////////////
+    // Hierarchy.
+    ////////////////////////////////////////////////////////////////
+
+    bool Node::isDescendantOf(const Node& other) const noexcept
+    {
+        const auto* ancestor = parent;
+
+        // Traverse upwards to look for other.
+        while (ancestor)
+        {
+            if (ancestor == &other) return true;
+            ancestor = ancestor->parent;
+        }
+
+        return false;
+    }
 
     ////////////////////////////////////////////////////////////////
     // Children.
     ////////////////////////////////////////////////////////////////
 
-    VectorUniquePtrIterator<Node> Node::begin() { return VectorUniquePtrIterator(children.data()); }
+    VectorUniquePtrIterator<Node> Node::begin() noexcept { return VectorUniquePtrIterator(children.data()); }
 
-    VectorUniquePtrIterator<Node> Node::end() { return VectorUniquePtrIterator(children.data() + children.size()); }
+    VectorUniquePtrIterator<Node> Node::begin() const noexcept { return VectorUniquePtrIterator(children.data()); }
+
+    VectorUniquePtrIterator<Node> Node::end() noexcept
+    {
+        return VectorUniquePtrIterator(children.data() + children.size());
+    }
+
+    VectorUniquePtrIterator<Node> Node::end() const noexcept
+    {
+        return VectorUniquePtrIterator(children.data() + children.size());
+    }
 
     Node& Node::operator[](const size_t index) { return *children.at(index); }
 
     const Node& Node::operator[](const size_t index) const { return *children.at(index); }
-
-    void Node::clearChildren() { children.clear(); }
-
-    void Node::addChildImpl(NodePtr child)
-    {
-        assert(child->parent == nullptr && child->scenegraph == nullptr);
-        child->parent     = this;
-        child->scenegraph = scenegraph;
-
-        children.emplace_back(std::move(child));
-    }
-
-    void Node::insertChildImpl(NodePtr child, const size_t index)
-    {
-        child->parent     = this;
-        child->scenegraph = scenegraph;
-
-        if (index >= children.size())
-            children.push_back(std::move(child));
-        else
-            children.insert(children.begin() + index, std::move(child));
-    }
 
     void Node::remove(const ChildAction action)
     {
@@ -125,19 +130,19 @@ namespace sol
         case ChildAction::Remove: break;
         case ChildAction::Extract: throw SolError("Cannot remove node with ChildAction::Extract.");
         case ChildAction::Append:
-            for (const auto& c : children) c->parent = parent;
+            for (const auto& c : children) c->updateParent(parent);
             parent->children.insert(parent->children.end(),
                                     std::make_move_iterator(children.begin()),
                                     std::make_move_iterator(children.end()));
             break;
         case ChildAction::Insert:
-            for (const auto& c : children) c->parent = parent;
+            for (const auto& c : children) c->updateParent(parent);
             offset += children.size();
             parent->children.insert(
               it, std::make_move_iterator(children.begin()), std::make_move_iterator(children.end()));
             break;
         case ChildAction::Prepend:
-            for (const auto& c : children) c->parent = parent;
+            for (const auto& c : children) c->updateParent(parent);
             offset += children.size();
             parent->children.insert(parent->children.begin(),
                                     std::make_move_iterator(children.begin()),
@@ -148,5 +153,30 @@ namespace sol
         // Remove self.
         parent->children.erase(parent->children.begin() + offset);
     }
+
+    void Node::clearChildren() { children.clear(); }
+
+    void Node::addChildImpl(NodePtr child)
+    {
+        child->updateScenegraph(scenegraph);
+        child->updateParent(this);
+
+        children.emplace_back(std::move(child));
+    }
+
+    void Node::insertChildImpl(NodePtr child, const size_t index)
+    {
+        child->updateScenegraph(scenegraph);
+        child->updateParent(this);
+
+        if (index >= children.size())
+            children.push_back(std::move(child));
+        else
+            children.insert(children.begin() + index, std::move(child));
+    }
+
+    void Node::updateScenegraph(Scenegraph* s) { scenegraph = s; }
+
+    void Node::updateParent(Node* p) { parent = p; }
 
 }  // namespace sol

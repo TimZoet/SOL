@@ -58,10 +58,23 @@ namespace sol
             return *this;
         }
 
+        auto& operator--()
+        {
+            ptr--;
+            return *this;
+        }
+
         auto operator++(int)
         {
             const auto tmp = *this;
             ++*this;
+            return tmp;
+        }
+
+        auto operator--(int)
+        {
+            const auto tmp = *this;
+            --*this;
             return tmp;
         }
 
