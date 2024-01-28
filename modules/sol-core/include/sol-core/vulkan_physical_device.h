@@ -4,11 +4,14 @@
 // Standard includes.
 ////////////////////////////////////////////////////////////////
 
+#include <any>
+#include <expected>
 #include <functional>
 #include <memory>
 #include <optional>
 #include <string>
 #include <tuple>
+#include <unordered_map>
 #include <vector>
 
 ////////////////////////////////////////////////////////////////
@@ -75,7 +78,7 @@ namespace sol
              */
             std::function<bool(const std::vector<VulkanQueueFamily>&)> queueFamilyFilter;
 
-            [[nodiscard]] bool validate() const noexcept;
+            [[nodiscard]] std::expected<bool, std::string> validate() const noexcept;
         };
 
         ////////////////////////////////////////////////////////////////
@@ -176,6 +179,36 @@ namespace sol
         [[nodiscard]] const std::optional<VulkanSwapchainSupportDetails>& getSwapchainSupportDetails() const noexcept;
 
         ////////////////////////////////////////////////////////////////
+        // Properties.
+        ////////////////////////////////////////////////////////////////
+
+        /**
+         * \brief Retrieve physical device properties. Retrieved structs are cached. You can keep a pointer / reference to the struct.
+         * \tparam T Properties structure type.
+         * \tparam S Matching enum value for T.
+         * \return Filled in property struct.
+         */
+        template<typename T, VkStructureType S>
+        [[nodiscard]] const T& getProperties()
+        {
+            auto it = properties.find(S);
+
+            if (it == properties.end())
+            {
+                T props{.sType = S};
+                props.sType = S;
+
+                VkPhysicalDeviceProperties2 props2{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
+                                                   .pNext = &props};
+
+                vkGetPhysicalDeviceProperties2(device, &props2);
+                it = properties.try_emplace(S, std::any(props)).first;
+            }
+
+            return std::any_cast<const T&>(it->second);
+        }
+
+        ////////////////////////////////////////////////////////////////
         // ...
         ////////////////////////////////////////////////////////////////
 
@@ -220,5 +253,7 @@ namespace sol
          * \brief Swap chain support details.
          */
         std::optional<VulkanSwapchainSupportDetails> swapchainSupportDetails;
+
+        std::unordered_map<VkStructureType, std::any> properties;
     };
 }  // namespace sol

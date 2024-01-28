@@ -9,7 +9,9 @@ set(SRC_DIR "src")
 set(HEADERS
     ${INCLUDE_DIR}/fwd.h
     ${INCLUDE_DIR}/material.h
+    ${INCLUDE_DIR}/material2.h
     ${INCLUDE_DIR}/material_instance.h
+    ${INCLUDE_DIR}/material_instance2.h
     ${INCLUDE_DIR}/material_layout.h
     ${INCLUDE_DIR}/material_layout_description.h
 
@@ -18,8 +20,11 @@ set(HEADERS
     ${INCLUDE_DIR}/compute/compute_material_layout.h
     ${INCLUDE_DIR}/compute/i_compute_material_manager.h
 
+    ${INCLUDE_DIR}/graphics/graphics_dynamic_state.h
     ${INCLUDE_DIR}/graphics/graphics_material.h
+    ${INCLUDE_DIR}/graphics/graphics_material2.h
     ${INCLUDE_DIR}/graphics/graphics_material_instance.h
+    ${INCLUDE_DIR}/graphics/graphics_material_instance2.h
     ${INCLUDE_DIR}/graphics/graphics_material_layout.h
     ${INCLUDE_DIR}/graphics/i_graphics_material_manager.h
 
@@ -31,7 +36,9 @@ set(HEADERS
 
 set(SOURCES
     ${SRC_DIR}/material.cpp
+    ${SRC_DIR}/material2.cpp
     ${SRC_DIR}/material_instance.cpp
+    ${SRC_DIR}/material_instance2.cpp
     ${SRC_DIR}/material_layout.cpp
     ${SRC_DIR}/material_layout_description.cpp
 
@@ -41,7 +48,9 @@ set(SOURCES
     ${SRC_DIR}/compute/i_compute_material_manager.cpp
 
     ${SRC_DIR}/graphics/graphics_material.cpp
+    ${SRC_DIR}/graphics/graphics_material2.cpp
     ${SRC_DIR}/graphics/graphics_material_instance.cpp
+    ${SRC_DIR}/graphics/graphics_material_instance2.cpp
     ${SRC_DIR}/graphics/graphics_material_layout.cpp
     ${SRC_DIR}/graphics/i_graphics_material_manager.cpp
 
@@ -53,6 +62,7 @@ set(SOURCES
 
 set(DEPS_PUBLIC
     sol-core
+    sol-descriptor
     sol-memory
     sol-mesh
     sol-texture

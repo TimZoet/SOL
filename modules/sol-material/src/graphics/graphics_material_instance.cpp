@@ -41,9 +41,9 @@ namespace sol
 
     const GraphicsMaterial& GraphicsMaterialInstance::getGraphicsMaterial() const noexcept { return *material; }
 
-    std::optional<CullMode> GraphicsMaterialInstance::getCullMode() const noexcept { return cullMode; }
+    std::optional<ECullMode> GraphicsMaterialInstance::getCullMode() const noexcept { return cullMode; }
 
-    std::optional<FrontFace> GraphicsMaterialInstance::getFrontFace() const noexcept { return frontFace; }
+    std::optional<EFrontFace> GraphicsMaterialInstance::getFrontFace() const noexcept { return frontFace; }
 
     const std::optional<std::vector<VkViewport>>& GraphicsMaterialInstance::getViewports() const noexcept
     {
@@ -55,7 +55,7 @@ namespace sol
         return scissors;
     }
 
-    std::optional<PolygonMode> GraphicsMaterialInstance::getPolygonMode() const noexcept { return polygonMode; }
+    std::optional<EPolygonMode> GraphicsMaterialInstance::getPolygonMode() const noexcept { return polygonMode; }
 
     ////////////////////////////////////////////////////////////////
     // Setters.
@@ -75,9 +75,9 @@ namespace sol
         material->addInstance(*this);
     }
 
-    void GraphicsMaterialInstance::setCullMode(const std::optional<CullMode> value) noexcept { cullMode = value; }
+    void GraphicsMaterialInstance::setCullMode(const std::optional<ECullMode> value) noexcept { cullMode = value; }
 
-    void GraphicsMaterialInstance::setFrontFace(const std::optional<FrontFace> value) noexcept { frontFace = value; }
+    void GraphicsMaterialInstance::setFrontFace(const std::optional<EFrontFace> value) noexcept { frontFace = value; }
 
     void GraphicsMaterialInstance::setViewports(std::optional<std::vector<VkViewport>> value)
     {
@@ -89,7 +89,7 @@ namespace sol
         scissors = std::move(value);
     }
 
-    void GraphicsMaterialInstance::setPolygonMode(const std::optional<PolygonMode> value) noexcept
+    void GraphicsMaterialInstance::setPolygonMode(const std::optional<EPolygonMode> value) noexcept
     {
         polygonMode = value;
     }

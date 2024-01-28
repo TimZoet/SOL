@@ -55,14 +55,4 @@ namespace sol
     {
         dimensions = {x, y, z};
     }
-
-    ////////////////////////////////////////////////////////////////
-    // Debugging and visualization.
-    ////////////////////////////////////////////////////////////////
-
-    std::string TraceRaysNode::getVizLabel() const { return "TraceRays"; }
-
-    std::string TraceRaysNode::getVizShape() const { return "octagon"; }
-
-    std::string TraceRaysNode::getVizFillColor() const { return "white"; }
 }  // namespace sol

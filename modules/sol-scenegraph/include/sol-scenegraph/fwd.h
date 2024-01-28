@@ -8,17 +8,26 @@
 
 namespace sol
 {
+    class GraphicsDynamicStateNode;
     class GraphicsMaterialNode;
+    class GraphicsPushConstantNode;
+    class ITraverser2;
     class MeshNode;
     class Node;
     class Scenegraph;
 
-    using GraphicsMaterialNodePtr       = std::unique_ptr<GraphicsMaterialNode>;
-    using GraphicsMaterialNodeSharedPtr = std::shared_ptr<GraphicsMaterialNode>;
-    using MeshNodePtr                   = std::unique_ptr<MeshNode>;
-    using MeshNodeSharedPtr             = std::shared_ptr<MeshNode>;
-    using NodePtr                       = std::unique_ptr<Node>;
-    using NodeSharedPtr                 = std::shared_ptr<Node>;
-    using ScenegraphPtr                 = std::unique_ptr<Scenegraph>;
-    using ScenegraphSharedPtr           = std::shared_ptr<Scenegraph>;
+    using GraphicsDynamicStateNodePtr       = std::unique_ptr<GraphicsDynamicStateNode>;
+    using GraphicsDynamicStateNodeSharedPtr = std::shared_ptr<GraphicsDynamicStateNode>;
+    using GraphicsMaterialNodePtr           = std::unique_ptr<GraphicsMaterialNode>;
+    using GraphicsMaterialNodeSharedPtr     = std::shared_ptr<GraphicsMaterialNode>;
+    using GraphicsPushConstantNodePtr       = std::unique_ptr<GraphicsPushConstantNode>;
+    using GraphicsPushConstantNodeSharedPtr = std::shared_ptr<GraphicsPushConstantNode>;
+    using ITraverser2Ptr                    = std::unique_ptr<ITraverser2>;
+    using ITraverser2SharedPtr              = std::shared_ptr<ITraverser2>;
+    using MeshNodePtr                       = std::unique_ptr<MeshNode>;
+    using MeshNodeSharedPtr                 = std::shared_ptr<MeshNode>;
+    using NodePtr                           = std::unique_ptr<Node>;
+    using NodeSharedPtr                     = std::shared_ptr<Node>;
+    using ScenegraphPtr                     = std::unique_ptr<Scenegraph>;
+    using ScenegraphSharedPtr               = std::shared_ptr<Scenegraph>;
 }  // namespace sol

@@ -14,22 +14,26 @@
 
 namespace sol
 {
-    class MeshNode final : public Node
+    class MeshNode : public Node
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        MeshNode() = default;
+        MeshNode();
 
-        explicit MeshNode(IMesh& meshInstance);
+        explicit MeshNode(uuids::uuid id);
+
+        explicit MeshNode(Mesh& m);
+
+        MeshNode(uuids::uuid id, Mesh& m);
 
         MeshNode(const MeshNode&) = delete;
 
         MeshNode(MeshNode&&) = delete;
 
-        ~MeshNode() noexcept override = default;
+        ~MeshNode() noexcept override;
 
         MeshNode& operator=(const MeshNode&) = delete;
 
@@ -39,31 +43,27 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] Type getType() const noexcept override;
-
-        [[nodiscard]] IMesh* getMesh() const noexcept;
+        [[nodiscard]] Mesh* getMesh() const noexcept;
 
         ////////////////////////////////////////////////////////////////
         // Setters.
         ////////////////////////////////////////////////////////////////
 
-        void setMesh(IMesh* msh) noexcept;
-
-        ////////////////////////////////////////////////////////////////
-        // Debugging and visualization.
-        ////////////////////////////////////////////////////////////////
-
-        [[nodiscard]] std::string getVizLabel() const override;
-
-        [[nodiscard]] std::string getVizShape() const override;
-
-        [[nodiscard]] std::string getVizFillColor() const override;
+        void setMesh(Mesh* m) noexcept;
 
     protected:
+        ////////////////////////////////////////////////////////////////
+        // Casting.
+        ////////////////////////////////////////////////////////////////
+
+        bool supportsTypeImpl(Type type) const noexcept override;
+
+        const void* getAsImpl(Type type) const override;
+
         ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        IMesh* mesh = nullptr;
+        Mesh* mesh = nullptr;
     };
 }  // namespace sol

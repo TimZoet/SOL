@@ -15,6 +15,7 @@
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
+#include "sol-core/vulkan_queue_family.h"
 #include "sol-texture/texture_manager.h"
 
 namespace
@@ -74,7 +75,7 @@ namespace sol
     VkImageLayout Image2D::getImageLayout() const noexcept { return imageLayout; }
 
     ////////////////////////////////////////////////////////////////
-    // Setters.
+    // Transitions.
     ////////////////////////////////////////////////////////////////
 
     void Image2D::stageTransition(const VulkanQueueFamily*           family,
@@ -86,13 +87,60 @@ namespace sol
     {
         if (!family && !layout)
             throw SolError("Cannot stage transition without either a family transfer or layout transition.");
+        if (!queueFamily && !family) throw SolError("Cannot stage transition without source and target queue family.");
 
-        textureManager->stageTransition(*this, family, layout, srcStage, dstStage, srcAccess, dstAccess);
+        stagedTransition = Transition{family, layout, srcStage, dstStage, srcAccess, dstAccess};
+        textureManager->stageTransition(*this);
     }
 
-    void Image2D::setQueueFamily(const VulkanQueueFamily& family) noexcept { queueFamily = &family; }
+    std::optional<Image2D::Transition> Image2D::getStagedTransition() const noexcept { return stagedTransition; }
 
-    void Image2D::setImageLayout(const VkImageLayout layout) noexcept { imageLayout = layout; }
+    Image2D::BarrierPair Image2D::getTransitionBarriers() const
+    {
+        BarrierPair barriers;
+
+        // If the image has an owner that is not the target queue, a barrier on both queues is needed.
+        // Otherwise, only an acquire barrier on the target queue is needed.
+
+        barriers.acquire = VkImageMemoryBarrier2{
+          .sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+          .pNext               = nullptr,
+          .srcStageMask        = stagedTransition->srcStage,
+          .srcAccessMask       = stagedTransition->srcAccess,
+          .dstStageMask        = VK_PIPELINE_STAGE_2_NONE,
+          .dstAccessMask       = VK_ACCESS_2_NONE,
+          .oldLayout           = stagedTransition->newLayout ? imageLayout : VK_IMAGE_LAYOUT_UNDEFINED,
+          .newLayout           = stagedTransition->newLayout ? *stagedTransition->newLayout : VK_IMAGE_LAYOUT_UNDEFINED,
+          .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+          .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+          .image               = image->get(),
+          .subresourceRange    = {
+               .aspectMask = aspectFlags, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1}};
+
+        if (queueFamily && queueFamily != stagedTransition->targetFamily)
+        {
+            barriers.acquire->srcQueueFamilyIndex = queueFamily->getIndex();
+            barriers.acquire->dstQueueFamilyIndex = stagedTransition->targetFamily->getIndex();
+            barriers.release                      = barriers.acquire;
+
+            // We must only set the destination stage and access on the acquire barrier.
+            // This to prevent e.g. a graphics only stage being recorded on a transfer queue, which is invalid.
+            barriers.acquire->dstStageMask  = stagedTransition->dstStage;
+            barriers.acquire->dstAccessMask = stagedTransition->dstAccess;
+        }
+
+        return barriers;
+    }
+
+
+    void Image2D::applyTransition()
+    {
+        if (!stagedTransition) return;
+
+        if (stagedTransition->targetFamily) queueFamily = stagedTransition->targetFamily;
+        if (stagedTransition->newLayout) imageLayout = *stagedTransition->newLayout;
+        stagedTransition.reset();
+    }
 
     ////////////////////////////////////////////////////////////////
     // Data setters.
@@ -150,20 +198,20 @@ namespace sol
         aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
 
         VulkanImage::Settings imageSettings;
-        imageSettings.device         = textureManager->getMemoryManager().getDevice();
-        imageSettings.format         = format;
-        imageSettings.width          = size[0];
-        imageSettings.height         = size[1];
-        imageSettings.depth          = 1;
-        imageSettings.tiling         = VK_IMAGE_TILING_OPTIMAL;
-        imageSettings.imageUsage     = usage;
-        imageSettings.sharingMode    = VK_SHARING_MODE_EXCLUSIVE;
-        imageSettings.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageSettings.allocator      = textureManager->getMemoryManager().getAllocator();
-        imageSettings.memoryUsage    = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
-        imageSettings.requiredFlags  = 0;
-        imageSettings.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-        imageSettings.flags          = 0;
-        image                        = VulkanImage::create(imageSettings);
+        imageSettings.device             = textureManager->getMemoryManager().getDevice();
+        imageSettings.format             = format;
+        imageSettings.width              = size[0];
+        imageSettings.height             = size[1];
+        imageSettings.depth              = 1;
+        imageSettings.tiling             = VK_IMAGE_TILING_OPTIMAL;
+        imageSettings.imageUsage         = usage;
+        imageSettings.sharingMode        = VK_SHARING_MODE_EXCLUSIVE;
+        imageSettings.initialLayout      = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageSettings.allocator          = textureManager->getMemoryManager().getAllocator();
+        imageSettings.vma.memoryUsage    = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+        imageSettings.vma.requiredFlags  = 0;
+        imageSettings.vma.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        imageSettings.vma.flags          = 0;
+        image                            = VulkanImage::create(imageSettings);
     }
 }  // namespace sol

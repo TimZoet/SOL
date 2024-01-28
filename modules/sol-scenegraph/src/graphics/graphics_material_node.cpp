@@ -6,32 +6,43 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    GraphicsMaterialNode::GraphicsMaterialNode(GraphicsMaterialInstance& materialInstance) :
-        Node(), material(&materialInstance)
+    GraphicsMaterialNode::GraphicsMaterialNode() = default;
+
+    GraphicsMaterialNode::GraphicsMaterialNode(const uuids::uuid id) : Node(id) {}
+
+    GraphicsMaterialNode::GraphicsMaterialNode(GraphicsMaterialInstance2& m) : material(&m) {}
+
+    GraphicsMaterialNode::GraphicsMaterialNode(const uuids::uuid id, GraphicsMaterialInstance2& m) :
+        Node(id), material(&m)
     {
     }
+
+    GraphicsMaterialNode::~GraphicsMaterialNode() noexcept = default;
 
     ////////////////////////////////////////////////////////////////
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    Node::Type GraphicsMaterialNode::getType() const noexcept { return Type::GraphicsMaterial; }
-
-    GraphicsMaterialInstance* GraphicsMaterialNode::getMaterial() const noexcept { return material; }
+    GraphicsMaterialInstance2* GraphicsMaterialNode::getMaterial() const noexcept { return material; }
 
     ////////////////////////////////////////////////////////////////
     // Setters.
     ////////////////////////////////////////////////////////////////
 
-    void GraphicsMaterialNode::setMaterial(GraphicsMaterialInstance* mtl) noexcept { material = mtl; }
+    void GraphicsMaterialNode::setMaterial(GraphicsMaterialInstance2* mtl) noexcept { material = mtl; }
 
     ////////////////////////////////////////////////////////////////
-    // Debugging and visualization.
+    // Casting.
     ////////////////////////////////////////////////////////////////
 
-    std::string GraphicsMaterialNode::getVizLabel() const { return "GraphicsMaterial"; }
+    bool GraphicsMaterialNode::supportsTypeImpl(const Type type) const noexcept
+    {
+        return type == Type::GraphicsMaterial;
+    }
 
-    std::string GraphicsMaterialNode::getVizShape() const { return "circle"; }
-
-    std::string GraphicsMaterialNode::getVizFillColor() const { return material ? "white" : "red"; }
+    const void* GraphicsMaterialNode::getAsImpl(const Type type) const
+    {
+        if (type == Type::GraphicsMaterial) return this;
+        return nullptr;
+    }
 }  // namespace sol

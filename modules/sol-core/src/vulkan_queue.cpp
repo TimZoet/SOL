@@ -35,6 +35,8 @@ namespace sol
 
     const VulkanDevice& VulkanQueue::getDevice() const noexcept { return *device; }
 
+    VulkanQueueFamily& VulkanQueue::getFamily() noexcept { return *family; }
+
     const VulkanQueueFamily& VulkanQueue::getFamily() const noexcept { return *family; }
 
     const VkQueue& VulkanQueue::get() const noexcept { return queue; }

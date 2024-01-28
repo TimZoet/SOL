@@ -1,40 +1,49 @@
 #include "sol-scenegraph/graphics/graphics_push_constant_node.h"
 
-////////////////////////////////////////////////////////////////
-// Standard includes.
-////////////////////////////////////////////////////////////////
-
-#include <ranges>
-
-////////////////////////////////////////////////////////////////
-// Module includes.
-////////////////////////////////////////////////////////////////
-
-#include "sol-error/sol_error.h"
-
 namespace sol
 {
     ////////////////////////////////////////////////////////////////
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    GraphicsPushConstantNode::GraphicsPushConstantNode(GraphicsMaterial& mtl) : Node(), material(&mtl) {}
+    GraphicsPushConstantNode::GraphicsPushConstantNode() = default;
+
+    GraphicsPushConstantNode::GraphicsPushConstantNode(const uuids::uuid id) : Node(id) {}
+
+    GraphicsPushConstantNode::GraphicsPushConstantNode(GraphicsMaterial2& mtl) : material(&mtl) {}
+
+    GraphicsPushConstantNode::GraphicsPushConstantNode(const uuids::uuid id, GraphicsMaterial2& mtl) :
+        Node(id), material(&mtl)
+    {
+    }
+
+    GraphicsPushConstantNode::~GraphicsPushConstantNode() noexcept = default;
 
     ////////////////////////////////////////////////////////////////
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    Node::Type GraphicsPushConstantNode::getType() const noexcept { return Type::GraphicsPushConstant; }
-
-    const GraphicsMaterial& GraphicsPushConstantNode::getMaterial() const noexcept { return *material; }
+    const GraphicsMaterial2* GraphicsPushConstantNode::getMaterial() const noexcept { return material; }
 
     ////////////////////////////////////////////////////////////////
-    // Debugging and visualization.
+    // Setters.
     ////////////////////////////////////////////////////////////////
 
-    std::string GraphicsPushConstantNode::getVizLabel() const { return "PushConstant"; }
+    void GraphicsPushConstantNode::setMaterial(GraphicsMaterial2* mtl) { material = mtl; }
 
-    std::string GraphicsPushConstantNode::getVizShape() const { return "invtriangle"; }
+    ////////////////////////////////////////////////////////////////
+    // Casting.
+    ////////////////////////////////////////////////////////////////
 
-    std::string GraphicsPushConstantNode::getVizFillColor() const { return "white"; }
+    bool GraphicsPushConstantNode::supportsTypeImpl(const Type type) const noexcept
+    {
+        return type == Type::GraphicsPushConstant;
+    }
+
+    const void* GraphicsPushConstantNode::getAsImpl(const Type type) const
+    {
+        if (type == Type::GraphicsPushConstant) return this;
+        return nullptr;
+    }
+
 }  // namespace sol

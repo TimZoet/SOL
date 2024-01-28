@@ -34,14 +34,4 @@ namespace sol
     {
         count = {x, y, z};
     }
-
-    ////////////////////////////////////////////////////////////////
-    // Debugging and visualization.
-    ////////////////////////////////////////////////////////////////
-
-    std::string DispatchNode::getVizLabel() const { return "Dispatch"; }
-
-    std::string DispatchNode::getVizShape() const { return "octagon"; }
-
-    std::string DispatchNode::getVizFillColor() const { return "white"; }
 }  // namespace sol

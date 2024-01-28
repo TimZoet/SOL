@@ -22,11 +22,11 @@ namespace sol
 
     uint32_t GraphicsMaterialLayout::getDynamicScissorCount() const noexcept { return dynamicScissorCount; }
 
-    CullMode GraphicsMaterialLayout::getCullMode() const noexcept { return cullMode; }
+    ECullMode GraphicsMaterialLayout::getCullMode() const noexcept { return cullMode; }
 
-    FrontFace GraphicsMaterialLayout::getFrontFace() const noexcept { return frontFace; }
+    EFrontFace GraphicsMaterialLayout::getFrontFace() const noexcept { return frontFace; }
 
-    PolygonMode GraphicsMaterialLayout::getPolygonMode() const noexcept { return polygonMode; }
+    EPolygonMode GraphicsMaterialLayout::getPolygonMode() const noexcept { return polygonMode; }
 
     const std::vector<VkPipelineColorBlendAttachmentState>&
       GraphicsMaterialLayout::getColorBlendAttachments() const noexcept
@@ -63,19 +63,19 @@ namespace sol
         dynamicScissorCount = value;
     }
 
-    void GraphicsMaterialLayout::setCullMode(const CullMode value) noexcept
+    void GraphicsMaterialLayout::setCullMode(const ECullMode value) noexcept
     {
         requireNonFinalized();
         cullMode = value;
     }
 
-    void GraphicsMaterialLayout::setFrontFace(const FrontFace value) noexcept
+    void GraphicsMaterialLayout::setFrontFace(const EFrontFace value) noexcept
     {
         requireNonFinalized();
         frontFace = value;
     }
 
-    void GraphicsMaterialLayout::setPolygonMode(const PolygonMode value) noexcept
+    void GraphicsMaterialLayout::setPolygonMode(const EPolygonMode value) noexcept
     {
         requireNonFinalized();
         polygonMode = value;

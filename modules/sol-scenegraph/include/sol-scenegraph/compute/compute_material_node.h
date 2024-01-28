@@ -49,16 +49,6 @@ namespace sol
 
         void setMaterial(ComputeMaterialInstance* mtl) noexcept;
 
-        ////////////////////////////////////////////////////////////////
-        // Debugging and visualization.
-        ////////////////////////////////////////////////////////////////
-
-        [[nodiscard]] std::string getVizLabel() const override;
-
-        [[nodiscard]] std::string getVizShape() const override;
-
-        [[nodiscard]] std::string getVizFillColor() const override;
-
     protected:
         ////////////////////////////////////////////////////////////////
         // Member variables.

@@ -166,13 +166,13 @@ namespace sol
         if (vertexCount == 0) throw SolError("Cannot add vertex buffer with vertex count 0.");
 
         VulkanBuffer::Settings bufferSettings;
-        bufferSettings.device      = meshManager->getMemoryManager().getDevice();
-        bufferSettings.bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-        bufferSettings.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        bufferSettings.allocator   = meshManager->getMemoryManager().getAllocator();
-        bufferSettings.memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY;
-        bufferSettings.flags       = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-        bufferSettings.size        = vertexSize * vertexCount;
+        bufferSettings.device          = meshManager->getMemoryManager().getDevice();
+        bufferSettings.bufferUsage     = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        bufferSettings.sharingMode     = VK_SHARING_MODE_EXCLUSIVE;
+        bufferSettings.allocator       = meshManager->getMemoryManager().getAllocator();
+        bufferSettings.vma.memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY;
+        bufferSettings.vma.flags       = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        bufferSettings.size            = vertexSize * vertexCount;
 
         vertexBuffers.emplace_back(
           VulkanBuffer::create(bufferSettings), vertexSize, vertexCount, vertexOffset, additionalFlags);
@@ -197,13 +197,13 @@ namespace sol
         if (indexCount == 0) throw SolError("Cannot add index buffer with index count 0.");
 
         VulkanBuffer::Settings bufferSettings;
-        bufferSettings.device      = meshManager->getMemoryManager().getDevice();
-        bufferSettings.bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-        bufferSettings.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        bufferSettings.allocator   = meshManager->getMemoryManager().getAllocator();
-        bufferSettings.memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY;
-        bufferSettings.flags       = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-        bufferSettings.size        = indexSize * indexCount;
+        bufferSettings.device          = meshManager->getMemoryManager().getDevice();
+        bufferSettings.bufferUsage     = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        bufferSettings.sharingMode     = VK_SHARING_MODE_EXCLUSIVE;
+        bufferSettings.allocator       = meshManager->getMemoryManager().getAllocator();
+        bufferSettings.vma.memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY;
+        bufferSettings.vma.flags       = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        bufferSettings.size            = indexSize * indexCount;
 
         indexBuffer.buffer          = VulkanBuffer::create(bufferSettings);
         indexBuffer.elementSize     = indexSize;

@@ -83,19 +83,19 @@ namespace sol
          * \brief Get the cull mode.
          * \return State.
          */
-        [[nodiscard]] CullMode getCullMode() const noexcept;
+        [[nodiscard]] ECullMode getCullMode() const noexcept;
 
         /**
          * \brief Get the front face.
          * \return State.
          */
-        [[nodiscard]] FrontFace getFrontFace() const noexcept;
+        [[nodiscard]] EFrontFace getFrontFace() const noexcept;
 
         /**
          * \brief Get the polygon mode.
          * \return State.
          */
-        [[nodiscard]] PolygonMode getPolygonMode() const noexcept;
+        [[nodiscard]] EPolygonMode getPolygonMode() const noexcept;
 
         [[nodiscard]] const std::vector<VkPipelineColorBlendAttachmentState>& getColorBlendAttachments() const noexcept;
 
@@ -139,19 +139,19 @@ namespace sol
          * \brief Set the cull mode.
          * \param value New state.
          */
-        void setCullMode(CullMode value) noexcept;
+        void setCullMode(ECullMode value) noexcept;
 
         /**
          * \brief Set the dynamic front face state.
          * \param value New state.
          */
-        void setFrontFace(FrontFace value) noexcept;
+        void setFrontFace(EFrontFace value) noexcept;
 
         /**
          * \brief Set the dynamic polygon mode state.
          * \param value New state.
          */
-        void setPolygonMode(PolygonMode value) noexcept;
+        void setPolygonMode(EPolygonMode value) noexcept;
 
         void addColorBlendAttachment(VkPipelineColorBlendAttachmentState state);
 
@@ -200,11 +200,11 @@ namespace sol
 
         uint32_t dynamicScissorCount = 0;
 
-        CullMode cullMode = CullMode::None;
+        ECullMode cullMode = ECullMode::None;
 
-        FrontFace frontFace = FrontFace::CounterClockwise;
+        EFrontFace frontFace = EFrontFace::CounterClockwise;
 
-        PolygonMode polygonMode = PolygonMode::Fill;
+        EPolygonMode polygonMode = EPolygonMode::Fill;
 
         std::vector<VkPipelineColorBlendAttachmentState> colorBlending;
     };
