@@ -8,14 +8,11 @@
 
 namespace sol
 {
-    class ITraverser;
-    class UniformBuffer;
-    class UniformBufferManager;
+    class GraphicsRenderData;
+    class GraphicsTraverser;
 
-    using ITraverserPtr                 = std::unique_ptr<ITraverser>;
-    using ITraverserSharedPtr           = std::shared_ptr<ITraverser>;
-    using UniformBufferPtr              = std::unique_ptr<UniformBuffer>;
-    using UniformBufferSharedPtr        = std::shared_ptr<UniformBuffer>;
-    using UniformBufferManagerPtr       = std::unique_ptr<UniformBufferManager>;
-    using UniformBufferManagerSharedPtr = std::shared_ptr<UniformBufferManager>;
+    using GraphicsRenderDataPtr       = std::unique_ptr<GraphicsRenderData>;
+    using GraphicsRenderDataSharedPtr = std::shared_ptr<GraphicsRenderData>;
+    using GraphicsTraverserPtr        = std::unique_ptr<GraphicsTraverser>;
+    using GraphicsTraverserSharedPtr  = std::shared_ptr<GraphicsTraverser>;
 }  // namespace sol

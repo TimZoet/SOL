@@ -9,6 +9,7 @@ set(HEADERS
     ${INCLUDE_DIR}/fwd.h
     ${INCLUDE_DIR}/node.h
     ${INCLUDE_DIR}/scenegraph.h
+    ${INCLUDE_DIR}/traverser.h
 
     #${INCLUDE_DIR}/compute/compute_material_node.h
     #${INCLUDE_DIR}/compute/dispatch_node.h

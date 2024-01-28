@@ -38,10 +38,11 @@ namespace sol
         if (set.preRasterizationPipeline) states.insert_range(settings->preRasterizationPipeline().getDynamicStates());
         if (set.fragmentPipeline) states.insert_range(settings->fragmentPipeline().getDynamicStates());
         if (set.fragmentOutputPipeline) states.insert_range(settings->fragmentOutputPipeline().getDynamicStates());
-        dynamicStates = std::ranges::to<std::vector>(states);
+        dynamicStates      = std::ranges::to<std::vector>(states);
+        pushConstantRanges = settings->fragmentPipeline().getSettings().layout().getSettings().pushConstants;
     }
 
-    VulkanGraphicsPipeline2::VulkanGraphicsPipeline2(Settings2 set, VkPipeline vkPipeline) :
+    VulkanGraphicsPipeline2::VulkanGraphicsPipeline2(Settings2 set, const VkPipeline vkPipeline) :
         settings2(set), pipeline(vkPipeline)
     {
         std::set<VkDynamicState> states;
@@ -49,7 +50,8 @@ namespace sol
         states.insert_range(settings2->preRasterization.enabledDynamicStates);
         states.insert_range(settings2->fragment.enabledDynamicStates);
         states.insert_range(settings2->fragmentOutput.enabledDynamicStates);
-        dynamicStates = std::ranges::to<std::vector>(states);
+        dynamicStates      = std::ranges::to<std::vector>(states);
+        pushConstantRanges = settings2->fragment.layout().getSettings().pushConstants;
     }
 
     VulkanGraphicsPipeline2::~VulkanGraphicsPipeline2() noexcept
@@ -293,8 +295,19 @@ namespace sol
 
     const VkPipeline& VulkanGraphicsPipeline2::get() const noexcept { return pipeline; }
 
+    const VulkanPipelineLayout& VulkanGraphicsPipeline2::getPipelineLayout() const noexcept
+    {
+        if (settings) return settings->preRasterizationPipeline().getSettings().layout();
+        return settings2->preRasterization.layout();
+    }
+
     const std::vector<VkDynamicState>& VulkanGraphicsPipeline2::getDynamicStates() const noexcept
     {
         return dynamicStates;
+    }
+
+    const std::vector<VkPushConstantRange>& VulkanGraphicsPipeline2::getPushConstantRanges() const noexcept
+    {
+        return pushConstantRanges;
     }
 }  // namespace sol

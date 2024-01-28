@@ -23,8 +23,6 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    Node::Type GraphicsMaterialNode::getType() const noexcept { return Type::GraphicsMaterial; }
-
     GraphicsMaterialInstance2* GraphicsMaterialNode::getMaterial() const noexcept { return material; }
 
     ////////////////////////////////////////////////////////////////
@@ -32,4 +30,19 @@ namespace sol
     ////////////////////////////////////////////////////////////////
 
     void GraphicsMaterialNode::setMaterial(GraphicsMaterialInstance2* mtl) noexcept { material = mtl; }
+
+    ////////////////////////////////////////////////////////////////
+    // Casting.
+    ////////////////////////////////////////////////////////////////
+
+    bool GraphicsMaterialNode::supportsTypeImpl(const Type type) const noexcept
+    {
+        return type == Type::GraphicsMaterial;
+    }
+
+    const void* GraphicsMaterialNode::getAsImpl(const Type type) const
+    {
+        if (type == Type::GraphicsMaterial) return this;
+        return nullptr;
+    }
 }  // namespace sol

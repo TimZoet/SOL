@@ -49,8 +49,6 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] Type getType() const noexcept override;
-
         /**
          * \brief Get material.
          * \return GraphicsMaterial.
@@ -58,10 +56,10 @@ namespace sol
         [[nodiscard]] const GraphicsMaterial2* getMaterial() const noexcept;
 
         /**
-         * \brief Get push constant data range.
-         * \return {offset, size}.
+         * \brief Get push constant range index.
+         * \return Index.
          */
-        [[nodiscard]] virtual std::pair<uint32_t, uint32_t> getRange() const noexcept = 0;
+        [[nodiscard]] virtual size_t getRangeIndex() const noexcept = 0;
 
         /**
          * \brief Get stages to which the push constant data applies.
@@ -82,6 +80,14 @@ namespace sol
         void setMaterial(GraphicsMaterial2* mtl);
 
     private:
+        ////////////////////////////////////////////////////////////////
+        // Casting.
+        ////////////////////////////////////////////////////////////////
+
+        bool supportsTypeImpl(Type type) const noexcept override;
+
+        const void* getAsImpl(Type type) const override;
+
         ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////

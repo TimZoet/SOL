@@ -65,6 +65,8 @@ namespace sol
 
     size_t VertexBuffer::getVertexSize() const noexcept { return vertexSize; }
 
+    size_t VertexBuffer::getVertexOffset() const noexcept { return vertexOffset; }
+
     VulkanBuffer& VertexBuffer::getBuffer() { return isSubAllocation() ? globalBuffer->getBuffer() : *freeBuffer; }
 
     const VulkanBuffer& VertexBuffer::getBuffer() const

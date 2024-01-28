@@ -65,6 +65,19 @@ namespace sol
 
     size_t IndexBuffer::getIndexSize() const noexcept { return indexSize; }
 
+    size_t IndexBuffer::getIndexOffset() const noexcept { return indexOffset; }
+
+    VkIndexType IndexBuffer::getIndexType() const noexcept
+    {
+        switch (indexSize)
+        {
+        case 1: return VK_INDEX_TYPE_UINT8_EXT;
+        case 2: return VK_INDEX_TYPE_UINT16;
+        case 4:
+        default: return VK_INDEX_TYPE_UINT32;
+        }
+    }
+
     VulkanBuffer& IndexBuffer::getBuffer() { return isSubAllocation() ? globalBuffer->getBuffer() : *freeBuffer; }
 
     const VulkanBuffer& IndexBuffer::getBuffer() const

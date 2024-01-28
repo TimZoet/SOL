@@ -5,22 +5,18 @@
 ////////////////////////////////////////////////////////////////
 
 #include "sol-core/utils.h"
-#include "sol-descriptor/descriptor_layout.h"
 #include "sol-material/graphics/graphics_material2.h"
 #include "sol-material/graphics/graphics_material_instance2.h"
 
+////////////////////////////////////////////////////////////////
+// Current target includes.
+////////////////////////////////////////////////////////////////
+
+#include "testutils/materials.h"
+
 void GraphicsMaterialInstance::operator()()
 {
-    // Use utility function to create a simple pipeline.
-    auto [pipeline, descriptorLayouts] = createSimpleGraphicsPipeline();
-    const auto layouts                 = sol::raw(descriptorLayouts);
-
-    // Create material from pipeline and descriptor layouts.
-    sol::GraphicsMaterial2Ptr material;
-    expectNoThrow([&] {
-        material =
-          std::make_unique<sol::GraphicsMaterial2>(uuids::uuid_system_generator{}(), std::move(pipeline), layouts);
-    });
+    const auto [descriptorLayouts, material] = Materials::load(Materials::Graphics::Name::Simple, getDevice());
 
     // Create material instance.
     sol::GraphicsMaterialInstance2Ptr instance;

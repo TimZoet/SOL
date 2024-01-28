@@ -23,8 +23,6 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    Node::Type GraphicsPushConstantNode::getType() const noexcept { return Type::GraphicsPushConstant; }
-
     const GraphicsMaterial2* GraphicsPushConstantNode::getMaterial() const noexcept { return material; }
 
     ////////////////////////////////////////////////////////////////
@@ -32,5 +30,20 @@ namespace sol
     ////////////////////////////////////////////////////////////////
 
     void GraphicsPushConstantNode::setMaterial(GraphicsMaterial2* mtl) { material = mtl; }
+
+    ////////////////////////////////////////////////////////////////
+    // Casting.
+    ////////////////////////////////////////////////////////////////
+
+    bool GraphicsPushConstantNode::supportsTypeImpl(const Type type) const noexcept
+    {
+        return type == Type::GraphicsPushConstant;
+    }
+
+    const void* GraphicsPushConstantNode::getAsImpl(const Type type) const
+    {
+        if (type == Type::GraphicsPushConstant) return this;
+        return nullptr;
+    }
 
 }  // namespace sol

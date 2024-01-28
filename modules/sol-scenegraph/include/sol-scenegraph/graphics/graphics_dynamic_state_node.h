@@ -46,13 +46,19 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] Type getType() const noexcept override;
-
         [[nodiscard]] std::vector<GraphicsDynamicStatePtr>& getStates() noexcept;
 
         [[nodiscard]] const std::vector<GraphicsDynamicStatePtr>& getStates() const noexcept;
 
     protected:
+        ////////////////////////////////////////////////////////////////
+        // Casting.
+        ////////////////////////////////////////////////////////////////
+
+        [[nodiscard]] bool supportsTypeImpl(Type type) const noexcept override;
+
+        [[nodiscard]] const void* getAsImpl(Type type) const override;
+
         ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////

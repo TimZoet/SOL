@@ -74,6 +74,12 @@ namespace sol
          */
         [[nodiscard]] size_t getVertexSize() const noexcept;
 
+        /**
+         * \brief Get the offset into global buffer in number of vertices.
+         * \return Offset in number of vertices.
+         */
+        [[nodiscard]] size_t getVertexOffset() const noexcept;
+
         [[nodiscard]] VulkanBuffer& getBuffer() override;
 
         [[nodiscard]] const VulkanBuffer& getBuffer() const override;

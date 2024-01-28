@@ -1,314 +1,20 @@
 #include "sol-render/graphics/graphics_traverser.h"
 
 ////////////////////////////////////////////////////////////////
-// Standard includes.
-////////////////////////////////////////////////////////////////
-
-#include <ranges>
-#include <unordered_map>
-
-////////////////////////////////////////////////////////////////
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-scenegraph/graphics/graphics_material_node.h"
-#include "sol-scenegraph/graphics/graphics_push_constant_node.h"
+#include "sol-error/sol_error.h"
+#include "sol-material/graphics/graphics_dynamic_state.h"
+#include "sol-material/graphics/graphics_material2.h"
 #include "sol-scenegraph/drawable/mesh_node.h"
-#include "sol-scenegraph/node.h"
-#include "sol-scenegraph/scenegraph.h"
+#include "sol-scenegraph/graphics/graphics_dynamic_state_node.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
 #include "sol-render/graphics/graphics_render_data.h"
-
-namespace
-{
-    constexpr size_t no_parent = static_cast<size_t>(-1);
-
-    struct MaterialItem
-    {
-        /**
-         * \brief Material instance.
-         */
-        const sol::GraphicsMaterialInstance& material;
-
-        /**
-         * \brief Index of parent material.
-         */
-        const size_t parentIndex;
-    };
-
-    struct MeshItem
-    {
-        /**
-         * \brief Mesh instance.
-         */
-        const sol::IMesh& mesh;
-
-        /**
-         * \brief Index of last visited material.
-         */
-        const size_t materialIndex;
-
-        /**
-         * \brief Index of last visited push constant.
-         */
-        const size_t pushConstantIndex;
-    };
-
-    struct PushConstantItem
-    {
-        /**
-         * \brief Material.
-         */
-        const sol::GraphicsMaterial& material;
-
-        const uint32_t rangeOffset;
-
-        const uint32_t rangeSize;
-
-        const VkShaderStageFlags stages;
-
-        /**
-         * \brief Offset in push constant data array.
-         */
-        const size_t offset;
-
-        /**
-         * \brief Index of parent push constant.
-         */
-        const size_t parentIndex;
-    };
-
-    struct StackLists
-    {
-        std::vector<MaterialItem>     materials;
-        std::vector<MeshItem>         meshes;
-        std::vector<PushConstantItem> pushConstants;
-        std::vector<std::byte>        pushConstantData;
-    };
-
-    struct StackItem
-    {
-        /**
-         * \brief Node.
-         */
-        const sol::Node& node;
-
-        /**
-         * \brief Index of last visited material.
-         */
-        const size_t materialIndex;
-
-        /**
-         * \brief Index of last visited push constant.
-         */
-        const size_t pushConstantIndex;
-    };
-
-    StackLists createStackLists(const sol::GraphicsTraverser& traverser, const sol::Scenegraph& scenegraph)
-    {
-        std::vector<MaterialItem>     materialStack;
-        std::vector<MeshItem>         meshStack;
-        std::vector<PushConstantItem> pushConstantStack;
-        std::vector<std::byte>        pushConstantData;
-
-        // Add root node to stack.
-        std::vector<StackItem> stack;
-        stack.emplace_back(scenegraph.getRootNode(), static_cast<size_t>(-1), static_cast<size_t>(-1));
-
-        // Traverse until all nodes have been visited.
-        while (!stack.empty())
-        {
-            // Get current node.
-            const auto current = stack.back();
-            stack.pop_back();
-
-            const auto nodeType      = current.node.getType();
-            bool       visitNode     = true;
-            bool       visitChildren = true;
-
-            // Use general mask to determine whether to visit node and children.
-            switch (traverser.getGeneralMaskFunction()(current.node.getGeneralMask()))
-            {
-            case sol::ITraverser::TraversalAction::Continue: break;
-            case sol::ITraverser::TraversalAction::Terminate:
-                visitNode     = false;
-                visitChildren = false;
-                break;
-            case sol::ITraverser::TraversalAction::IgnoreChildren: visitChildren = false; break;
-            case sol::ITraverser::TraversalAction::Skip: visitNode = false;
-            }
-
-            // Use type mask to determine whether to visit node and children.
-            if (traverser.supportsNodeType(nodeType))
-            {
-                switch (traverser.getTypeMaskFunction()(current.node.getTypeMask()))
-                {
-                case sol::ITraverser::TraversalAction::Continue: break;
-                case sol::ITraverser::TraversalAction::Terminate:
-                    visitNode     = false;
-                    visitChildren = false;
-                    break;
-                case sol::ITraverser::TraversalAction::IgnoreChildren: visitChildren = false; break;
-                case sol::ITraverser::TraversalAction::Skip: visitNode = false;
-                }
-            }
-            // Skip node if unsupported type.
-            else
-                visitNode = false;
-
-            // By default pass on material index of last visited material.
-            size_t materialIndex           = current.materialIndex;
-            size_t parentPushConstantIndex = current.pushConstantIndex;
-
-            if (visitNode)
-            {
-                if (nodeType == sol::Node::Type::GraphicsMaterial)
-                {
-                    // Adding a new material, so pass on the index of that one.
-                    materialIndex = materialStack.size();
-
-                    // Add material to list.
-                    const auto& materialNode = static_cast<const sol::GraphicsMaterialNode&>(current.node);
-                    const auto* material     = materialNode.getMaterial();
-                    if (material) materialStack.emplace_back(*material, current.materialIndex);
-                }
-                else if (nodeType == sol::Node::Type::GraphicsPushConstant)
-                {
-                    parentPushConstantIndex = current.pushConstantIndex;
-
-                    // Add push constant range to list.
-                    const auto& pushConstantNode = static_cast<const sol::GraphicsPushConstantNode&>(current.node);
-                    const auto& material         = pushConstantNode.getMaterial();
-                    const auto [rangeOffset, rangeSize] = pushConstantNode.getRange();
-                    const auto offset                   = pushConstantData.size();
-                    pushConstantData.resize(pushConstantData.size() + rangeSize);
-                    std::memcpy(pushConstantData.data() + offset, pushConstantNode.getData(), rangeSize);
-                    pushConstantStack.emplace_back(material,
-                                                   rangeOffset,
-                                                   rangeSize,
-                                                   pushConstantNode.getStageFlags(),
-                                                   offset,
-                                                   parentPushConstantIndex);
-                    parentPushConstantIndex = pushConstantStack.size() - 1;
-                }
-                else if (nodeType == sol::Node::Type::Mesh)
-                {
-                    // Add mesh to list with last visited material.
-                    const auto& meshNode = static_cast<const sol::MeshNode&>(current.node);
-                    const auto* mesh     = meshNode.getMesh();
-                    if (mesh) meshStack.emplace_back(*mesh, materialIndex, parentPushConstantIndex);
-                }
-            }
-
-            if (visitChildren)
-            {
-                // Push children on stack with index to last visited material.
-                for (const auto& child : current.node.getChildren() | std::views::reverse)
-                    stack.emplace_back(*child, materialIndex, parentPushConstantIndex);
-            }
-        }
-
-        return {.materials        = std::move(materialStack),
-                .meshes           = std::move(meshStack),
-                .pushConstants    = std::move(pushConstantStack),
-                .pushConstantData = std::move(pushConstantData)};
-    }
-
-    [[nodiscard]] bool findMaterialInstances(const StackLists&                                  stack,
-                                             const sol::GraphicsMaterial&                       activeMtl,
-                                             std::vector<const sol::GraphicsMaterialInstance*>& mtlInstanceList,
-                                             const MaterialItem*                                mtlItem)
-    {
-        const auto& activeMtlLayout = activeMtl.getLayout();
-
-        mtlInstanceList.resize(activeMtlLayout.getSetCount());
-        std::ranges::fill(mtlInstanceList, nullptr);
-        size_t missingSets = mtlInstanceList.size();
-
-        // Traverse upwards and look for a compatible material instance for each set.
-        while (mtlItem)
-        {
-            const auto& currentMtlInstance = mtlItem->material;
-            const auto  setIndex           = currentMtlInstance.getSetIndex();
-
-            // If this material instance is for a not yet found set.
-            if (!mtlInstanceList[setIndex])
-            {
-                bool        compatible = true;
-                const auto& currentMtl = currentMtlInstance.getGraphicsMaterial();
-
-                // If the current material is not the same as the active material, check if layouts are compatible.
-                if (&currentMtl != &activeMtl)
-                {
-                    const auto& currentMtlLayout = currentMtl.getLayout();
-                    // Check push constant compatibility.
-                    if (!activeMtlLayout.getDescription().isPushConstantCompatible(currentMtlLayout.getDescription()))
-                        compatible = false;
-
-                    // Check if layout is compatible at least up to setIndex.
-                    if (const auto compatibleSets = activeMtlLayout.getDescription().getDescriptorSetCompatibility(
-                          currentMtlLayout.getDescription());
-                        compatibleSets <= setIndex)
-                        compatible = false;
-                }
-
-                //
-                if (compatible)
-                {
-                    mtlInstanceList[setIndex] = &currentMtlInstance;
-                    missingSets--;
-                    if (missingSets == 0) break;
-                }
-            }
-
-            // Get parent, if any.
-            if (mtlItem->parentIndex != no_parent)
-                mtlItem = &stack.materials[mtlItem->parentIndex];
-            else
-                mtlItem = nullptr;
-        }
-
-        return missingSets == 0;
-    }
-
-    void findPushConstants(const StackLists&            stack,
-                           const sol::GraphicsMaterial& activeMtl,
-                           std::vector<size_t>&         pushConstantIndices,
-                           size_t                       pcItemIndex)
-    {
-        const auto& activeMtlLayout = activeMtl.getLayout();
-
-        // Traverse upwards and look for compatible push constants.
-        const PushConstantItem* pcItem = &stack.pushConstants[pcItemIndex];
-        while (pcItem)
-        {
-            const auto& currentMtl = pcItem->material;
-
-            // If the current material is not the same as the active material, check if push constants are compatible.
-            if (&currentMtl != &activeMtl)
-            {
-                const auto& currentMtlLayout = currentMtl.getLayout();
-                if (!activeMtlLayout.getDescription().isPushConstantCompatible(currentMtlLayout.getDescription()))
-                    continue;
-            }
-
-            pushConstantIndices.push_back(pcItemIndex);
-
-            // Get parent, if any.
-            if (pcItem->parentIndex != no_parent)
-            {
-                pcItemIndex = pcItem->parentIndex;
-                pcItem      = &stack.pushConstants[pcItemIndex];
-            }
-            else
-                pcItem = nullptr;
-        }
-    }
-}  // namespace
 
 namespace sol
 {
@@ -324,86 +30,215 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    bool GraphicsTraverser::supportsNodeType(const Node::Type type) const noexcept
-    {
-        switch (type)
-        {
-        case Node::Type::Empty:
-        case Node::Type::GraphicsMaterial:
-        case Node::Type::GraphicsPushConstant:
-        case Node::Type::Mesh: return true;
-        default: return false;
-        }
-    }
+    GraphicsRenderData* GraphicsTraverser::getRenderData() const noexcept { return renderData; }
+
+    ////////////////////////////////////////////////////////////////
+    // Setters.
+    ////////////////////////////////////////////////////////////////
+
+    void GraphicsTraverser::setRenderData(GraphicsRenderData* data) noexcept { renderData = data; }
 
     ////////////////////////////////////////////////////////////////
     // Traversal.
     ////////////////////////////////////////////////////////////////
 
-    void GraphicsTraverser::traverse(const Scenegraph& scenegraph, GraphicsRenderData& renderData)
+    void GraphicsTraverser::traverseBegin()
     {
-        auto stack = createStackLists(*this, scenegraph);
+        if (!renderData) throw SolError("Cannot begin traversal. No render data assigned.");
+    }
 
-        // TODO: Cache compatibility. Do that here, or in material(-manager)? Materials can be in different managers, so that complicates things.
-        // std::unordered_map<std::pair<const GraphicsMaterial*, const GraphicsMaterial*>, std::pair<bool, uint32_t>>
-        //   layoutCompatibility;
+    void GraphicsTraverser::traverseEnd() {}
 
-        // TODO: Use std::array with fixed size instead? Would need to limit max depth to something sensible.
-        std::vector<const GraphicsMaterialInstance*> mtlInstanceList;
+    void GraphicsTraverser::visit(const Node& node, const Node*)
+    {
+        if (node.supportsType(Node::Type::GraphicsDynamicState))
+            visitNode(*static_cast<const GraphicsDynamicStateNode*>(node.getAs(Node::Type::GraphicsDynamicState)));
 
-        for (const auto& [mesh, materialIndex, pushConstantIndex] : stack.meshes)
+        if (node.supportsType(Node::Type::GraphicsMaterial))
+            visitNode(*static_cast<const GraphicsMaterialNode*>(node.getAs(Node::Type::GraphicsMaterial)));
+
+        if (node.supportsType(Node::Type::GraphicsPushConstant))
+            visitNode(*static_cast<const GraphicsPushConstantNode*>(node.getAs(Node::Type::GraphicsPushConstant)));
+
+        if (node.supportsType(Node::Type::Mesh)) visitNode(*static_cast<const MeshNode*>(node.getAs(Node::Type::Mesh)));
+    }
+
+    ITraverser2::TraversalAction GraphicsTraverser::generalMask(const uint64_t) { return TraversalAction::Visit; }
+
+    ITraverser2::TraversalAction GraphicsTraverser::typeMask(const uint64_t) { return TraversalAction::Visit; }
+
+    void GraphicsTraverser::visitNode(const GraphicsDynamicStateNode& node)
+    {
+        if (!node.getStates().empty())
         {
-            // Skip if no material was found above the mesh.
-            if (materialIndex == no_parent) continue;
+            dynamicStateStack.push(node, renderData->dynamicStates.size());
+            for (const auto& s : node.getStates()) renderData->dynamicStates.emplace_back(s->clone());
+        }
+    }
 
-            const auto* mtlItem = &stack.materials[materialIndex];
+    void GraphicsTraverser::visitNode(const GraphicsMaterialNode& node)
+    {
+        if (node.getMaterial()) materialStack.push(node);
+    }
 
-            // Get the active material, i.e. the first material above the mesh node.
-            const auto& activeMtlInstance = mtlItem->material;
-            const auto& activeMtl         = activeMtlInstance.getGraphicsMaterial();
-            const auto& activeMtlLayout   = activeMtl.getLayout();
+    void GraphicsTraverser::visitNode(const GraphicsPushConstantNode& node)
+    {
+        if (node.getMaterial() && node.getData())
+        {
+            // Copy push constant data.
+            const auto size   = node.getMaterial()->getPushConstantRanges()[node.getRangeIndex()].size;
+            const auto offset = renderData->pushConstantData.size();
+            renderData->pushConstantData.resize(offset + size);
+            std::memcpy(renderData->pushConstantData.data() + offset, node.getData(), size);
+            pushConstantStack.push(node, offset);
+        }
+    }
 
-            // Skip if push constants are needed but none were found above the mesh.
-            if (activeMtlLayout.getPushConstantCount() > 0 && pushConstantIndex == no_parent) continue;
+    void GraphicsTraverser::visitNode(const MeshNode& node)
+    {
+        if (!node.getMesh()) return;
 
-            // Look for a material instance for each descriptor set in the material layout.
-            if (!findMaterialInstances(stack, activeMtl, mtlInstanceList, mtlItem)) continue;
+        const auto* mtl = materialStack.getActive(node);
+        if (!mtl) return;
 
-            // Add to RenderData.
-            const size_t materialOffset = renderData.materialInstances.size();
-            for (const auto* mtlInstance : mtlInstanceList) renderData.materialInstances.emplace_back(mtlInstance);
+        const auto& material = mtl->node->getMaterial()->getGraphicsMaterial();
 
-            size_t              pushConstantOffset = renderData.pushConstantRanges.size();
-            std::vector<size_t> pushConstantIndices;
+        // Reserve space for all required descriptors.
+        const size_t descriptorOffset = renderData->descriptors.size();
+        const size_t descriptorCount  = material.getDescriptorLayouts().size();
+        renderData->descriptors.resize(descriptorOffset + descriptorCount);
 
-            // Look for each required push constant.
-            if (pushConstantIndex != no_parent)
+        // Traverse upwards to find all descriptors.
+        size_t found = 0;
+        while (found < descriptorCount)
+        {
+            const auto& materialNode     = *mtl->node;
+            const auto& materialInstance = *materialNode.getMaterial();
+
+            // Collect all descriptors in the instance that were not yet set by a descendant.
+            if (&material == &materialInstance.getGraphicsMaterial())
             {
-                findPushConstants(stack, activeMtl, pushConstantIndices, pushConstantIndex);
-
-                // Add to RenderData.
-                for (const auto index : pushConstantIndices)
+                for (const auto [desc, index] : materialInstance)
                 {
-                    renderData.pushConstantRanges.emplace_back(
-                      GraphicsRenderData::PushConstantRange{.rangeOffset = stack.pushConstants[index].rangeOffset,
-                                                            .rangeSize   = stack.pushConstants[index].rangeSize,
-                                                            .offset      = stack.pushConstants[index].offset,
-                                                            .stages      = stack.pushConstants[index].stages});
+                    if (!renderData->descriptors[descriptorOffset + index])
+                    {
+                        renderData->descriptors[descriptorOffset + index] = &desc;
+                        found++;
+                    }
                 }
             }
 
-            //
-            renderData.drawables.emplace_back(
-              GraphicsRenderData::Drawable{.mesh               = &mesh,
-                                           .material           = &activeMtl,
-                                           .materialOffset     = materialOffset,
-                                           .pushConstantOffset = pushConstantOffset,
-                                           .pushConstantCount  = pushConstantIndices.size()});
+            // Go to parent, if any.
+            if (mtl->parent == -1) break;
+            mtl = materialStack[mtl->parent];
         }
 
-        // Move all push constant data to RenderData.
-        renderData.pushConstantData = std::move(stack.pushConstantData);
+        // TODO: Create utility struct that does this in its destructor, here and for other resets in this method.
+        // Failed to find all required descriptors. Reset descriptor list.
+        if (found < descriptorCount)
+        {
+            renderData->descriptors.resize(descriptorOffset);
+            return;
+        }
 
-        renderData.sortDrawablesByLayer();
+        const auto* pc = pushConstantStack.getActive(node);
+
+        // Reserve space for push constant ranges.
+        const size_t pcOffset = renderData->pushConstantRanges.size();
+        const size_t pcCount  = material.getPushConstantRanges().size();
+        renderData->pushConstantRanges.resize(pcOffset + material.getPushConstantRanges().size());
+
+        // Traverse upwards to find all push constant ranges.
+        found = 0;
+        while (pc && found < pcCount)
+        {
+            const auto& pushConstantNode = *pc->node;
+
+            if (&material == pushConstantNode.getMaterial())
+            {
+                const auto index = pushConstantNode.getRangeIndex();
+                if (renderData->pushConstantRanges[pcOffset + index].offset == ~0ULL)
+                {
+                    renderData->pushConstantRanges[pcOffset + index].offset = pc->data;
+                    renderData->pushConstantRanges[pcOffset + index].stages = pushConstantNode.getStageFlags();
+                    found++;
+                }
+            }
+
+            // Go to parent, if any.
+            if (pc->parent == -1) break;
+            pc = pushConstantStack[pc->parent];
+        }
+
+        // Failed to find all required push constants. Reset lists.
+        if (found < pcCount)
+        {
+            renderData->descriptors.resize(descriptorOffset);
+            renderData->pushConstantRanges.resize(pcOffset);
+            return;
+        }
+
+        const auto* dynState = dynamicStateStack.getActive(node);
+
+        // Reserve space for dynamic states.
+        const size_t dynStateOffset = renderData->dynamicStateReferences.size();
+        const size_t dynStateCount  = material.getDynamicStates().size();
+        renderData->dynamicStateReferences.resize(dynStateOffset + dynStateCount);
+
+        // Traverse upwards to find all dynamic states.
+        found = 0;
+        while (dynState && found < dynStateCount)
+        {
+            const auto& dynStateNode = *dynState->node;
+
+            // Dynamic states are stored in a random order. Go over all of the states for the current node and see if
+            // 1. It is enabled for the material;
+            // 2. It is not already set by a descendant;
+            // 3. Not all states have been set yet.
+            for (size_t i = 0; i < dynStateNode.getStates().size(); i++)
+            {
+                const auto& state      = *renderData->dynamicStates[dynState->data + i];
+                bool        alreadySet = false;
+
+                // Skip
+                if (!material.isDynamicStateEnabled(state.getType())) continue;
+
+                // Skip if it was already set by a descendant.
+                for (size_t j = 0; j < found; j++)
+                {
+                    if (renderData->dynamicStateReferences[dynStateOffset + j]->getType() == state.getType())
+                    {
+                        alreadySet = true;
+                        break;
+                    }
+                }
+                if (alreadySet) continue;
+
+                // Insert into next empty spot.
+                renderData->dynamicStateReferences[dynStateOffset + found] = &state;
+                found++;
+
+                if (found == dynStateCount) break;
+            }
+
+            // Go to parent, if any.
+            if (dynState->parent == -1) break;
+            dynState = dynamicStateStack[dynState->parent];
+        }
+
+        // Failed to find all required dynamic states. Reset lists.
+        if (found < dynStateCount)
+        {
+            renderData->descriptors.resize(descriptorOffset);
+            renderData->pushConstantRanges.resize(pcOffset);
+            renderData->dynamicStateReferences.resize(dynStateOffset);
+            return;
+        }
+
+        renderData->drawables.emplace_back(GraphicsRenderData::Drawable{.mesh               = node.getMesh(),
+                                                                        .material           = &material,
+                                                                        .descriptorOffset   = descriptorOffset,
+                                                                        .pushConstantOffset = pcOffset,
+                                                                        .dynamicStateOffset = dynStateOffset});
     }
 }  // namespace sol

@@ -20,8 +20,6 @@ namespace sol
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    Node::Type MeshNode::getType() const noexcept { return Type::Mesh; }
-
     Mesh* MeshNode::getMesh() const noexcept { return mesh; }
 
     ////////////////////////////////////////////////////////////////
@@ -29,4 +27,16 @@ namespace sol
     ////////////////////////////////////////////////////////////////
 
     void MeshNode::setMesh(Mesh* m) noexcept { mesh = m; }
+
+    ////////////////////////////////////////////////////////////////
+    // Casting.
+    ////////////////////////////////////////////////////////////////
+
+    bool MeshNode::supportsTypeImpl(const Type type) const noexcept { return type == Type::Mesh; }
+
+    const void* MeshNode::getAsImpl(const Type type) const
+    {
+        if (type == Type::Mesh) return this;
+        return nullptr;
+    }
 }  // namespace sol

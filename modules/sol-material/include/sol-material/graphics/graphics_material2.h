@@ -61,6 +61,8 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
+        [[nodiscard]] const std::vector<VkPushConstantRange>& getPushConstantRanges() const noexcept override;
+
         [[nodiscard]] const VulkanGraphicsPipeline2& getPipeline() const noexcept;
 
         /**

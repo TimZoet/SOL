@@ -29,48 +29,13 @@ namespace sol
     GraphicsRenderingInfo::~GraphicsRenderingInfo() noexcept = default;
 
     ////////////////////////////////////////////////////////////////
-    // Getters
-    ////////////////////////////////////////////////////////////////
-
-    bool GraphicsRenderingInfo::isFinalized() const noexcept
-    {
-        return renderingInfo.sType == VK_STRUCTURE_TYPE_RENDERING_INFO;
-    }
-
-    void GraphicsRenderingInfo::requireFinalized() const
-    {
-        if (!isFinalized()) throw SolError("GraphicsRenderingInfo was not yet finalized.");
-    }
-
-    void GraphicsRenderingInfo::requireNonFinalized() const
-    {
-        if (isFinalized()) throw SolError("GraphicsRenderingInfo was already finalized.");
-    }
-
-    const VkRenderingInfo& GraphicsRenderingInfo::get() const
-    {
-        requireFinalized();
-        return renderingInfo;
-    }
-
-    const std::vector<const VulkanImageView*>& GraphicsRenderingInfo::getColorImageViews() const noexcept
-    {
-        return colorImageViews;
-    }
-
-    ////////////////////////////////////////////////////////////////
     // Modifiers.
     ////////////////////////////////////////////////////////////////
 
-    void GraphicsRenderingInfo::setRenderArea(const VkRect2D area)
-    {
-        requireNonFinalized();
-        renderArea = area;
-    }
+    void GraphicsRenderingInfo::setRenderArea(const VkRect2D area) { renderArea = area; }
 
     void GraphicsRenderingInfo::setRenderArea(const VkOffset2D offset, const VkExtent2D extent)
     {
-        requireNonFinalized();
         renderArea.offset = offset;
         renderArea.extent = extent;
     }
@@ -80,18 +45,13 @@ namespace sol
                                               const uint32_t extentX,
                                               const uint32_t extentY)
     {
-        requireNonFinalized();
         renderArea.offset.x      = offsetX;
         renderArea.offset.y      = offsetY;
         renderArea.extent.width  = extentX;
         renderArea.extent.height = extentY;
     }
 
-    void GraphicsRenderingInfo::setLayerCount(const uint32_t count)
-    {
-        requireNonFinalized();
-        layerCount = count;
-    }
+    void GraphicsRenderingInfo::setLayerCount(const uint32_t count) { layerCount = count; }
 
     void GraphicsRenderingInfo::addColorAttachment(const VulkanImageView&     imageView,
                                                    const VkImageLayout        imageLayout,
@@ -99,7 +59,6 @@ namespace sol
                                                    const VkAttachmentStoreOp  storeOp,
                                                    const std::array<float, 4> clearColor)
     {
-        requireNonFinalized();
         VkClearColorValue clear;
         std::ranges::copy(clearColor, clear.float32);
         addColorAttachment(imageView, imageLayout, loadOp, storeOp, clear);
@@ -111,7 +70,6 @@ namespace sol
                                                    const VkAttachmentStoreOp    storeOp,
                                                    const std::array<int32_t, 4> clearColor)
     {
-        requireNonFinalized();
         VkClearColorValue clear;
         std::ranges::copy(clearColor, clear.int32);
         addColorAttachment(imageView, imageLayout, loadOp, storeOp, clear);
@@ -123,7 +81,6 @@ namespace sol
                                                    const VkAttachmentStoreOp     storeOp,
                                                    const std::array<uint32_t, 4> clearColor)
     {
-        requireNonFinalized();
         VkClearColorValue clear;
         std::ranges::copy(clearColor, clear.uint32);
         addColorAttachment(imageView, imageLayout, loadOp, storeOp, clear);
@@ -139,8 +96,6 @@ namespace sol
                                                                 const VkAccessFlags2        srcAccess,
                                                                 const VkAccessFlags2        dstAccess)
     {
-        requireNonFinalized();
-
         preColorTransitions.at(index) =
           ColorAttachmentTransition{srcQueue, dstQueue, oldLayout, newLayout, srcStage, dstStage, srcAccess, dstAccess};
     }
@@ -155,7 +110,6 @@ namespace sol
                                                                  const VkAccessFlags2        srcAccess,
                                                                  const VkAccessFlags2        dstAccess)
     {
-        requireNonFinalized();
         postColorTransitions.at(index) =
           ColorAttachmentTransition{srcQueue, dstQueue, oldLayout, newLayout, srcStage, dstStage, srcAccess, dstAccess};
     }
@@ -166,7 +120,6 @@ namespace sol
                                                    const VkAttachmentStoreOp storeOp,
                                                    const float               clearDepth)
     {
-        requireNonFinalized();
         VkClearValue clear;
         clear.depthStencil.depth = clearDepth;
         colorAttachmentInfo.emplace_back(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
@@ -187,7 +140,6 @@ namespace sol
                                                      const VkAttachmentStoreOp storeOp,
                                                      const uint32_t            clearStencil)
     {
-        requireNonFinalized();
         VkClearValue clear;
         clear.depthStencil.stencil = clearStencil;
         colorAttachmentInfo.emplace_back(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
@@ -208,8 +160,6 @@ namespace sol
                                                    const VkAttachmentStoreOp storeOp,
                                                    const VkClearColorValue   clearColor)
     {
-        requireNonFinalized();
-
         colorImageViews.emplace_back(&imageView);
         preColorTransitions.emplace_back();
         postColorTransitions.emplace_back();
@@ -228,87 +178,61 @@ namespace sol
                                          clear);
     }
 
-    void GraphicsRenderingInfo::finalize()
-    {
-        requireNonFinalized();
-        renderingInfo.sType                = VK_STRUCTURE_TYPE_RENDERING_INFO;
-        renderingInfo.pNext                = nullptr;
-        renderingInfo.flags                = 0;
-        renderingInfo.renderArea           = renderArea;
-        renderingInfo.layerCount           = layerCount;
-        renderingInfo.viewMask             = 0;
-        renderingInfo.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentInfo.size());
-        renderingInfo.pColorAttachments    = colorAttachmentInfo.data();
-        renderingInfo.pDepthAttachment     = depthAttachmentInfo ? &depthAttachmentInfo.value() : VK_NULL_HANDLE;
-        renderingInfo.pStencilAttachment   = stencilAttachmentInfo ? &stencilAttachmentInfo.value() : VK_NULL_HANDLE;
-
-        // Setup barriers.
-        for (const auto [image, transition] :
-             std::views::zip(colorImageViews, preColorTransitions) |
-               std::views::filter([](const auto& pair) -> bool { return std::get<1>(pair).has_value(); }))
-        {
-            preBarriers.emplace_back(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-                                     nullptr,
-                                     transition->srcStage,
-                                     transition->srcAccess,
-                                     transition->dstStage,
-                                     transition->dstAccess,
-                                     transition->oldLayout,
-                                     transition->newLayout,
-                                     transition->srcQueue ? transition->srcQueue->getIndex() : VK_QUEUE_FAMILY_IGNORED,
-                                     transition->dstQueue ? transition->dstQueue->getIndex() : VK_QUEUE_FAMILY_IGNORED,
-                                     image->getImage().get(),
-                                     VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
-        }
-        for (const auto [image, transition] :
-             std::views::zip(colorImageViews, postColorTransitions) |
-               std::views::filter([](const auto& pair) -> bool { return std::get<1>(pair).has_value(); }))
-        {
-            postBarriers.emplace_back(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-                                      nullptr,
-                                      transition->srcStage,
-                                      transition->srcAccess,
-                                      transition->dstStage,
-                                      transition->dstAccess,
-                                      transition->oldLayout,
-                                      transition->newLayout,
-                                      transition->srcQueue ? transition->srcQueue->getIndex() : VK_QUEUE_FAMILY_IGNORED,
-                                      transition->dstQueue ? transition->dstQueue->getIndex() : VK_QUEUE_FAMILY_IGNORED,
-                                      image->getImage().get(),
-                                      VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
-        }
-
-        // Setup dependency infos.
-        if (!preBarriers.empty())
-        {
-            preDependencyInfo.imageMemoryBarrierCount = static_cast<uint32_t>(preBarriers.size());
-            preDependencyInfo.pImageMemoryBarriers    = preBarriers.data();
-        }
-        if (!postBarriers.empty())
-        {
-            postDependencyInfo.imageMemoryBarrierCount = static_cast<uint32_t>(postBarriers.size());
-            postDependencyInfo.pImageMemoryBarriers    = postBarriers.data();
-        }
-    }
-
     void GraphicsRenderingInfo::beginRendering(const VulkanCommandBuffer& buffer) const
     {
+        transition(buffer, preColorTransitions);
+
+        const VkRenderingInfo renderingInfo{
+          .sType                = VK_STRUCTURE_TYPE_RENDERING_INFO,
+          .pNext                = nullptr,
+          .flags                = 0,
+          .renderArea           = renderArea,
+          .layerCount           = layerCount,
+          .viewMask             = 0,
+          .colorAttachmentCount = static_cast<uint32_t>(colorAttachmentInfo.size()),
+          .pColorAttachments    = colorAttachmentInfo.data(),
+          .pDepthAttachment     = depthAttachmentInfo ? &depthAttachmentInfo.value() : VK_NULL_HANDLE,
+          .pStencilAttachment   = stencilAttachmentInfo ? &stencilAttachmentInfo.value() : VK_NULL_HANDLE};
+
         vkCmdBeginRendering(buffer.get(), &renderingInfo);
     }
 
     void GraphicsRenderingInfo::endRendering(const VulkanCommandBuffer& buffer) const
     {
         vkCmdEndRendering(buffer.get());
+        transition(buffer, postColorTransitions);
     }
 
-    void GraphicsRenderingInfo::preTransition(const VulkanCommandBuffer& buffer) const
+    void
+      GraphicsRenderingInfo::transition(const VulkanCommandBuffer&                                   buffer,
+                                        const std::vector<std::optional<ColorAttachmentTransition>>& transitions) const
     {
-        if (!preBarriers.empty()) vkCmdPipelineBarrier2(buffer.get(), &preDependencyInfo);
-    }
+        std::vector<VkImageMemoryBarrier2> barriers;
 
-    void GraphicsRenderingInfo::postTransition(const VulkanCommandBuffer& buffer) const
-    {
-        if (!postBarriers.empty()) vkCmdPipelineBarrier2(buffer.get(), &postDependencyInfo);
-    }
+        for (const auto [image, transition] :
+             std::views::zip(colorImageViews, transitions) |
+               std::views::filter([](const auto& pair) -> bool { return std::get<1>(pair).has_value(); }))
+        {
+            barriers.emplace_back(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                                  nullptr,
+                                  transition->srcStage,
+                                  transition->srcAccess,
+                                  transition->dstStage,
+                                  transition->dstAccess,
+                                  transition->oldLayout,
+                                  transition->newLayout,
+                                  transition->srcQueue ? transition->srcQueue->getIndex() : VK_QUEUE_FAMILY_IGNORED,
+                                  transition->dstQueue ? transition->dstQueue->getIndex() : VK_QUEUE_FAMILY_IGNORED,
+                                  image->getImage().get(),
+                                  VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
+        }
 
+        if (!barriers.empty())
+        {
+            const VkDependencyInfo info{.sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+                                        .imageMemoryBarrierCount = static_cast<uint32_t>(barriers.size()),
+                                        .pImageMemoryBarriers    = barriers.data()};
+            vkCmdPipelineBarrier2(buffer.get(), &info);
+        }
+    }
 }  // namespace sol

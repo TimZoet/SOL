@@ -65,6 +65,14 @@ namespace sol
 
         [[nodiscard]] size_t getIndexSize() const noexcept;
 
+        /**
+         * \brief Get the offset into global buffer in number of indices.
+         * \return Offset in number of indices.
+         */
+        [[nodiscard]] size_t getIndexOffset() const noexcept;
+
+        [[nodiscard]] VkIndexType getIndexType() const noexcept;
+
         [[nodiscard]] VulkanBuffer& getBuffer() override;
 
         [[nodiscard]] const VulkanBuffer& getBuffer() const override;

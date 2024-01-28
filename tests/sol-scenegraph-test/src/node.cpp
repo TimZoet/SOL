@@ -14,7 +14,8 @@ void Node::operator()()
     // Check initial state.
     auto& root = scenegraph->getRootNode();
     compareNE(uuids::uuid{}, root.getUuid());
-    compareEQ(sol::Node::Type::Empty, root.getType());
+    compareTrue(root.supportsType(sol::Node::Type::Empty));
+    compareEQ(&root, root.getAs(sol::Node::Type::Empty));
     compareEQ(scenegraph.get(), &root.getScenegraph());
     compareEQ(0, root.getChildren().size());
     compareEQ(0, root.getGeneralMask());

@@ -7,10 +7,16 @@ set(INCLUDE_DIR "include/testutils")
 set(SRC_DIR "src")
 
 set(HEADERS
+    ${INCLUDE_DIR}/materials.h
+    ${INCLUDE_DIR}/meshes.h
+    ${INCLUDE_DIR}/scenegraph.h
     ${INCLUDE_DIR}/utils.h
 )
 
 set(SOURCES
+    ${SRC_DIR}/materials.cpp
+    ${SRC_DIR}/meshes.cpp
+    ${SRC_DIR}/scenegraph.cpp
     ${SRC_DIR}/utils.cpp
 )
 
@@ -18,7 +24,9 @@ set(DEPS_PUBLIC
     sol-core
     sol-material
     sol-memory
+    sol-mesh
     #sol-render
+    sol-scenegraph
     sol-window
 )
 

@@ -5,24 +5,27 @@
 ////////////////////////////////////////////////////////////////
 
 #include <ranges>
+#include <set>
+#include <vector>
 
 ////////////////////////////////////////////////////////////////
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-core/vulkan_attachment.h"
-#include "sol-core/vulkan_command_buffer_list.h"
+#include "sol-core/vulkan_buffer.h"
 #include "sol-core/vulkan_device.h"
-#include "sol-core/vulkan_graphics_pipeline.h"
-#include "sol-material/graphics/graphics_material.h"
-#include "sol-mesh/i_mesh.h"
+#include "sol-core/vulkan_pipeline_layout.h"
+#include "sol-descriptor/descriptor.h"
+#include "sol-material/graphics/graphics_material2.h"
+#include "sol-mesh/index_buffer.h"
+#include "sol-mesh/mesh.h"
+#include "sol-mesh/vertex_buffer.h"
+
 ////////////////////////////////////////////////////////////////
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-render/graphics/graphics_material_manager.h"
 #include "sol-render/graphics/graphics_render_data.h"
-#include "sol-render/graphics/graphics_traverser.h"
 
 namespace sol
 {
@@ -38,147 +41,226 @@ namespace sol
     // Render.
     ////////////////////////////////////////////////////////////////
 
-    void GraphicsRenderer::createPipelines(const Parameters& params) const
+    void GraphicsRenderer::render(const Parameters& params)
     {
-        // TODO: RenderData should have a list of all unique materials, instead of looping over the drawables here.
-        // Ensure all pipelines have been created.
-        for (const auto& [mesh, material, materialOffset, _a, _b] : params.renderData.drawables)
+        // Reset active state.
+        activeDescriptorBuffers.clear();
+        activePipeline = nullptr;
+        activeDynamicStates.clear();
+        activeDescriptors.clear();
+        activeIndexBuffer = nullptr;
+        activeVertexBuffers.clear();
+
+        bindDescriptorBuffers(params);
+
+        for (const auto& [mesh, material, descriptorOffset, pushConstantOffset, dynamicStateOffset] :
+             params.renderData.drawables)
         {
-            material->getMaterialManager().createPipeline(*material);
+            bindMaterial(params.commandBuffer, *material);
+            bindDynamicStates(params.commandBuffer, params, *material, dynamicStateOffset);
+            bindPushConstants(params.commandBuffer, params, *material, pushConstantOffset);
+            bindDescriptors(params.commandBuffer, params, *material, descriptorOffset);
+            const auto firstIndex = bindIndexBuffer(params.commandBuffer, *mesh);
+            bindVertexBuffers(params.commandBuffer, *mesh);
+            if (mesh->hasIndexBuffer())
+                vkCmdDrawIndexed(params.commandBuffer, 0, 1, firstIndex, 0, 0);
+            else
+                vkCmdDraw(params.commandBuffer, 0, 1, 0, 0);
         }
     }
 
-    void GraphicsRenderer::render(const Parameters& params)
+    void GraphicsRenderer::bindDescriptorBuffers(const Parameters& params)
     {
-        std::vector<VkBuffer> vertexBuffers;
-        std::vector<size_t>   vertexBufferOffsets;
+        std::set<const DescriptorBuffer*> uniqueBuffers;
 
-        for (const auto& [mesh, material, materialOffset, pushConstantOffset, pushConstantCount] :
+        for (const auto& [mesh, material, descriptorOffset, pushConstantOffset, dynamicStateOffset] :
              params.renderData.drawables)
         {
-            const auto& materialLayout  = material->getGraphicsLayout();
-            const auto& materialManager = material->getMaterialManager();
-            auto&       pipeline        = materialManager.getPipeline(*material);
-            vkCmdBindPipeline(params.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getPipeline());
-
-            // Just bind all dynamic states for now.
-            for (size_t i = 0; i < materialLayout.getSetCount(); i++)
+            for (size_t i = 0; i < material->getDescriptorLayouts().size(); i++)
             {
-                const auto& inst = *params.renderData.materialInstances[materialOffset + i];
-                if (materialLayout.isDynamicStateEnabled<VK_DYNAMIC_STATE_VIEWPORT>())
-                {
-                    if (const auto& viewports = inst.getViewports(); viewports)
-                    {
-                        vkCmdSetViewport(
-                          params.commandBuffer, 0, static_cast<uint32_t>(viewports->size()), viewports->data());
-                    }
-                }
+                const auto& buffer = params.renderData.descriptors[descriptorOffset + i]->getBuffer();
+                uniqueBuffers.insert(&buffer);
+            }
+        }
 
-                if (materialLayout.isDynamicStateEnabled<VK_DYNAMIC_STATE_SCISSOR>())
-                {
-                    if (const auto& scissors = inst.getScissors(); scissors)
-                    {
-                        vkCmdSetScissor(
-                          params.commandBuffer, 0, static_cast<uint32_t>(scissors->size()), scissors->data());
-                    }
-                }
+        activeDescriptorBuffers = uniqueBuffers | std::ranges::to<std::vector>();
+        const auto infos =
+          activeDescriptorBuffers | std::views::transform([](const DescriptorBuffer* b) {
+              return VkDescriptorBufferBindingInfoEXT{.sType   = VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT,
+                                                      .pNext   = nullptr,
+                                                      .address = b->getBuffer().getDeviceAddress(),
+                                                      .usage   = b->getBuffer().getSettings().bufferUsage};
+          }) |
+          std::ranges::to<std::vector>();
 
-                if (materialLayout.isDynamicStateEnabled<VK_DYNAMIC_STATE_CULL_MODE>())
-                {
-                    if (const auto cull = inst.getCullMode(); cull)
-                    {
-                        vkCmdSetCullMode(params.commandBuffer, toVulkanEnum(*cull));
-                    }
-                }
+        // TODO: Verify that activeDescriptorBuffers.size() <= VK_EXT_descriptor_buffer.maxDescriptorBufferBindings.
 
-                if (materialLayout.isDynamicStateEnabled<VK_DYNAMIC_STATE_FRONT_FACE>())
-                {
-                    if (const auto face = inst.getFrontFace(); face)
-                    {
-                        vkCmdSetFrontFace(params.commandBuffer, toVulkanEnum(*face));
-                    }
-                }
+        params.device.vkCmdBindDescriptorBuffersEXT(
+          params.commandBuffer, static_cast<uint32_t>(activeDescriptorBuffers.size()), infos.data());
+    }
 
-                if (materialLayout.isDynamicStateEnabled<VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT>())
-                {
-                    if (const auto& viewports = inst.getViewports(); viewports)
-                    {
-                        vkCmdSetViewportWithCount(params.commandBuffer, 0, viewports->data());
-                    }
-                }
+    void GraphicsRenderer::bindMaterial(const VkCommandBuffer cb, const GraphicsMaterial2& material)
+    {
+        // Rebind the pipeline if it is different or not yet set.
+        if (&material.getPipeline() != activePipeline)
+        {
+            vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, material.getPipeline().get());
+            activePipeline = &material.getPipeline();
 
-                if (materialLayout.isDynamicStateEnabled<VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT>())
-                {
-                    if (const auto& scissors = inst.getScissors(); scissors)
-                    {
-                        vkCmdSetScissorWithCount(params.commandBuffer, 0, scissors->data());
-                    }
-                }
+            // Clear active descriptors.
+            // TODO: Is this necessary when using descriptor buffers? With descriptor pools you had the fun pipeline layout compatibility stuff.
+            // Does that apply here as well?
+            activeDescriptors.clear();
+        }
+    }
 
-                if (materialLayout.isDynamicStateEnabled<VK_DYNAMIC_STATE_POLYGON_MODE_EXT>())
+    void GraphicsRenderer::bindDynamicStates(const VkCommandBuffer    cb,
+                                             const Parameters&        params,
+                                             const GraphicsMaterial2& material,
+                                             const size_t             stateOffset)
+    {
+        for (size_t i = 0; i < material.getDynamicStates().size(); i++)
+        {
+
+            const auto& state = *params.renderData.dynamicStateReferences[stateOffset + i];
+            const auto  it    = activeDynamicStates.find(state.getType());
+
+            if (it == activeDynamicStates.end() || it->second != &state)
+            {
+                activeDynamicStates.insert_or_assign(it, state.getType(), &state);
+
+                switch (state.getType())
                 {
-                    if (const auto polygon = inst.getPolygonMode(); polygon)
-                    {
-                        params.device.vkCmdSetPolygonModeEXT(params.commandBuffer, toVulkanEnum(*polygon));
-                    }
+                case GraphicsDynamicState::StateType::CullMode:
+                    vkCmdSetCullMode(cb, toVulkanEnum(static_cast<const CullMode&>(state).value));
+                    break;
+                case GraphicsDynamicState::StateType::FrontFace:
+                    vkCmdSetFrontFace(cb, toVulkanEnum(static_cast<const FrontFace&>(state).value));
+                    break;
+                case GraphicsDynamicState::StateType::PolygonMode:
+                    params.device.vkCmdSetPolygonModeEXT(cb,
+                                                         toVulkanEnum(static_cast<const PolygonMode&>(state).value));
+                    break;
+                case GraphicsDynamicState::StateType::Scissor: {
+                    const auto& scissor = static_cast<const Scissor&>(state);
+                    vkCmdSetScissorWithCount(cb,
+                                             static_cast<uint32_t>(scissor.values.size()),
+                                             reinterpret_cast<const VkRect2D*>(scissor.values.data()));
+                    break;
+                }
+                case GraphicsDynamicState::StateType::Viewport: {
+                    const auto& viewport = static_cast<const Viewport&>(state);
+                    vkCmdSetViewportWithCount(cb,
+                                              static_cast<uint32_t>(viewport.values.size()),
+                                              reinterpret_cast<const VkViewport*>(viewport.values.data()));
+                    break;
+                }
+                default: break;
                 }
             }
+        }
+    }
 
-            materialManager.bindDescriptorSets(
-              {params.renderData.materialInstances.data() + materialOffset, materialLayout.getSetCount()},
-              params.commandBuffer,
-              pipeline,
-              params.index);
+    void GraphicsRenderer::bindPushConstants(const VkCommandBuffer    cb,
+                                             const Parameters&        params,
+                                             const GraphicsMaterial2& material,
+                                             const size_t             pushConstantOffset)
+    {
+        // TODO: This is inefficient because we currently re-push all constants without checking what is already bound.
+        // This could be optimized with memcmp / hashing, though that might be difficult with nodes having potentially differing stage flags.
+        // TODO: Additionally, it may be wrong, because the stage flags are potentially not taken into account properly.
+        // Maybe get rid of nodes being able to provide only a subset of stageflags? Cool feature, but how often do you really want to have different push constants between stages in the same draw call?
+        for (size_t i = 0; i < material.getPushConstantRanges().size(); i++)
+        {
+            const auto& data  = params.renderData.pushConstantRanges[pushConstantOffset + i];
+            const auto& range = material.getPushConstantRanges()[i];
 
-            // TODO: Reverse this push? Might be that this list contains deeper nodes first,
-            // causing them to be overwritten by higher nodes when they have an overlapping range.
-            // Although perhaps that should be solved in the GraphicsRenderData class? Perhaps add a
-            // flag there indicating the order of the pcRanges. Or fix order that. While doing that,
-            // redundant ranges could even be removed.
-            for (size_t i = 0; i < pushConstantCount; i++)
+            vkCmdPushConstants(cb,
+                               material.getPipeline().getPipelineLayout().get(),
+                               range.stageFlags,
+                               range.offset,
+                               range.size,
+                               params.renderData.pushConstantData.data() + data.offset);
+        }
+    }
+
+    void GraphicsRenderer::bindDescriptors(const VkCommandBuffer    cb,
+                                           const Parameters&        params,
+                                           const GraphicsMaterial2& material,
+                                           const size_t             descriptorOffset)
+    {
+        if (activeDescriptors.size() < material.getDescriptorLayouts().size())
+            activeDescriptors.resize(material.getDescriptorLayouts().size());
+
+        std::vector<uint32_t>     bufferIndices(material.getDescriptorLayouts().size());
+        std::vector<VkDeviceSize> offsets(material.getDescriptorLayouts().size());
+        size_t                    firstRebindIndex = ~0ULL;
+
+        for (size_t i = 0; i < material.getDescriptorLayouts().size(); i++)
+        {
+            const auto& desc   = *params.renderData.descriptors[descriptorOffset + i];
+            const auto  index  = static_cast<uint32_t>(std::distance(
+              activeDescriptorBuffers.begin(), std::ranges::find(activeDescriptorBuffers, &desc.getBuffer())));
+            const auto  offset = desc.getOffset();
+
+            if (activeDescriptors[i].first != index || activeDescriptors[i].second != offset)
             {
-                const auto pcRange = params.renderData.pushConstantRanges[pushConstantOffset + i];
-
-                vkCmdPushConstants(params.commandBuffer,
-                                   pipeline.getPipelineLayout(),
-                                   pcRange.stages,
-                                   pcRange.rangeOffset,
-                                   pcRange.rangeSize,
-                                   params.renderData.pushConstantData.data() + pcRange.offset);
+                activeDescriptors[i] = {index, offset};
+                if (firstRebindIndex == ~0ULL) firstRebindIndex = i;
             }
 
+            bufferIndices[i] = index;
+            offsets[i]       = offset;
+        }
 
-            const auto& meshInstance = mesh;
+        if (firstRebindIndex != ~0ULL)
+        {
+            params.device.vkCmdSetDescriptorBufferOffsetsEXT(
+              cb,
+              VK_PIPELINE_BIND_POINT_GRAPHICS,
+              material.getPipeline().getPipelineLayout().get(),
+              static_cast<uint32_t>(firstRebindIndex),
+              static_cast<uint32_t>(material.getDescriptorLayouts().size() - firstRebindIndex),
+              bufferIndices.data() + firstRebindIndex,
+              offsets.data() + firstRebindIndex);
+        }
+    }
 
-            if (!meshInstance->isValid()) continue;
-
-            vertexBuffers.clear();
-            vertexBufferOffsets.clear();
-            meshInstance->getVertexBufferHandles(vertexBuffers);
-            meshInstance->getVertexBufferOffsets(vertexBufferOffsets);
-            assert(vertexBuffers.size() == vertexBufferOffsets.size());
-
-            vkCmdBindVertexBuffers(params.commandBuffer,
-                                   0,
-                                   static_cast<uint32_t>(vertexBuffers.size()),
-                                   vertexBuffers.data(),
-                                   vertexBufferOffsets.data());
-            if (meshInstance->isIndexed())
+    uint32_t GraphicsRenderer::bindIndexBuffer(const VkCommandBuffer cb, const Mesh& mesh)
+    {
+        if (mesh.hasIndexBuffer())
+        {
+            if (activeIndexBuffer != &mesh.getIndexBuffer()->getBuffer())
             {
-                vkCmdBindIndexBuffer(params.commandBuffer,
-                                     meshInstance->getIndexBufferHandle(),
-                                     meshInstance->getIndexBufferOffset(),
-                                     meshInstance->getIndexType());
-                vkCmdDrawIndexed(params.commandBuffer,
-                                 meshInstance->getIndexCount(),
-                                 1,
-                                 meshInstance->getFirstIndex(),
-                                 meshInstance->getVertexOffset(),
-                                 0);
+                // We bind the index buffer with an offset of 0, instead relying on the getIndexOffset() value during the draw call.
+                vkCmdBindIndexBuffer(
+                  cb, mesh.getIndexBuffer()->getBuffer().get(), 0, mesh.getIndexBuffer()->getIndexType());
+                activeIndexBuffer = &mesh.getIndexBuffer()->getBuffer();
             }
-            else
+
+            return static_cast<uint32_t>(mesh.getIndexBuffer()->getIndexOffset());
+        }
+
+        return 0;
+    }
+
+    void GraphicsRenderer::bindVertexBuffers(const VkCommandBuffer cb, const Mesh& mesh)
+    {
+        if (activeVertexBuffers.size() < mesh.getVertexBufferCount())
+            activeVertexBuffers.resize(mesh.getVertexBufferCount());
+
+        for (size_t i = 0; i < mesh.getVertexBufferCount(); i++)
+        {
+            const std::pair vertexBuffer = {&mesh.getVertexBuffers()[i]->getBuffer(),
+                                            mesh.getVertexBuffers()[i]->getBufferOffset()};
+
+            if (activeVertexBuffers[i] != vertexBuffer)
             {
-                vkCmdDraw(params.commandBuffer, meshInstance->getVertexCount(), 1, meshInstance->getFirstVertex(), 0);
+                const auto buffer = vertexBuffer.first->get();
+                const auto offset = vertexBuffer.second;
+                vkCmdBindVertexBuffers(cb, static_cast<uint32_t>(i), 1, &buffer, &offset);
+
+                activeVertexBuffers[i] = vertexBuffer;
             }
         }
     }

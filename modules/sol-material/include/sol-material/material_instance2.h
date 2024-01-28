@@ -47,7 +47,7 @@ namespace sol
 
             DescriptorIterator() { throw std::runtime_error("Not implemented"); }
 
-            DescriptorIterator(MaterialInstance2& mtl, const size_t index) : material(&mtl), set(index) {}
+            DescriptorIterator(const MaterialInstance2& mtl, const size_t index) : material(&mtl), set(index) {}
 
             [[nodiscard]] element_type operator*() const
             {
@@ -71,11 +71,11 @@ namespace sol
                 return tmp;
             }
 
-            auto operator<=>(const DescriptorIterator& rhs) const noexcept = default;// { return set <=> rhs.set; }
+            auto operator<=>(const DescriptorIterator& rhs) const noexcept = default;  // { return set <=> rhs.set; }
 
         private:
-            MaterialInstance2* material = nullptr;
-            size_t             set      = 0;
+            const MaterialInstance2* material = nullptr;
+            size_t                   set      = 0;
         };
 
         ////////////////////////////////////////////////////////////////
@@ -188,7 +188,11 @@ namespace sol
 
         [[nodiscard]] DescriptorIterator begin();
 
+        [[nodiscard]] DescriptorIterator begin() const;
+
         [[nodiscard]] DescriptorIterator end();
+
+        [[nodiscard]] DescriptorIterator end() const;
 
     private:
         ////////////////////////////////////////////////////////////////

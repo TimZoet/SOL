@@ -11,22 +11,19 @@
 #include "sol-material/graphics/graphics_material2.h"
 #include "sol-material/graphics/graphics_material_instance2.h"
 
+////////////////////////////////////////////////////////////////
+// Current target includes.
+////////////////////////////////////////////////////////////////
+
+#include "testutils/materials.h"
+
 void MaterialInstance::operator()()
 {
     // Create small buffer for descriptors below.
     const sol::DescriptorBuffer::Settings settings{.memoryManager = &getMemoryManager(), .size = 2048};
     const auto                            buffer = sol::DescriptorBuffer::create(settings);
 
-    // Use utility function to create a simple pipeline.
-    auto [pipeline, descriptorLayouts] = createSimpleGraphicsPipeline();
-    const auto layouts                 = sol::raw(descriptorLayouts);
-
-    // Create material from pipeline and descriptor layouts.
-    sol::GraphicsMaterial2Ptr material;
-    expectNoThrow([&] {
-        material =
-          std::make_unique<sol::GraphicsMaterial2>(uuids::uuid_system_generator{}(), std::move(pipeline), layouts);
-    });
+    const auto [descriptorLayouts, material] = Materials::load(Materials::Graphics::Name::Simple, getDevice());
 
     // Create material instance.
     sol::MaterialInstance2Ptr instance;
@@ -35,7 +32,7 @@ void MaterialInstance::operator()()
     });
     compareEQ(&getDevice(), &instance->getDevice());
     compareNE(uuids::uuid{}, instance->getUuid());
-    compareEQ("", instance->getName());
+    compareEQ(std::string(""), instance->getName());
     compareEQ(material.get(), &instance->getMaterial());
 
     // Check default disabled state of descriptors.

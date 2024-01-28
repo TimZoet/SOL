@@ -84,6 +84,12 @@ namespace sol
 
         [[nodiscard]] const DescriptorLayout& getLayout() const;
 
+        /**
+         * \brief Get the offset of the descriptor into the descriptor buffer.
+         * \return Offset  in bytes.
+         */
+        [[nodiscard]] VkDeviceSize getOffset() const noexcept;
+
         ////////////////////////////////////////////////////////////////
         // Setters.
         ////////////////////////////////////////////////////////////////

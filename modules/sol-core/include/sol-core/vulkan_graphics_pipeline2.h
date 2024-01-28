@@ -158,11 +158,15 @@ namespace sol
          */
         [[nodiscard]] const VkPipeline& get() const noexcept;
 
+        [[nodiscard]] const VulkanPipelineLayout& getPipelineLayout() const noexcept;
+
         /**
          * \brief Get the list of enabled dynamic states.
          * \return List of dynamic states.
          */
         [[nodiscard]] const std::vector<VkDynamicState>& getDynamicStates() const noexcept;
+
+        [[nodiscard]] const std::vector<VkPushConstantRange>& getPushConstantRanges() const noexcept;
 
     private:
         [[nodiscard]] static VkPipeline createImpl(const Settings& settings);
@@ -185,5 +189,7 @@ namespace sol
          * \brief Union of the dynamic states of all pipeline libraries making up this complete pipeline.
          */
         std::vector<VkDynamicState> dynamicStates;
+
+        std::vector<VkPushConstantRange> pushConstantRanges;
     };
 }  // namespace sol

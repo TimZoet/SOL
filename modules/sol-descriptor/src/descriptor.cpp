@@ -26,6 +26,8 @@ namespace sol
 
     const DescriptorLayout& Descriptor::getLayout() const { return *descriptorLayout; }
 
+    VkDeviceSize Descriptor::getOffset() const noexcept { return virtualOffset; }
+
     ////////////////////////////////////////////////////////////////
     // Setters.
     ////////////////////////////////////////////////////////////////
