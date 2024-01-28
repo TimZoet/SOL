@@ -21,8 +21,8 @@ set(HEADERS
     #${INCLUDE_DIR}/graphics/graphics_material_manager.h
     #${INCLUDE_DIR}/graphics/graphics_pipeline_cache.h
     ${INCLUDE_DIR}/graphics/graphics_render_data.h
-    #${INCLUDE_DIR}/graphics/graphics_renderer.h
-    #${INCLUDE_DIR}/graphics/graphics_rendering_info.h
+    ${INCLUDE_DIR}/graphics/graphics_renderer.h
+    ${INCLUDE_DIR}/graphics/graphics_rendering_info.h
     ${INCLUDE_DIR}/graphics/graphics_traverser.h
     #${INCLUDE_DIR}/graphics/fwd.h
 
@@ -49,8 +49,8 @@ set(SOURCES
     #${SRC_DIR}/graphics/graphics_material_manager.cpp
     #${SRC_DIR}/graphics/graphics_pipeline_cache.cpp
     ${SRC_DIR}/graphics/graphics_render_data.cpp
-    #${SRC_DIR}/graphics/graphics_renderer.cpp
-    #${SRC_DIR}/graphics/graphics_rendering_info.cpp
+    ${SRC_DIR}/graphics/graphics_renderer.cpp
+    ${SRC_DIR}/graphics/graphics_rendering_info.cpp
     ${SRC_DIR}/graphics/graphics_traverser.cpp
 
     #${SRC_DIR}/ray_tracing/ray_tracing_material_manager.cpp

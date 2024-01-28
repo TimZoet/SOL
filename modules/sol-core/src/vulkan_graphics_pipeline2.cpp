@@ -295,6 +295,12 @@ namespace sol
 
     const VkPipeline& VulkanGraphicsPipeline2::get() const noexcept { return pipeline; }
 
+    const VulkanPipelineLayout& VulkanGraphicsPipeline2::getPipelineLayout() const noexcept
+    {
+        if (settings) return settings->preRasterizationPipeline().getSettings().layout();
+        return settings2->preRasterization.layout();
+    }
+
     const std::vector<VkDynamicState>& VulkanGraphicsPipeline2::getDynamicStates() const noexcept
     {
         return dynamicStates;

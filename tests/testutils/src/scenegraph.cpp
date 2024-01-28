@@ -63,6 +63,11 @@ namespace
             mtl1.addChild(std::make_unique<sol::MeshNode>(*wrapper.meshes[0]));
             mtl2.addChild(std::make_unique<sol::MeshNode>(*wrapper.meshes[1]));
         }
+        {
+            auto& mtl0 = root.addChild(std::make_unique<sol::GraphicsMaterialNode>(*wrapper.materialInstances[0]));
+            auto& mtl1 = mtl0.addChild(std::make_unique<sol::GraphicsMaterialNode>(*wrapper.materialInstances[1]));
+            mtl1.addChild(std::make_unique<sol::MeshNode>(*wrapper.meshes[0]));
+        }
 
         return wrapper;
     }

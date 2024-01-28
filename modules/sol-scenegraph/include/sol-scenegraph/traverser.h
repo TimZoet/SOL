@@ -171,9 +171,10 @@ namespace sol
 
                 if (!visitNode && !visitChildren) continue;
 
+                // Process node.
                 if (supported && visitNode) visit(*node, previous);
 
-                // Push children on stack.
+                // Push children on stack in reverse for depth-first traversal.
                 if (visitChildren)
                     for (const auto& child : *node | std::views::reverse)
                         stack.emplace_back(visitNode ? node : previous, &child);
@@ -208,7 +209,6 @@ namespace sol
             CustomData     data;
         };
 
-        //template<std::same_as<CustomData> C = CustomData>
         void push(const N& node, CustomData d = {})
         {
             if (active == ~0ULL)
@@ -240,92 +240,4 @@ namespace sol
         size_t            active = ~0ULL;
         std::vector<Item> items;
     };
-#if 0
-    template<std::derived_from<Node> N, typename CustomData = void>
-    class TraversalStack
-    {
-    public:
-        struct Item
-        {
-            const size_t   parent = 0;
-            const size_t   index  = 0;
-            const N* const node   = nullptr;
-            CustomData     data;
-        };
-
-        void push(const N& node, CustomData d)
-        {
-            if (active == ~0ULL)
-            {
-                active = items.size();
-                items.emplace_back(~0ULL, items.size(), &node);
-                return;
-            }
-
-            while (active != ~0ULL && !node.isDescendantOf(*items[active].node)) { active = items[active].parent; }
-
-            active = items.emplace_back(active, items.size(), &node, std::move(d)).index;
-        }
-
-        Item* getActive(const Node& node) noexcept
-        {
-            while (active != ~0ULL && !node.isDescendantOf(*items[active].node)) { active = items[active].parent; }
-            if (active == ~0ULL) return nullptr;
-            return &items[active];
-        }
-
-        Item* operator[](const size_t index) noexcept
-        {
-            if (index >= items.size()) return nullptr;
-            return &items[index];
-        }
-
-    private:
-        size_t            active = ~0ULL;
-        std::vector<Item> items;
-    };
-
-    template<std::derived_from<Node> N>
-    class TraversalStack<N, void>
-    {
-    public:
-        struct Item
-        {
-            const size_t   parent = 0;
-            const size_t   index  = 0;
-            const N* const node   = nullptr;
-        };
-
-        void push(const N& node)
-        {
-            if (active == ~0ULL)
-            {
-                active = items.size();
-                items.emplace_back(~0ULL, items.size(), &node);
-                return;
-            }
-
-            while (active != ~0ULL && !node.isDescendantOf(*items[active].node)) { active = items[active].parent; }
-
-            active = items.emplace_back(active, items.size(), &node).index;
-        }
-
-        Item* getActive(const Node& node) noexcept
-        {
-            while (active != ~0ULL && !node.isDescendantOf(*items[active].node)) { active = items[active].parent; }
-            if (active == ~0ULL) return nullptr;
-            return &items[active];
-        }
-
-        Item* operator[](const size_t index) noexcept
-        {
-            if (index >= items.size()) return nullptr;
-            return &items[index];
-        }
-
-    private:
-        size_t            active = ~0ULL;
-        std::vector<Item> items;
-    };
-#endif
 }  // namespace sol

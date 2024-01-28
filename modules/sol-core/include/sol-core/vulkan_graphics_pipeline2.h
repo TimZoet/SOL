@@ -158,6 +158,8 @@ namespace sol
          */
         [[nodiscard]] const VkPipeline& get() const noexcept;
 
+        [[nodiscard]] const VulkanPipelineLayout& getPipelineLayout() const noexcept;
+
         /**
          * \brief Get the list of enabled dynamic states.
          * \return List of dynamic states.

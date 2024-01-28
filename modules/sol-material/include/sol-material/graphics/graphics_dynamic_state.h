@@ -65,6 +65,8 @@ namespace sol
         ////////////////////////////////////////////////////////////////
 
         [[nodiscard]] virtual StateType getType() const noexcept = 0;
+
+        [[nodiscard]] auto operator<=>(const GraphicsDynamicState&) const noexcept = default;
     };
 
     struct CullMode final : GraphicsDynamicState
@@ -83,6 +85,8 @@ namespace sol
 
         [[nodiscard]] StateType getType() const noexcept override { return type; }
 
+        [[nodiscard]] auto operator<=>(const CullMode&) const noexcept = default;
+
         Value value = Value::None;
     };
 
@@ -99,6 +103,8 @@ namespace sol
         [[nodiscard]] GraphicsDynamicStatePtr clone() const override { return std::make_unique<FrontFace>(*this); }
 
         [[nodiscard]] StateType getType() const noexcept override { return type; }
+
+        [[nodiscard]] auto operator<=>(const FrontFace&) const noexcept = default;
 
         Value value = Value::Clockwise;
     };
@@ -118,6 +124,8 @@ namespace sol
 
         [[nodiscard]] StateType getType() const noexcept override { return type; }
 
+        [[nodiscard]] auto operator<=>(const PolygonMode&) const noexcept = default;
+
         Value value = Value::Fill;
     };
 
@@ -129,11 +137,15 @@ namespace sol
         {
             std::pair<int32_t, int32_t>   offset;
             std::pair<uint32_t, uint32_t> extent;
+
+            [[nodiscard]] auto operator<=>(const Value&) const noexcept = default;
         };
 
         [[nodiscard]] GraphicsDynamicStatePtr clone() const override { return std::make_unique<Scissor>(*this); }
 
         [[nodiscard]] StateType getType() const noexcept override { return type; }
+
+        [[nodiscard]] auto operator<=>(const Scissor&) const noexcept = default;
 
         std::vector<Value> values;
     };
@@ -150,11 +162,15 @@ namespace sol
             float height;
             float minDepth;
             float maxDepth;
+
+            [[nodiscard]] auto operator<=>(const Value&) const noexcept = default;
         };
 
         [[nodiscard]] GraphicsDynamicStatePtr clone() const override { return std::make_unique<Viewport>(*this); }
 
         [[nodiscard]] StateType getType() const noexcept override { return type; }
+
+        [[nodiscard]] auto operator<=>(const Viewport&) const noexcept = default;
 
         std::vector<Value> values;
     };

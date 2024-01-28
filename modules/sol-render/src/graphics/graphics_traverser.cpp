@@ -150,7 +150,7 @@ namespace sol
 
         // Traverse upwards to find all push constant ranges.
         found = 0;
-        while (found < pcCount)
+        while (pc && found < pcCount)
         {
             const auto& pushConstantNode = *pc->node;
 
@@ -187,7 +187,7 @@ namespace sol
 
         // Traverse upwards to find all dynamic states.
         found = 0;
-        while (found < dynStateCount)
+        while (dynState && found < dynStateCount)
         {
             const auto& dynStateNode = *dynState->node;
 
