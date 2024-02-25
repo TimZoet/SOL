@@ -73,7 +73,7 @@ namespace sol
         [[nodiscard]] virtual uint32_t getSetIndex() const = 0;
 
         [[nodiscard]] virtual const VulkanTopLevelAccelerationStructure*
-          getAccelerationStructureData(size_t binding) const;
+            getAccelerationStructureData(size_t binding) const;
 
         [[nodiscard]] virtual const Texture2D* getCombinedImageSamplerData(size_t binding) const;
 

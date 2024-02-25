@@ -177,6 +177,23 @@ namespace sol
         void loadExtensionFunctions(const Settings& set);
 
     public:
+        /* VK_EXT_descriptor_buffer */
+
+        PFN_vkCmdBindDescriptorBufferEmbeddedSamplersEXT vkCmdBindDescriptorBufferEmbeddedSamplersEXT = VK_NULL_HANDLE;
+        PFN_vkCmdBindDescriptorBuffersEXT                vkCmdBindDescriptorBuffersEXT                = VK_NULL_HANDLE;
+        PFN_vkCmdSetDescriptorBufferOffsetsEXT           vkCmdSetDescriptorBufferOffsetsEXT           = VK_NULL_HANDLE;
+        PFN_vkGetBufferOpaqueCaptureDescriptorDataEXT    vkGetBufferOpaqueCaptureDescriptorDataEXT    = VK_NULL_HANDLE;
+        PFN_vkGetDescriptorEXT                           vkGetDescriptorEXT                           = VK_NULL_HANDLE;
+        PFN_vkGetDescriptorSetLayoutBindingOffsetEXT     vkGetDescriptorSetLayoutBindingOffsetEXT     = VK_NULL_HANDLE;
+        PFN_vkGetDescriptorSetLayoutSizeEXT              vkGetDescriptorSetLayoutSizeEXT              = VK_NULL_HANDLE;
+        PFN_vkGetImageOpaqueCaptureDescriptorDataEXT     vkGetImageOpaqueCaptureDescriptorDataEXT     = VK_NULL_HANDLE;
+        PFN_vkGetImageViewOpaqueCaptureDescriptorDataEXT vkGetImageViewOpaqueCaptureDescriptorDataEXT = VK_NULL_HANDLE;
+        PFN_vkGetSamplerOpaqueCaptureDescriptorDataEXT   vkGetSamplerOpaqueCaptureDescriptorDataEXT   = VK_NULL_HANDLE;
+
+        /* VK_EXT_extended_dynamic_state3 */
+
+        PFN_vkCmdSetPolygonModeEXT vkCmdSetPolygonModeEXT = VK_NULL_HANDLE;
+
         /* VK_KHR_acceleration_structure */
 
         PFN_vkCmdBuildAccelerationStructuresKHR        vkCmdBuildAccelerationStructuresKHR        = VK_NULL_HANDLE;
@@ -184,10 +201,6 @@ namespace sol
         PFN_vkDestroyAccelerationStructureKHR          vkDestroyAccelerationStructureKHR          = VK_NULL_HANDLE;
         PFN_vkGetAccelerationStructureBuildSizesKHR    vkGetAccelerationStructureBuildSizesKHR    = VK_NULL_HANDLE;
         PFN_vkGetAccelerationStructureDeviceAddressKHR vkGetAccelerationStructureDeviceAddressKHR = VK_NULL_HANDLE;
-
-        /* VK_EXT_extended_dynamic_state3 */
-
-        PFN_vkCmdSetPolygonModeEXT vkCmdSetPolygonModeEXT = VK_NULL_HANDLE;
 
         /* VK_KHR_ray_tracing_pipeline */
 

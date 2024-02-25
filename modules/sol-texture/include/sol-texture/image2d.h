@@ -1,6 +1,12 @@
 #pragma once
 
 ////////////////////////////////////////////////////////////////
+// Standard includes.
+////////////////////////////////////////////////////////////////
+
+#include <optional>
+
+////////////////////////////////////////////////////////////////
 // External includes.
 ////////////////////////////////////////////////////////////////
 
@@ -23,6 +29,26 @@ namespace sol
     class Image2D
     {
     public:
+        ////////////////////////////////////////////////////////////////
+        // Types.
+        ////////////////////////////////////////////////////////////////
+
+        struct Transition
+        {
+            const VulkanQueueFamily*     targetFamily = nullptr;
+            std::optional<VkImageLayout> newLayout    = {};
+            VkPipelineStageFlags2        srcStage     = VK_PIPELINE_STAGE_2_NONE;
+            VkPipelineStageFlags2        dstStage     = VK_PIPELINE_STAGE_2_NONE;
+            VkAccessFlags2               srcAccess    = VK_ACCESS_2_NONE;
+            VkAccessFlags2               dstAccess    = VK_ACCESS_2_NONE;
+        };
+
+        struct BarrierPair
+        {
+            std::optional<VkImageMemoryBarrier2> release;
+            std::optional<VkImageMemoryBarrier2> acquire;
+        };
+
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
@@ -110,19 +136,46 @@ namespace sol
         [[nodiscard]] VkImageLayout getImageLayout() const noexcept;
 
         ////////////////////////////////////////////////////////////////
-        // Setters.
+        // Transitions.
         ////////////////////////////////////////////////////////////////
 
-        void stageTransition(const VulkanQueueFamily*     family,
-                             std::optional<VkImageLayout> layout,
-                             VkPipelineStageFlags2        srcStage,
-                             VkPipelineStageFlags2        dstStage,
-                             VkAccessFlags2               srcAccess,
-                             VkAccessFlags2               dstAccess);
+        /**
+         * \brief Stage a queue family ownership transfer and/or image layout transition.
+         * Will override any existing transition that was not yet applied.
+         * \param family Target queue family.
+         * \param layout Optional new layout.
+         * \param srcStage Source pipeline stage.
+         * \param dstStage Destination pipeline stage.
+         * \param srcAccess Source access flags.
+         * \param dstAccess Destination access flags.
+         */
+        void  stageTransition(const VulkanQueueFamily*     family,
+                              std::optional<VkImageLayout> layout,
+                              VkPipelineStageFlags2        srcStage,
+                              VkPipelineStageFlags2        dstStage,
+                              VkAccessFlags2               srcAccess,
+                              VkAccessFlags2               dstAccess);
 
-        void setQueueFamily(const VulkanQueueFamily& family) noexcept;
+        /**
+         * \brief Get the currently staged transition.
+         * \return Staged transition or empty.
+         */
+        [[nodiscard]] std::optional<Transition> getStagedTransition() const noexcept;
 
-        void setImageLayout(VkImageLayout layout) noexcept;
+        /**
+         * \brief Generate the pair of release and acquire barriers that transition this image
+         * from its current state to its target state. This does not change any state of this
+         * object. For that, call applyTransition().
+         * \return Pair of release/acquire barriers.
+         */
+        [[nodiscard]] BarrierPair getTransitionBarriers() const;
+
+        /**
+         * \brief Apply staged transition. Does not have any effect if there is no staged transition.
+         * Does not actually run any commands but merely updates the state of this object to reflect
+         * that the transition was applied elsewhere.
+         */
+        void applyTransition();
 
         ////////////////////////////////////////////////////////////////
         // Data.
@@ -231,5 +284,7 @@ namespace sol
          * \brief Current image layout.
          */
         VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+        std::optional<Transition> stagedTransition;
     };
 }  // namespace sol

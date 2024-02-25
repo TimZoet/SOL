@@ -107,9 +107,9 @@ namespace sol
         bufferSettings.size   = sizeInfo.accelerationStructureSize;
         bufferSettings.bufferUsage =
           VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-        bufferSettings.allocator   = settings.allocator;
-        bufferSettings.memoryUsage = VMA_MEMORY_USAGE_AUTO;
-        auto buffer                = VulkanBuffer::create(bufferSettings);
+        bufferSettings.allocator       = settings.allocator;
+        bufferSettings.vma.memoryUsage = VMA_MEMORY_USAGE_AUTO;
+        auto buffer                    = VulkanBuffer::create(bufferSettings);
 
         // Create acceleration structure.
         VkAccelerationStructureKHR           as;
@@ -121,11 +121,12 @@ namespace sol
         device.vkCreateAccelerationStructureKHR(device.get(), &asInfo, nullptr, &as);
 
         // Create scratch buffer.
-        bufferSettings.size        = sizeInfo.buildScratchSize;
-        bufferSettings.bufferUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-        bufferSettings.memoryUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
-        bufferSettings.alignment   = 256;  // TODO: Hardcoded to 256 because VMA doesn't return properly aligned memory?
-        auto scratchBuffer         = VulkanBuffer::create(bufferSettings);
+        bufferSettings.size            = sizeInfo.buildScratchSize;
+        bufferSettings.bufferUsage     = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        bufferSettings.vma.memoryUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+        bufferSettings.vma.alignment =
+          256;  // TODO: Hardcoded to 256 because VMA doesn't return properly aligned memory?
+        auto scratchBuffer = VulkanBuffer::create(bufferSettings);
 
         buildInfo.mode                      = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
         buildInfo.dstAccelerationStructure  = as;

@@ -32,7 +32,6 @@ make_target(
     NAME ${NAME}
     OUTDIR "tests"
     # WARNINGS WERROR
-    STARTUP
     HEADERS "${HEADERS}"
     SOURCES "${SOURCES}"
     DEPS_PRIVATE "${DEPS_PRIVATE}"

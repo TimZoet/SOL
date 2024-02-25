@@ -23,11 +23,18 @@ namespace sol
     class VulkanFence;
     class VulkanFramebuffer;
     class VulkanGraphicsPipeline;
+    class VulkanGraphicsPipeline2;
+    class VulkanGraphicsPipelineFragment;
+    class VulkanGraphicsPipelineFragmentOutput;
+    class VulkanGraphicsPipelinePreRasterization;
+    class VulkanGraphicsPipelineVertexInput;
     class VulkanImage;
     class VulkanImageView;
     class VulkanInstance;
     class VulkanMemoryAllocator;
+    class VulkanMemoryPool;
     class VulkanPhysicalDevice;
+    class VulkanPipelineLayout;
     class VulkanQueue;
     class VulkanQueueFamily;
     class VulkanRayTracingPipeline;
@@ -41,6 +48,7 @@ namespace sol
     class VulkanSurface;
     class VulkanSwapchain;
     class VulkanSwapchainSupportDetails;
+    class VulkanTimelineSemaphore;
     class VulkanTopLevelAccelerationStructure;
 
     using VulkanAttachmentPtr                             = std::unique_ptr<VulkanAttachment>;
@@ -71,6 +79,16 @@ namespace sol
     using VulkanFramebufferSharedPtr                      = std::shared_ptr<VulkanFramebuffer>;
     using VulkanGraphicsPipelinePtr                       = std::unique_ptr<VulkanGraphicsPipeline>;
     using VulkanGraphicsPipelineSharedPtr                 = std::shared_ptr<VulkanGraphicsPipeline>;
+    using VulkanGraphicsPipeline2Ptr                      = std::unique_ptr<VulkanGraphicsPipeline2>;
+    using VulkanGraphicsPipeline2SharedPtr                = std::shared_ptr<VulkanGraphicsPipeline2>;
+    using VulkanGraphicsPipelineFragmentPtr               = std::unique_ptr<VulkanGraphicsPipelineFragment>;
+    using VulkanGraphicsPipelineFragmentSharedPtr         = std::shared_ptr<VulkanGraphicsPipelineFragment>;
+    using VulkanGraphicsPipelineFragmentOutputPtr         = std::unique_ptr<VulkanGraphicsPipelineFragmentOutput>;
+    using VulkanGraphicsPipelineFragmentOutputSharedPtr   = std::shared_ptr<VulkanGraphicsPipelineFragmentOutput>;
+    using VulkanGraphicsPipelinePreRasterizationPtr       = std::unique_ptr<VulkanGraphicsPipelinePreRasterization>;
+    using VulkanGraphicsPipelinePreRasterizationSharedPtr = std::shared_ptr<VulkanGraphicsPipelinePreRasterization>;
+    using VulkanGraphicsPipelineVertexInputPtr            = std::unique_ptr<VulkanGraphicsPipelineVertexInput>;
+    using VulkanGraphicsPipelineVertexInputSharedPtr      = std::shared_ptr<VulkanGraphicsPipelineVertexInput>;
     using VulkanImagePtr                                  = std::unique_ptr<VulkanImage>;
     using VulkanImageSharedPtr                            = std::shared_ptr<VulkanImage>;
     using VulkanImageViewPtr                              = std::unique_ptr<VulkanImageView>;
@@ -79,8 +97,12 @@ namespace sol
     using VulkanInstanceSharedPtr                         = std::shared_ptr<VulkanInstance>;
     using VulkanMemoryAllocatorPtr                        = std::unique_ptr<VulkanMemoryAllocator>;
     using VulkanMemoryAllocatorSharedPtr                  = std::shared_ptr<VulkanMemoryAllocator>;
+    using VulkanMemoryPoolPtr                             = std::unique_ptr<VulkanMemoryPool>;
+    using VulkanMemoryPoolSharedPtr                       = std::shared_ptr<VulkanMemoryPool>;
     using VulkanPhysicalDevicePtr                         = std::unique_ptr<VulkanPhysicalDevice>;
     using VulkanPhysicalDeviceSharedPtr                   = std::shared_ptr<VulkanPhysicalDevice>;
+    using VulkanPipelineLayoutPtr                         = std::unique_ptr<VulkanPipelineLayout>;
+    using VulkanPipelineLayoutSharedPtr                   = std::shared_ptr<VulkanPipelineLayout>;
     using VulkanQueuePtr                                  = std::unique_ptr<VulkanQueue>;
     using VulkanQueueSharedPtr                            = std::shared_ptr<VulkanQueue>;
     using VulkanRayTracingPipelinePtr                     = std::unique_ptr<VulkanRayTracingPipeline>;
@@ -101,6 +123,8 @@ namespace sol
     using VulkanSurfaceSharedPtr                          = std::shared_ptr<VulkanSurface>;
     using VulkanSwapchainPtr                              = std::unique_ptr<VulkanSwapchain>;
     using VulkanSwapchainSharedPtr                        = std::shared_ptr<VulkanSwapchain>;
+    using VulkanTimelineSemaphorePtr                      = std::unique_ptr<VulkanTimelineSemaphore>;
+    using VulkanTimelineSemaphoreSharedPtr                = std::shared_ptr<VulkanTimelineSemaphore>;
     using VulkanTopLevelAccelerationStructurePtr          = std::unique_ptr<VulkanTopLevelAccelerationStructure>;
     using VulkanTopLevelAccelerationStructureSharedPtr    = std::shared_ptr<VulkanTopLevelAccelerationStructure>;
 }  // namespace sol

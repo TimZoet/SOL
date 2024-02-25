@@ -155,16 +155,7 @@ namespace sol
         return imageTransfer->getStagingBuffer(image, index);
     }
 
-    void TextureManager::stageTransition(Image2D&                           image,
-                                         const VulkanQueueFamily*           queueFamily,
-                                         const std::optional<VkImageLayout> imageLayout,
-                                         const VkPipelineStageFlags2        srcStage,
-                                         const VkPipelineStageFlags2        dstStage,
-                                         const VkAccessFlags2               srcAccess,
-                                         const VkAccessFlags2               dstAccess) const
-    {
-        imageTransfer->stageTransition(image, queueFamily, imageLayout, srcStage, dstStage, srcAccess, dstAccess);
-    }
+    void TextureManager::stageTransition(Image2D& image) const { imageTransfer->stageTransition(image); }
 
 
     void TextureManager::transfer() const { imageTransfer->transfer(); }
@@ -175,14 +166,13 @@ namespace sol
     {
         auto image2D = std::make_unique<Image2D>(*this, format, size, usage);
 
-        // Stage a default transition. Reading in a shader on the graphics queue is the most common operation
-        imageTransfer->stageTransition(*image2D,
-                                       &memoryManager->getGraphicsQueue().getFamily(),
-                                       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                       VK_PIPELINE_STAGE_2_NONE,
-                                       VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-                                       VK_ACCESS_2_NONE,
-                                       VK_ACCESS_2_SHADER_READ_BIT);
+        // Stage a default transition. Reading in a shader on the graphics queue is the most common operation.
+        image2D->stageTransition(&memoryManager->getGraphicsQueue().getFamily(),
+                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                 VK_PIPELINE_STAGE_2_NONE,
+                                 VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+                                 VK_ACCESS_2_NONE,
+                                 VK_ACCESS_2_SHADER_READ_BIT);
 
         images2D.emplace_back(std::move(image2D));
         return *images2D.back();

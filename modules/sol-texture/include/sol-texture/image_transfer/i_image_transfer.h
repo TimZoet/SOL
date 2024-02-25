@@ -50,13 +50,7 @@ namespace sol
 
         [[nodiscard]] virtual ImageStagingBuffer getStagingBuffer(Image2D& image, size_t index) = 0;
 
-        virtual void stageTransition(Image2D&                     image,
-                                     const VulkanQueueFamily*     queueFamily,
-                                     std::optional<VkImageLayout> imageLayout,
-                                     VkPipelineStageFlags2        srcStage,
-                                     VkPipelineStageFlags2        dstStage,
-                                     VkAccessFlags2               srcAccess,
-                                     VkAccessFlags2               dstAccess) = 0;
+        virtual void stageTransition(Image2D& image) = 0;
 
 
         virtual void transfer() = 0;

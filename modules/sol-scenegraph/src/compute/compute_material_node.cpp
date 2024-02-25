@@ -21,14 +21,4 @@ namespace sol
     ////////////////////////////////////////////////////////////////
 
     void ComputeMaterialNode::setMaterial(ComputeMaterialInstance* mtl) noexcept { material = mtl; }
-
-    ////////////////////////////////////////////////////////////////
-    // Debugging and visualization.
-    ////////////////////////////////////////////////////////////////
-
-    std::string ComputeMaterialNode::getVizLabel() const { return "ComputeMaterial"; }
-
-    std::string ComputeMaterialNode::getVizShape() const { return "circle"; }
-
-    std::string ComputeMaterialNode::getVizFillColor() const { return material ? "white" : "red"; }
 }  // namespace sol

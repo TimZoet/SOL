@@ -1,3 +1,5 @@
+find_package(stduuid REQUIRED)
+
 set(NAME sol-texture)
 set(TYPE module)
 set(INCLUDE_DIR "include/sol-texture")
@@ -6,8 +8,11 @@ set(SRC_DIR "src")
 set(HEADERS
     ${INCLUDE_DIR}/fwd.h
     ${INCLUDE_DIR}/image2d.h
+    ${INCLUDE_DIR}/image2d2.h
+    ${INCLUDE_DIR}/sampler2d.h
     ${INCLUDE_DIR}/texture_manager.h
     ${INCLUDE_DIR}/texture2d.h
+    ${INCLUDE_DIR}/texture2d2.h
 
     ${INCLUDE_DIR}/image_transfer/i_image_transfer.h
     ${INCLUDE_DIR}/image_transfer/image_staging_buffer.h
@@ -16,8 +21,11 @@ set(HEADERS
 
 set(SOURCES
     ${SRC_DIR}/image2d.cpp
+    ${SRC_DIR}/image2d2.cpp
+    ${SRC_DIR}/sampler2d.cpp
     ${SRC_DIR}/texture_manager.cpp
     ${SRC_DIR}/texture2d.cpp
+    ${SRC_DIR}/texture2d2.cpp
 
     ${SRC_DIR}/image_transfer/i_image_transfer.cpp
     ${SRC_DIR}/image_transfer/image_staging_buffer.cpp
@@ -27,6 +35,8 @@ set(SOURCES
 set(DEPS_PUBLIC
     sol-core
     sol-memory
+
+    stduuid::stduuid
 )
 
 set(DEPS_PRIVATE

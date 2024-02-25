@@ -117,30 +117,32 @@ namespace sol
 
         // TODO: This should not be derived from the memory requirements, as the size could be larger due to alignment.
         // Instead, it should be derived from the VkFormat. Vulkan ValidationLayers has some generated code that does this:
-        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/layers/generated/vk_format_utils.h
-        const auto perPixelSize =
-          image.getImage().getMemoryRequirements().size / (static_cast<size_t>(image.getWidth()) * image.getHeight());
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/layers/vulkan/generated/vk_format_utils.cpp
+        /*const auto perPixelSize =
+          image.getImage().getMemoryRequirements().size / (static_cast<size_t>(image.getWidth()) * image.getHeight());*/
+        size_t perPixelSize = 0;
+        switch (image.getFormat())
+        {
+        case VK_FORMAT_R32G32B32A32_SFLOAT: perPixelSize = 16; break;
+        default: throw SolError("");
+        }
         const auto bufferSize = perPixelSize * regionSize[0] * regionSize[1];
 
         // Create persistently mapped staging buffer.
         VulkanBuffer::Settings bufferSettings;
-        bufferSettings.device      = memoryManager->getDevice();
-        bufferSettings.bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-        bufferSettings.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        bufferSettings.allocator   = memoryManager->getAllocator();
-        bufferSettings.memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY;
-        bufferSettings.flags       = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-        bufferSettings.size        = bufferSize;
-        auto buffer                = VulkanBuffer::create(bufferSettings);
+        bufferSettings.device          = memoryManager->getDevice();
+        bufferSettings.bufferUsage     = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        bufferSettings.sharingMode     = VK_SHARING_MODE_EXCLUSIVE;
+        bufferSettings.allocator       = memoryManager->getAllocator();
+        bufferSettings.vma.memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY;
+        bufferSettings.vma.flags =
+          VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+        bufferSettings.size = bufferSize;
+        auto buffer         = VulkanBuffer::create(bufferSettings);
         buffer->map();  //TODO: This map necessary?
 
         // Create new list of StagingBuffers for this image.
-        if (it == staged.end())
-        {
-            it                = staged.try_emplace(&image).first;
-            it->second.image  = image.getImage().get();
-            it->second.aspect = image.getAspectFlags();
-        }
+        if (it == staged.end()) { it = staged.try_emplace(&image).first; }
 
         // Store staging buffer.
         it->second.copies.emplace_back(
@@ -160,35 +162,7 @@ namespace sol
         return {*buffer, regionOffset, regionSize};
     }
 
-    void ImprovedImageTransfer::stageTransition(Image2D&                           image,
-                                                const VulkanQueueFamily*           queueFamily,
-                                                const std::optional<VkImageLayout> imageLayout,
-                                                const VkPipelineStageFlags2        srcStage,
-                                                const VkPipelineStageFlags2        dstStage,
-                                                const VkAccessFlags2               srcAccess,
-                                                const VkAccessFlags2               dstAccess)
-    {
-        // Get or create existing info object.
-        TransferInfo& info = staged.try_emplace(&image).first->second;
-
-        info.image                = image.getImage().get();
-        info.aspect               = image.getAspectFlags();
-        info.transition.srcStage  = srcStage;
-        info.transition.dstStage  = dstStage;
-        info.transition.srcAccess = srcAccess;
-        info.transition.dstAccess = dstAccess;
-        info.transition.srcFamily = image.getQueueFamily();
-        info.transition.dstFamily = queueFamily;
-
-        if (!info.transition.srcFamily && !info.transition.dstFamily)
-            throw SolError("Cannot stage Image2D transition without source and target queue family.");
-
-        if (imageLayout)
-        {
-            info.transition.oldLayout = image.getImageLayout();
-            info.transition.newLayout = *imageLayout;
-        }
-    }
+    void ImprovedImageTransfer::stageTransition(Image2D& image) { staged.try_emplace(&image); }
 
     void ImprovedImageTransfer::transfer()
     {
@@ -214,46 +188,40 @@ namespace sol
         const size_t familyCount    = physicalDevice.getQueueFamilies().size();
         auto&        transferQueue  = memoryManager->getTransferQueue();
 
-        //
+        // Collect all release and acquire barriers per queue family.
         std::vector<std::vector<VkImageMemoryBarrier2>> releaseBarriers(familyCount);
         std::vector<std::vector<VkImageMemoryBarrier2>> acquireBarriers(familyCount);
-        for (const auto& info : staged | std::views::values)
+        for (const auto& [image, info] : staged)
         {
             // Skip if there are no copies needed.
             if (info.copies.empty()) continue;
 
-            VkImageMemoryBarrier2 barrier{};
-            barrier.sType        = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-            barrier.srcStageMask = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;  // TODO: Should we use the user supplied stage
-            barrier.srcAccessMask =
-              VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;  // and access masks here, assuming they are set?
-            barrier.dstStageMask                    = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
-            barrier.dstAccessMask                   = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-            barrier.oldLayout                       = info.transition.oldLayout;
-            barrier.newLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-            barrier.image                           = info.image;
-            barrier.subresourceRange.aspectMask     = info.aspect;
-            barrier.subresourceRange.baseMipLevel   = 0;
-            barrier.subresourceRange.levelCount     = 1;
-            barrier.subresourceRange.baseArrayLayer = 0;
-            barrier.subresourceRange.layerCount     = 1;
+            // Remember the currently active transition.
+            auto transition = image->getStagedTransition();
 
+            // Override transition to get image on transfer queue.
+            image->stageTransition(
+              &transferQueue.getFamily(),
+              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+              VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,  // TODO: Should we use the user supplied stage (transition->srcStage)
+              VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+              0,  // and access mask (transition->srcAccess) here for optimization?
+              VK_ACCESS_2_TRANSFER_WRITE_BIT);
 
-            // If the image has an owner that is not the transfer queue, a barrier on both queues is needed.
-            if (info.transition.srcFamily && info.transition.srcFamily != &transferQueue.getFamily())
-            {
-                barrier.srcQueueFamilyIndex = info.transition.srcFamily->getIndex();
-                barrier.dstQueueFamilyIndex = transferQueue.getFamily().getIndex();
-                releaseBarriers[info.transition.srcFamily->getIndex()].emplace_back(barrier);
-            }
-            // Otherwise, only an acquire barrier on the transfer queue is needed.
-            else
-            {
-                barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            }
+            // Store barriers and apply transition to image.
+            const auto [release, acquire] = image->getTransitionBarriers();
+            if (release) releaseBarriers[image->getQueueFamily()->getIndex()].emplace_back(*release);
+            if (acquire) acquireBarriers[transferQueue.getFamily().getIndex()].emplace_back(*acquire);
+            image->applyTransition();
 
-            acquireBarriers[transferQueue.getFamily().getIndex()].emplace_back(barrier);
+            // Restage the active transition, but wait on transfer.
+            if (transition)
+                image->stageTransition(transition->targetFamily,
+                                       transition->newLayout,
+                                       VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                       transition->dstStage,
+                                       VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                                       transition->dstAccess);
         }
 
         // Wait for previous submits to complete before resetting and recording command buffers.
@@ -268,40 +236,29 @@ namespace sol
         }
 
         //
+        auto recordCmds = [](const std::vector<VkImageMemoryBarrier2>& barriers, const VulkanCommandBuffer& cb) {
+            if (!barriers.empty())
+            {
+                VkDependencyInfo info{};
+                info.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+                cb.resetCommand(VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
+                cb.beginOneTimeCommand();
+                info.imageMemoryBarrierCount = static_cast<uint32_t>(barriers.size());
+                info.pImageMemoryBarriers    = barriers.data();
+                vkCmdPipelineBarrier2(cb.get(), &info);
+                cb.endCommand();
+            }
+        };
         for (uint32_t i = 0; i < familyCount; i++)
         {
-            // Write the release command.
-            if (!releaseBarriers[i].empty())
-            {
-                VkDependencyInfo info{};
-                info.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-                auto& cb   = *releaseCommandBuffers[i];
-                cb.resetCommand(VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
-                cb.beginOneTimeCommand();
-                info.imageMemoryBarrierCount = static_cast<uint32_t>(releaseBarriers[i].size());
-                info.pImageMemoryBarriers    = releaseBarriers[i].data();
-                vkCmdPipelineBarrier2(cb.get(), &info);
-                cb.endCommand();
-            }
-
-            // Write the acquire command.
-            if (!acquireBarriers[i].empty())
-            {
-                VkDependencyInfo info{};
-                info.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-                auto& cb   = *acquireCommandBuffers[i];
-                cb.resetCommand(VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
-                cb.beginOneTimeCommand();
-                info.imageMemoryBarrierCount = static_cast<uint32_t>(acquireBarriers[i].size());
-                info.pImageMemoryBarriers    = acquireBarriers[i].data();
-                vkCmdPipelineBarrier2(cb.get(), &info);
-                cb.endCommand();
-            }
+            recordCmds(releaseBarriers[i], *releaseCommandBuffers[i]);
+            recordCmds(acquireBarriers[i], *acquireCommandBuffers[i]);
         }
 
-        //
+        // Submit barriers to each queue.
         for (uint32_t i = 0; i < familyCount; i++)
         {
+            // Release barriers are submitted to queue that previously owned resources.
             if (!releaseBarriers[i].empty())
             {
                 VkSubmitInfo submit{};
@@ -321,6 +278,7 @@ namespace sol
                 memoryManager->getQueue(i).submit(submit);
             }
 
+            // Acquire barriers are submitted to transfer queue. Each submit needs to wait for matching submit above that releases the images.
             if (!acquireBarriers[i].empty())
             {
                 VkSubmitInfo submit{};
@@ -355,7 +313,7 @@ namespace sol
         copy.commandBuffer->resetCommand(VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
         copy.commandBuffer->beginOneTimeCommand();
 
-        for (const auto& info : staged | std::views::values)
+        for (const auto& [image, info] : staged)
         {
             for (const auto& [stagingBuffer, regionOffset, regionSize] : info.copies)
             {
@@ -363,7 +321,7 @@ namespace sol
                 region.bufferOffset                    = 0;
                 region.bufferRowLength                 = 0;
                 region.bufferImageHeight               = 0;
-                region.imageSubresource.aspectMask     = info.aspect;
+                region.imageSubresource.aspectMask     = image->getAspectFlags();
                 region.imageSubresource.mipLevel       = 0;
                 region.imageSubresource.baseArrayLayer = 0;
                 region.imageSubresource.layerCount     = 1;
@@ -375,7 +333,7 @@ namespace sol
                 region.imageExtent.depth               = 1;
                 vkCmdCopyBufferToImage(copy.commandBuffer->get(),
                                        stagingBuffer->get(),
-                                       info.image,
+                                       image->getImage().get(),
                                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                        1,
                                        &region);
@@ -415,93 +373,11 @@ namespace sol
         std::vector<std::vector<VkImageMemoryBarrier2>> acquireBarriers(familyCount * familyCount);
         for (const auto& [image, info] : staged)
         {
-            image->setImageLayout(info.transition.newLayout);
-            if (info.transition.dstFamily) image->setQueueFamily(*info.transition.dstFamily);
-
-            VkImageMemoryBarrier2 barrier{};
-            barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-            barrier.pNext                           = nullptr;
-            barrier.image                           = info.image;
-            barrier.subresourceRange.aspectMask     = info.aspect;
-            barrier.subresourceRange.baseMipLevel   = 0;
-            barrier.subresourceRange.levelCount     = 1;
-            barrier.subresourceRange.baseArrayLayer = 0;
-            barrier.subresourceRange.layerCount     = 1;
-            barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-            barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-
-            if (info.copies.empty())
-            {
-                barrier.srcStageMask  = info.transition.srcStage;
-                barrier.srcAccessMask = info.transition.srcAccess;
-                barrier.dstStageMask  = info.transition.dstStage;
-                barrier.dstAccessMask = info.transition.dstAccess;
-                barrier.oldLayout     = info.transition.oldLayout;
-                barrier.newLayout     = info.transition.newLayout;
-
-                if (info.transition.srcFamily && info.transition.dstFamily)
-                {
-                    // Ownership transfer on the same queue was requested. Only acquire on the one queue is needed.
-                    if (info.transition.srcFamily == info.transition.dstFamily)
-                    {
-                        const auto idx = calcIdx(info.transition.srcFamily->getIndex(), VK_QUEUE_FAMILY_IGNORED);
-                        acquireBarriers[idx].emplace_back(barrier);
-                    }
-                    // Ownership transfer from one queue to another. Release and acquire needed.
-                    else
-                    {
-                        barrier.srcQueueFamilyIndex = info.transition.srcFamily->getIndex();
-                        barrier.dstQueueFamilyIndex = info.transition.dstFamily->getIndex();
-                        const auto idx              = calcIdx(barrier.srcQueueFamilyIndex, barrier.dstQueueFamilyIndex);
-
-                        releaseBarriers[idx].emplace_back(barrier);
-                        acquireBarriers[idx].emplace_back(barrier);
-                    }
-                }
-                // No ownership transfer was requested. Only acquire on the same queue is needed.
-                else if (info.transition.srcFamily)
-                {
-                    const auto idx = calcIdx(info.transition.srcFamily->getIndex(), VK_QUEUE_FAMILY_IGNORED);
-                    acquireBarriers[idx].emplace_back(barrier);
-                }
-                // Image is not yet owned by any family. Only acquire on the destination queue is needed.
-                else if (info.transition.dstFamily)
-                {
-                    const auto idx = calcIdx(VK_QUEUE_FAMILY_IGNORED, info.transition.dstFamily->getIndex());
-                    acquireBarriers[idx].emplace_back(barrier);
-                }
-                else { assert(false); }
-            }
-            else
-            {
-                barrier.srcStageMask  = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
-                barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-                barrier.dstStageMask  = VK_PIPELINE_STAGE_2_NONE;
-                barrier.dstAccessMask = VK_ACCESS_2_NONE;
-                barrier.oldLayout     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-                barrier.newLayout     = info.transition.newLayout;
-
-                // Ownership transfer to queue different from transfer queue was requested. Release on transfer queue, acquire on destination queue.
-                if (info.transition.dstFamily && info.transition.dstFamily != &transferQueue.getFamily())
-                {
-                    barrier.srcQueueFamilyIndex = transferQueue.getFamily().getIndex();
-                    barrier.dstQueueFamilyIndex = info.transition.dstFamily->getIndex();
-                    const auto idx              = calcIdx(barrier.srcQueueFamilyIndex, barrier.dstQueueFamilyIndex);
-                    releaseBarriers[idx].emplace_back(barrier);
-
-                    barrier.dstStageMask  = info.transition.dstStage;
-                    barrier.dstAccessMask = info.transition.dstAccess;
-                    acquireBarriers[idx].emplace_back(barrier);
-                }
-                // No ownership transfer was requested. Only acquire on the transfer queue is needed.
-                else
-                {
-                    barrier.dstStageMask  = info.transition.dstStage;
-                    barrier.dstAccessMask = info.transition.dstAccess;
-                    const auto idx        = calcIdx(VK_QUEUE_FAMILY_IGNORED, transferQueue.getFamily().getIndex());
-                    acquireBarriers[idx].emplace_back(barrier);
-                }
-            }
+            // Store barriers and apply transition to image.
+            const auto [release, acquire] = image->getTransitionBarriers();
+            if (release) releaseBarriers[image->getQueueFamily()->getIndex()].emplace_back(*release);
+            if (acquire) acquireBarriers[transferQueue.getFamily().getIndex()].emplace_back(*acquire);
+            image->applyTransition();
         }
 
         // Wait for previous submits to complete before resetting and recording command buffers.

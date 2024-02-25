@@ -80,8 +80,8 @@ namespace sol
         createInfo.extent.width          = settings.width;
         createInfo.extent.height         = settings.height;
         createInfo.extent.depth          = settings.depth;
-        createInfo.mipLevels             = 1;
-        createInfo.arrayLayers           = 1;
+        createInfo.mipLevels             = settings.mipLevels;
+        createInfo.arrayLayers           = settings.arrayLayers;
         createInfo.samples               = VK_SAMPLE_COUNT_1_BIT;
         createInfo.tiling                = settings.tiling;
         createInfo.usage                 = settings.imageUsage;
@@ -97,10 +97,10 @@ namespace sol
         if (settings.allocator)
         {
             VmaAllocationCreateInfo allocInfo = {};
-            allocInfo.usage                   = settings.memoryUsage;
-            allocInfo.requiredFlags           = settings.requiredFlags;
-            allocInfo.preferredFlags          = settings.preferredFlags;
-            allocInfo.flags                   = settings.flags;
+            allocInfo.usage                   = settings.vma.memoryUsage;
+            allocInfo.requiredFlags           = settings.vma.requiredFlags;
+            allocInfo.preferredFlags          = settings.vma.preferredFlags;
+            allocInfo.flags                   = settings.vma.flags;
             handleVulkanError(
               vmaCreateImage(settings.allocator, &createInfo, &allocInfo, &vkImage, &vmaAllocation, nullptr));
         }

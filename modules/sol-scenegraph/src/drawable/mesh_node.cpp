@@ -6,29 +6,37 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    MeshNode::MeshNode(IMesh& meshInstance) : Node(), mesh(&meshInstance) {}
+    MeshNode::MeshNode() = default;
+
+    MeshNode::MeshNode(const uuids::uuid id) : Node(id) {}
+
+    MeshNode::MeshNode(Mesh& m) : mesh(&m) {}
+
+    MeshNode::MeshNode(const uuids::uuid id, Mesh& m) : Node(id), mesh(&m) {}
+
+    MeshNode::~MeshNode() noexcept = default;
 
     ////////////////////////////////////////////////////////////////
     // Getters.
     ////////////////////////////////////////////////////////////////
 
-    Node::Type MeshNode::getType() const noexcept { return Type::Mesh; }
-
-    IMesh* MeshNode::getMesh() const noexcept { return mesh; }
+    Mesh* MeshNode::getMesh() const noexcept { return mesh; }
 
     ////////////////////////////////////////////////////////////////
     // Setters.
     ////////////////////////////////////////////////////////////////
 
-    void MeshNode::setMesh(IMesh* msh) noexcept { mesh = msh; }
+    void MeshNode::setMesh(Mesh* m) noexcept { mesh = m; }
 
     ////////////////////////////////////////////////////////////////
-    // Debugging and visualization.
+    // Casting.
     ////////////////////////////////////////////////////////////////
 
-    std::string MeshNode::getVizLabel() const { return "Mesh"; }
+    bool MeshNode::supportsTypeImpl(const Type type) const noexcept { return type == Type::Mesh; }
 
-    std::string MeshNode::getVizShape() const { return "triangle"; }
-
-    std::string MeshNode::getVizFillColor() const { return mesh ? "white" : "red"; }
+    const void* MeshNode::getAsImpl(const Type type) const
+    {
+        if (type == Type::Mesh) return this;
+        return nullptr;
+    }
 }  // namespace sol

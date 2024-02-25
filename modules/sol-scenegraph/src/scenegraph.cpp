@@ -12,7 +12,11 @@ namespace sol
     // Constructors.
     ////////////////////////////////////////////////////////////////
 
-    Scenegraph::Scenegraph() { rootNode = std::make_unique<Node>(); }
+    Scenegraph::Scenegraph()
+    {
+        rootNode             = std::make_unique<Node>();
+        rootNode->scenegraph = this;
+    }
 
     Scenegraph::~Scenegraph() noexcept = default;
 
@@ -23,11 +27,4 @@ namespace sol
     Node& Scenegraph::getRootNode() noexcept { return *rootNode; }
 
     const Node& Scenegraph::getRootNode() const noexcept { return *rootNode; }
-
-    ////////////////////////////////////////////////////////////////
-    // Debugging and visualization.
-    ////////////////////////////////////////////////////////////////
-
-    //void Scenegraph::visualize(dot::Graph& graph) const { rootNode->visualize(graph, nullptr); }
-
 }  // namespace sol

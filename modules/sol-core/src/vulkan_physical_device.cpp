@@ -5,6 +5,7 @@
 ////////////////////////////////////////////////////////////////
 
 #include <algorithm>
+#include <ranges>
 
 ////////////////////////////////////////////////////////////////
 // Module includes.
@@ -71,18 +72,21 @@ namespace sol
         return std::make_shared<VulkanPhysicalDevice>(settings, device, indices, details);
     }
 
-    bool VulkanPhysicalDevice::Settings::validate() const noexcept
+    std::expected<bool, std::string> VulkanPhysicalDevice::Settings::validate() const noexcept
     {
-        if (!instance) return false;
-
+        if (!instance) return std::unexpected("No instance set.");
+        if (!std::ranges::contains(extensions, VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME))
+            return std::unexpected(std::format("The required device extension {} was not enabled.",
+                                               VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME));
         return true;
     }
 
     std::tuple<VkPhysicalDevice, std::vector<VulkanQueueFamily>, std::optional<VulkanSwapchainSupportDetails>>
       VulkanPhysicalDevice::createImpl(const Settings& settings)
     {
-        if (!settings.validate())
-            throw SettingsValidationError("Could not create VulkanPhysicalDevice. Settings not valid.");
+        if (const auto exp = settings.validate(); !exp.has_value())
+            throw SettingsValidationError(
+              std::format("Could not create VulkanPhysicalDevice. Settings not valid: {}", exp.error()));
 
         // Get number of devices.
         uint32_t deviceCount = 0;

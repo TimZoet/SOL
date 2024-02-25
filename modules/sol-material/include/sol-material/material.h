@@ -100,7 +100,7 @@ namespace sol
         std::string name;
     };
 
-    enum class CullMode
+    enum class ECullMode
     {
         None  = 0,
         Front = 1,
@@ -108,48 +108,48 @@ namespace sol
         Both  = Front | Back
     };
 
-    enum class FrontFace
+    enum class EFrontFace
     {
         Clockwise        = 1,
         CounterClockwise = 2
     };
 
-    enum class PolygonMode
+    enum class EPolygonMode
     {
         Fill  = 0,
         Line  = 1,
         Point = 2
     };
 
-    inline auto toVulkanEnum(const CullMode value)
+    inline auto toVulkanEnum(const ECullMode value)
     {
         switch (value)
         {
-        case CullMode::None: return VK_CULL_MODE_NONE;
-        case CullMode::Front: return VK_CULL_MODE_FRONT_BIT;
-        case CullMode::Back: return VK_CULL_MODE_BACK_BIT;
-        case CullMode::Both: return VK_CULL_MODE_FRONT_AND_BACK;
+        case ECullMode::None: return VK_CULL_MODE_NONE;
+        case ECullMode::Front: return VK_CULL_MODE_FRONT_BIT;
+        case ECullMode::Back: return VK_CULL_MODE_BACK_BIT;
+        case ECullMode::Both: return VK_CULL_MODE_FRONT_AND_BACK;
         }
         return VK_CULL_MODE_NONE;
     }
 
-    inline auto toVulkanEnum(const FrontFace value)
+    inline auto toVulkanEnum(const EFrontFace value)
     {
         switch (value)
         {
-        case FrontFace::Clockwise: return VK_FRONT_FACE_CLOCKWISE;
-        case FrontFace::CounterClockwise: return VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        case EFrontFace::Clockwise: return VK_FRONT_FACE_CLOCKWISE;
+        case EFrontFace::CounterClockwise: return VK_FRONT_FACE_COUNTER_CLOCKWISE;
         }
         return VK_FRONT_FACE_COUNTER_CLOCKWISE;
     }
 
-    inline auto toVulkanEnum(const PolygonMode value)
+    inline auto toVulkanEnum(const EPolygonMode value)
     {
         switch (value)
         {
-        case PolygonMode::Fill: return VK_POLYGON_MODE_FILL;
-        case PolygonMode::Line: return VK_POLYGON_MODE_LINE;
-        case PolygonMode::Point: return VK_POLYGON_MODE_POINT;
+        case EPolygonMode::Fill: return VK_POLYGON_MODE_FILL;
+        case EPolygonMode::Line: return VK_POLYGON_MODE_LINE;
+        case EPolygonMode::Point: return VK_POLYGON_MODE_POINT;
         }
         return VK_POLYGON_MODE_FILL;
     }

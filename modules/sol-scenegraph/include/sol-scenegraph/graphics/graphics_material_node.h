@@ -4,7 +4,7 @@
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
-#include "sol-material/graphics/graphics_material_instance.h"
+#include "sol-material/graphics/graphics_material_instance2.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
@@ -14,22 +14,26 @@
 
 namespace sol
 {
-    class GraphicsMaterialNode final : public Node
+    class GraphicsMaterialNode : public Node
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        GraphicsMaterialNode() = default;
+        GraphicsMaterialNode();
 
-        explicit GraphicsMaterialNode(GraphicsMaterialInstance& materialInstance);
+        explicit GraphicsMaterialNode(uuids::uuid id);
+
+        explicit GraphicsMaterialNode(GraphicsMaterialInstance2& m);
+
+        GraphicsMaterialNode(uuids::uuid id, GraphicsMaterialInstance2& m);
 
         GraphicsMaterialNode(const GraphicsMaterialNode&) = delete;
 
         GraphicsMaterialNode(GraphicsMaterialNode&&) = delete;
 
-        ~GraphicsMaterialNode() noexcept override = default;
+        ~GraphicsMaterialNode() noexcept override;
 
         GraphicsMaterialNode& operator=(const GraphicsMaterialNode&) = delete;
 
@@ -39,31 +43,27 @@ namespace sol
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] Type getType() const noexcept override;
-
-        [[nodiscard]] GraphicsMaterialInstance* getMaterial() const noexcept;
+        [[nodiscard]] GraphicsMaterialInstance2* getMaterial() const noexcept;
 
         ////////////////////////////////////////////////////////////////
         // Setters.
         ////////////////////////////////////////////////////////////////
 
-        void setMaterial(GraphicsMaterialInstance* mtl) noexcept;
-
-        ////////////////////////////////////////////////////////////////
-        // Debugging and visualization.
-        ////////////////////////////////////////////////////////////////
-
-        [[nodiscard]] std::string getVizLabel() const override;
-
-        [[nodiscard]] std::string getVizShape() const override;
-
-        [[nodiscard]] std::string getVizFillColor() const override;
+        void setMaterial(GraphicsMaterialInstance2* mtl) noexcept;
 
     protected:
+        ////////////////////////////////////////////////////////////////
+        // Casting.
+        ////////////////////////////////////////////////////////////////
+
+        bool supportsTypeImpl(Type type) const noexcept override;
+
+        const void* getAsImpl(Type type) const override;
+
         ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        GraphicsMaterialInstance* material = nullptr;
+        GraphicsMaterialInstance2* material = nullptr;
     };
 }  // namespace sol

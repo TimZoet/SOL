@@ -48,6 +48,9 @@ namespace sol
 
     using VulkanPhysicalDeviceFeatures2Ptr = std::unique_ptr<RootVulkanPhysicalDeviceFeatures2>;
 
+    /*
+     * Core.
+     */
 
     using VulkanPhysicalDeviceVulkan11Features =
       VulkanPhysicalDeviceFeature<VkPhysicalDeviceVulkan11Features,
@@ -58,15 +61,35 @@ namespace sol
     using VulkanPhysicalDeviceVulkan13Features =
       VulkanPhysicalDeviceFeature<VkPhysicalDeviceVulkan13Features,
                                   VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES>;
+
+    /*
+     * KHR.
+     */
+
     using VulkanPhysicalDeviceAccelerationStructureFeaturesKHR =
       VulkanPhysicalDeviceFeature<VkPhysicalDeviceAccelerationStructureFeaturesKHR,
                                   VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR>;
+    using VulkanPhysicalDeviceMaintenance5FeaturesKHR =
+      VulkanPhysicalDeviceFeature<VkPhysicalDeviceMaintenance5FeaturesKHR,
+                                  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES_KHR>;
     using VulkanPhysicalDeviceRayQueryFeaturesKHR =
       VulkanPhysicalDeviceFeature<VkPhysicalDeviceRayQueryFeaturesKHR,
                                   VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR>;
     using VulkanPhysicalDeviceRayTracingPipelineFeaturesKHR =
       VulkanPhysicalDeviceFeature<VkPhysicalDeviceRayTracingPipelineFeaturesKHR,
                                   VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR>;
+
+    /*
+     * EXT.
+     */
+
+    using VulkanPhysicalDeviceDescriptorBufferFeaturesEXT =
+      VulkanPhysicalDeviceFeature<VkPhysicalDeviceDescriptorBufferFeaturesEXT,
+                                  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT>;
+
+    using VulkanPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT =
+      VulkanPhysicalDeviceFeature<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT,
+                                  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GRAPHICS_PIPELINE_LIBRARY_FEATURES_EXT>;
 
     template<typename...>
     struct VulkanPhysicalDeviceFeatures2 : RootVulkanPhysicalDeviceFeatures2
@@ -83,7 +106,7 @@ namespace sol
 
         VulkanPhysicalDeviceFeatures2& operator=(VulkanPhysicalDeviceFeatures2&&) = delete;
 
-        [[nodiscard]] void* getImpl(const VkStructureType s) noexcept override { return nullptr; }
+        [[nodiscard]] void* getImpl(const VkStructureType) noexcept override { return nullptr; }
 
         template<typename = void>
         [[nodiscard]] VkPhysicalDeviceFeatures2& get() noexcept

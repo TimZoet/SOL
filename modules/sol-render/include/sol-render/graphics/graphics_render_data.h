@@ -16,6 +16,7 @@
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
+#include "sol-descriptor/fwd.h"
 #include "sol-material/fwd.h"
 #include "sol-mesh/fwd.h"
 
@@ -33,17 +34,17 @@ namespace sol
             /**
              * \brief Mesh instance.
              */
-            const IMesh* mesh = nullptr;
+            const Mesh* mesh = nullptr;
 
             /**
              * \brief Active material.
              */
-            const GraphicsMaterial* material = nullptr;
+            const GraphicsMaterial2* material = nullptr;
 
             /**
-             * \brief Offset into the material instance list.
+             * \brief Offset into the descriptor list.
              */
-            size_t materialOffset = 0;
+            size_t descriptorOffset = 0;
 
             /**
              * \brief Offset into the push constant ranges list.
@@ -51,32 +52,26 @@ namespace sol
             size_t pushConstantOffset = 0;
 
             /**
-             * \brief Number of push constants.
+             * \brief Offset into the dynamic state reference list.
              */
-            size_t pushConstantCount = 0;
+            size_t dynamicStateOffset = 0;
+
+            auto operator<=>(const Drawable&) const noexcept = default;
         };
 
         struct PushConstantRange
         {
             /**
-             * \brief Start offset of the push constant range to update in bytes.
-             */
-            uint32_t rangeOffset = 0;
-
-            /**
-             * \brief Size of the push constant range to update in bytes.
-             */
-            uint32_t rangeSize = 0;
-
-            /**
              * \brief Offset into the push constant data array.
              */
-            size_t offset = 0;
+            size_t offset = ~0ULL;
 
             /**
              * \brief Shader stages that will be updated.
              */
             VkShaderStageFlags stages = VK_SHADER_STAGE_ALL;
+
+            auto operator<=>(const PushConstantRange&) const noexcept = default;
         };
 
         ////////////////////////////////////////////////////////////////
@@ -102,24 +97,19 @@ namespace sol
         void clear();
 
         ////////////////////////////////////////////////////////////////
-        // Sorting.
-        ////////////////////////////////////////////////////////////////
-
-        void sortDrawablesByLayer();
-
-        ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
         std::vector<Drawable> drawables;
 
-        std::vector<const GraphicsMaterialInstance*> materialInstances;
+        std::vector<const Descriptor*> descriptors;
 
-        /**
-         * \brief Range into the push constant data array.
-         */
         std::vector<PushConstantRange> pushConstantRanges;
 
         std::vector<std::byte> pushConstantData;
+
+        std::vector<GraphicsDynamicStatePtr> dynamicStates;
+
+        std::vector<const GraphicsDynamicState*> dynamicStateReferences;
     };
 }  // namespace sol

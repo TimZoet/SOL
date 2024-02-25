@@ -188,17 +188,30 @@ namespace sol
 
         for (const auto& ext : set.extensions)
         {
-            if (ext == VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)
+            if (ext == VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME)
+            {
+                load(vkCmdSetPolygonModeEXT, "vkCmdSetPolygonModeEXT");
+            }
+            else if (ext == VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME)
+            {
+                load(vkCmdBindDescriptorBufferEmbeddedSamplersEXT, "vkCmdBindDescriptorBufferEmbeddedSamplersEXT");
+                load(vkCmdBindDescriptorBuffersEXT, "vkCmdBindDescriptorBuffersEXT");
+                load(vkCmdSetDescriptorBufferOffsetsEXT, "vkCmdSetDescriptorBufferOffsetsEXT");
+                load(vkGetBufferOpaqueCaptureDescriptorDataEXT, "vkGetBufferOpaqueCaptureDescriptorDataEXT");
+                load(vkGetDescriptorEXT, "vkGetDescriptorEXT");
+                load(vkGetDescriptorSetLayoutBindingOffsetEXT, "vkGetDescriptorSetLayoutBindingOffsetEXT");
+                load(vkGetDescriptorSetLayoutSizeEXT, "vkGetDescriptorSetLayoutSizeEXT");
+                load(vkGetImageOpaqueCaptureDescriptorDataEXT, "vkGetImageOpaqueCaptureDescriptorDataEXT");
+                load(vkGetImageViewOpaqueCaptureDescriptorDataEXT, "vkGetImageViewOpaqueCaptureDescriptorDataEXT");
+                load(vkGetSamplerOpaqueCaptureDescriptorDataEXT, "vkGetSamplerOpaqueCaptureDescriptorDataEXT");
+            }
+            else if (ext == VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)
             {
                 load(vkCmdBuildAccelerationStructuresKHR, "vkCmdBuildAccelerationStructuresKHR");
                 load(vkCreateAccelerationStructureKHR, "vkCreateAccelerationStructureKHR");
                 load(vkDestroyAccelerationStructureKHR, "vkDestroyAccelerationStructureKHR");
                 load(vkGetAccelerationStructureBuildSizesKHR, "vkGetAccelerationStructureBuildSizesKHR");
                 load(vkGetAccelerationStructureDeviceAddressKHR, "vkGetAccelerationStructureDeviceAddressKHR");
-            }
-            else if (ext == VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME)
-            {
-                load(vkCmdSetPolygonModeEXT, "vkCmdSetPolygonModeEXT");
             }
             else if (ext == VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)
             {

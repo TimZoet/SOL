@@ -58,20 +58,6 @@ namespace sol
         GraphicsRenderingInfo& operator=(GraphicsRenderingInfo&&) = delete;
 
         ////////////////////////////////////////////////////////////////
-        // Getters.
-        ////////////////////////////////////////////////////////////////
-
-        [[nodiscard]] bool isFinalized() const noexcept;
-
-        void requireFinalized() const;
-
-        void requireNonFinalized() const;
-
-        [[nodiscard]] const VkRenderingInfo& get() const;
-
-        [[nodiscard]] const std::vector<const VulkanImageView*>& getColorImageViews() const noexcept;
-
-        ////////////////////////////////////////////////////////////////
         // Modifiers.
         ////////////////////////////////////////////////////////////////
 
@@ -133,8 +119,6 @@ namespace sol
                                   VkAttachmentStoreOp    storeOp,
                                   uint32_t               clearStencil);
 
-        void finalize();
-
         ////////////////////////////////////////////////////////////////
         // Commands.
         ////////////////////////////////////////////////////////////////
@@ -143,10 +127,6 @@ namespace sol
 
         void endRendering(const VulkanCommandBuffer& buffer) const;
 
-        void preTransition(const VulkanCommandBuffer& buffer) const;
-
-        void postTransition(const VulkanCommandBuffer& buffer) const;
-
     private:
         void addColorAttachment(const VulkanImageView& imageView,
                                 VkImageLayout          imageLayout,
@@ -154,11 +134,12 @@ namespace sol
                                 VkAttachmentStoreOp    storeOp,
                                 VkClearColorValue      clearColor);
 
+        void transition(const VulkanCommandBuffer&                                   buffer,
+                        const std::vector<std::optional<ColorAttachmentTransition>>& transitions) const;
+
         ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////
-
-        VkRenderingInfo renderingInfo{.sType = VK_STRUCTURE_TYPE_MAX_ENUM};
 
         VkRect2D renderArea{};
         uint32_t layerCount = 0;
@@ -170,10 +151,5 @@ namespace sol
 
         std::vector<std::optional<ColorAttachmentTransition>> preColorTransitions;
         std::vector<std::optional<ColorAttachmentTransition>> postColorTransitions;
-
-        std::vector<VkImageMemoryBarrier2> preBarriers;
-        std::vector<VkImageMemoryBarrier2> postBarriers;
-        VkDependencyInfo                   preDependencyInfo{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
-        VkDependencyInfo                   postDependencyInfo{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
     };
 }  // namespace sol
