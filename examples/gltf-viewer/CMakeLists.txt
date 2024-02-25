@@ -1,5 +1,6 @@
 find_package(math REQUIRED)
 find_package(parsertongue REQUIRED)
+find_package(Vulkan COMPONENTS dxc REQUIRED)
 
 set(NAME gltf-viewer)
 set(TYPE application)
@@ -44,3 +45,27 @@ make_target(
     DEPS_PUBLIC "${DEPS_PUBLIC}"
     INCS_PUBLIC "${INCS_PUBLIC}"
 )
+
+add_custom_command(
+    OUTPUT
+        ${CMAKE_BINARY_DIR}/bin/${NAME}/shaders/display.vert.spv
+        ${CMAKE_BINARY_DIR}/bin/${NAME}/shaders/display.frag.spv
+    DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/shaders/display.vert.hlsl
+        ${CMAKE_CURRENT_SOURCE_DIR}/shaders/display.frag.hlsl
+    COMMAND
+        ${Vulkan_dxc_EXECUTABLE} -spirv -E main -T vs_6_6 ${CMAKE_CURRENT_SOURCE_DIR}/shaders/display.vert.hlsl -Fo ${CMAKE_BINARY_DIR}/bin/${NAME}/shaders/display.vert.spv
+    COMMAND
+        ${Vulkan_dxc_EXECUTABLE} -spirv -E main -T ps_6_6 ${CMAKE_CURRENT_SOURCE_DIR}/shaders/display.frag.hlsl -Fo ${CMAKE_BINARY_DIR}/bin/${NAME}/shaders/display.frag.spv
+    VERBATIM
+)
+
+add_custom_target(
+    ${NAME}-shaders ALL
+    DEPENDS
+        ${CMAKE_BINARY_DIR}/bin/${NAME}/shaders/display.vert.spv
+        ${CMAKE_BINARY_DIR}/bin/${NAME}/shaders/display.frag.spv
+)
+
+
+add_dependencies(${NAME} ${NAME}-shaders)

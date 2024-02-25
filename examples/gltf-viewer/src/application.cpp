@@ -34,13 +34,10 @@
 #include "sol-core/vulkan_queue.h"
 #include "sol-core/vulkan_queue_family.h"
 #include "sol-core/vulkan_semaphore.h"
-#include "sol-core/vulkan_shader_module.h"
 #include "sol-core/vulkan_surface.h"
 #include "sol-core/vulkan_swapchain.h"
 #include "sol-descriptor/descriptor_layout.h"
-#include "sol-descriptor/fwd.h"
 #include "sol-error/vulkan_error_handler.h"
-#include "sol-error/vulkan_no_devices_error.h"
 #include "sol-material/graphics/graphics_material2.h"
 #include "sol-memory/memory_manager.h"
 #include "sol-memory/transaction_manager.h"
@@ -164,7 +161,10 @@ void Application::run()
             const VkRect2D scissor{.offset = VkOffset2D{.x = 0, .y = 0}, .extent = swapchain->getExtent()};
             vkCmdSetScissorWithCount(commandBuffers[frameIndex]->get(), 1, &scissor);
 
-            const auto offset = vertexBuffer->getBufferOffset();
+            auto offset = vertexBuffer->getBufferOffset();
+            vkCmdBindVertexBuffers(commandBuffers[frameIndex]->get(), 0, 1, &vertexBuffer->getBuffer().get(), &offset);
+            vkCmdDraw(commandBuffers[frameIndex]->get(), 3, 1, 0, 0);
+            offset = vertexBuffer->getBufferOffset() + sizeof(math::float2) * 3;
             vkCmdBindVertexBuffers(commandBuffers[frameIndex]->get(), 0, 1, &vertexBuffer->getBuffer().get(), &offset);
             vkCmdDraw(commandBuffers[frameIndex]->get(), 3, 1, 0, 0);
 
@@ -438,9 +438,9 @@ void Application::createGeometry()
 
     vertexBuffer                 = geometryAllocator->allocateVertexBuffer(6, sizeof(math::float2));
     const auto       transaction = transactionManager->beginTransaction();
-    const std::array vertices    = {math::float2{-1.0f, -1.0f},
-                                    math::float2{1.0f, -1.0f},
-                                    math::float2{1.0f, 1.0f},
+    const std::array vertices    = {math::float2{0.0f, -0.5f},
+                                    math::float2{0.5f, 0.5f},
+                                    math::float2{-0.5f, 0.5f},
                                     math::float2{1.0f, 1.0f},
                                     math::float2{-1.0f, 1.0f},
                                     math::float2{-1.0f, 0.0f}};
@@ -496,7 +496,7 @@ void Application::createMaterials()
     sol::VulkanGraphicsPipelinePreRasterization::Settings preRastSettings;
     preRastSettings.layout = layout;
     preRastSettings.vertexShader.code =
-      loadShaderBytecode("C:/Users/timzo/dev/projects/sol/source/examples/gltf-viewer/shaders/display.vert.spv");
+      loadShaderBytecode(std::filesystem::current_path() / "gltf-viewer/shaders/display.vert.spv");
     preRastSettings.enabledDynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
     preRastSettings.enabledDynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
     preRastSettings.rasterization.cullMode = VK_CULL_MODE_NONE;
@@ -505,12 +505,20 @@ void Application::createMaterials()
     sol::VulkanGraphicsPipelineFragment::Settings fragmentSettings;
     fragmentSettings.layout = layout;
     fragmentSettings.fragmentShader.code =
-      loadShaderBytecode("C:/Users/timzo/dev/projects/sol/source/examples/gltf-viewer/shaders/display.frag.spv");
-
+      loadShaderBytecode(std::filesystem::current_path() / "gltf-viewer/shaders/display.frag.spv");
+    fragmentSettings.depthStencil.depthTestEnable = false;
 
     sol::VulkanGraphicsPipelineFragmentOutput::Settings fragOutSettings;
     fragOutSettings.device = device;
-    fragOutSettings.colorBlend.attachments.emplace_back(VK_FALSE);
+    fragOutSettings.colorBlend.attachments.emplace_back(VK_FALSE,
+                                                        VK_BLEND_FACTOR_SRC_ALPHA,
+                                                        VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+                                                        VK_BLEND_OP_ADD,
+                                                        VK_BLEND_FACTOR_ONE,
+                                                        VK_BLEND_FACTOR_ZERO,
+                                                        VK_BLEND_OP_ADD,
+                                                        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                                                          VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT);
     fragOutSettings.colorAttachmentFormats.push_back(swapchain->getImageViews()[0]->getSettings().format);
     fragOutSettings.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT;
 

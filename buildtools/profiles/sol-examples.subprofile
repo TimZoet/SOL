@@ -1,3 +1,4 @@
 [options]
 build_examples=True
+build_tests=True
 use_conan=True

@@ -251,8 +251,8 @@ namespace sol
 
         for (size_t i = 0; i < mesh.getVertexBufferCount(); i++)
         {
-            const std::pair vertexBuffer = {&mesh.getVertexBuffers()[i]->getBuffer(),
-                                            mesh.getVertexBuffers()[i]->getBufferOffset()};
+            const std::pair<const VulkanBuffer*, size_t> vertexBuffer = {&mesh.getVertexBuffers()[i]->getBuffer(),
+                                                                         mesh.getVertexBuffers()[i]->getBufferOffset()};
 
             if (activeVertexBuffers[i] != vertexBuffer)
             {
