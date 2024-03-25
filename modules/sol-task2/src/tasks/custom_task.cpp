@@ -1,0 +1,28 @@
+#include "sol-task/tasks/custom_task.h"
+
+namespace sol
+{
+    ////////////////////////////////////////////////////////////////
+    // Constructors.
+    ////////////////////////////////////////////////////////////////
+
+    CustomTask::CustomTask(TaskGraph& taskGraph) : ITask(taskGraph) {}
+
+    CustomTask::~CustomTask() noexcept = default;
+
+    ////////////////////////////////////////////////////////////////
+    // Setters.
+    ////////////////////////////////////////////////////////////////
+
+    void CustomTask::setFunction(function_t func) { function = std::move(func); }
+
+    ////////////////////////////////////////////////////////////////
+    // Compile.
+    ////////////////////////////////////////////////////////////////
+
+    std::function<void()> CustomTask::compile(const CompiledGraph::Node&,
+                                              std::unordered_map<const ITaskResource*, IProvider*>&)
+    {
+        return function;
+    }
+}  // namespace sol
