@@ -1,0 +1,26 @@
+#include "sol-task/providers/index_provider.h"
+
+namespace sol
+{
+    ////////////////////////////////////////////////////////////////
+    // Constructors.
+    ////////////////////////////////////////////////////////////////
+
+    IndexProvider::IndexProvider(CompiledGraph& g, const uint32_t r) : IProvider(g), range(r) {}
+
+    IndexProvider::~IndexProvider() noexcept = default;
+
+    ////////////////////////////////////////////////////////////////
+    // Getters.
+    ////////////////////////////////////////////////////////////////
+
+    uint32_t IndexProvider::getValue() const noexcept { return value; }
+
+    ////////////////////////////////////////////////////////////////
+    // Setters.
+    ////////////////////////////////////////////////////////////////
+
+    void IndexProvider::increment() noexcept { value = (value + 1) % range; }
+
+    void IndexProvider::set(const uint32_t v) noexcept { value = v % range; }
+}  // namespace sol
