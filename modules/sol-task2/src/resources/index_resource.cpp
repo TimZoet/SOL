@@ -1,0 +1,18 @@
+#include "sol-task/resources/index_resource.h"
+
+namespace sol
+{
+    ////////////////////////////////////////////////////////////////
+    // Constructors.
+    ////////////////////////////////////////////////////////////////
+
+    IndexResource::IndexResource(TaskGraph& taskGraph, const uint32_t r) : ITaskResource(taskGraph), range(r) {}
+
+    IndexResource::~IndexResource() noexcept = default;
+
+    ////////////////////////////////////////////////////////////////
+    // Getters.
+    ////////////////////////////////////////////////////////////////
+
+    uint32_t IndexResource::getRange() const noexcept { return range; }
+}  // namespace sol

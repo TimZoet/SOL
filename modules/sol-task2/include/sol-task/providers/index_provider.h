@@ -1,0 +1,56 @@
+#pragma once
+
+////////////////////////////////////////////////////////////////
+// Current target includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-task/fwd.h"
+#include "sol-task/providers/i_provider.h"
+
+namespace sol
+{
+    class IndexProvider final : public IProvider
+    {
+    public:
+        ////////////////////////////////////////////////////////////////
+        // Constructors.
+        ////////////////////////////////////////////////////////////////
+
+        IndexProvider() = delete;
+
+        IndexProvider(CompiledGraph& g, uint32_t r);
+
+        IndexProvider(const IndexProvider&) = delete;
+
+        IndexProvider(IndexProvider&&) = delete;
+
+        ~IndexProvider() noexcept override;
+
+        IndexProvider& operator=(const IndexProvider&) = delete;
+
+        IndexProvider& operator=(IndexProvider&&) = delete;
+
+        ////////////////////////////////////////////////////////////////
+        // Getters.
+        ////////////////////////////////////////////////////////////////
+
+        [[nodiscard]] uint32_t getValue() const noexcept;
+
+        ////////////////////////////////////////////////////////////////
+        // Setters.
+        ////////////////////////////////////////////////////////////////
+
+        void increment() noexcept;
+
+        void set(uint32_t v) noexcept;
+
+    private:
+        ////////////////////////////////////////////////////////////////
+        // Member variables.
+        ////////////////////////////////////////////////////////////////
+
+        uint32_t range = 0;
+
+        uint32_t value = 0;
+    };
+}  // namespace sol
