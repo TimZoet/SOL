@@ -1,0 +1,44 @@
+#include "sol-task/providers/semaphore_provider.h"
+
+////////////////////////////////////////////////////////////////
+// Module includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-core/vulkan_semaphore.h"
+
+////////////////////////////////////////////////////////////////
+// Current target includes.
+////////////////////////////////////////////////////////////////
+
+#include "sol-task/compiled_graph.h"
+
+namespace sol
+{
+    ////////////////////////////////////////////////////////////////
+    // Constructors.
+    ////////////////////////////////////////////////////////////////
+
+    SemaphoreProvider::SemaphoreProvider(CompiledGraph& g, const uint32_t count) : IProvider(g), index(g, count) {}
+
+    SemaphoreProvider::~SemaphoreProvider() noexcept = default;
+
+    ////////////////////////////////////////////////////////////////
+    // Getters.
+    ////////////////////////////////////////////////////////////////
+
+    uint32_t SemaphoreProvider::getIndex() const { return index.getValue(); }
+
+    VulkanSemaphore* SemaphoreProvider::getSemaphore() const { return semaphores[getIndex()].get(); }
+
+    ////////////////////////////////////////////////////////////////
+    // Graph setup.
+    ////////////////////////////////////////////////////////////////
+
+    void SemaphoreProvider::createResources()
+    {
+        const VulkanSemaphore::Settings settings{.device = getGraph().getDevice()};
+        semaphores = VulkanSemaphore::create(settings, index.getRange());
+    }
+
+    void SemaphoreProvider::loop() { index.increment(); }
+}  // namespace sol

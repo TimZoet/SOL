@@ -5,12 +5,20 @@
 ////////////////////////////////////////////////////////////////
 
 #include <functional>
+#include <source_location>
 #include <unordered_map>
 #include <vector>
 
 ////////////////////////////////////////////////////////////////
+// External includes.
+////////////////////////////////////////////////////////////////
+
+#include <vulkan/vulkan.hpp>
+
+////////////////////////////////////////////////////////////////
 // Current target includes.
 ////////////////////////////////////////////////////////////////
+
 
 #include "sol-task/compiled_graph.h"
 #include "sol-task/fwd.h"
@@ -29,7 +37,14 @@ namespace sol
         enum class Capability
         {
             AwaitSemaphore,
-            SignalSemaphore
+            SignalSemaphore,
+            TimelineSemaphore
+        };
+
+        struct SemaphoreAwait
+        {
+            ITask*               src;
+            VkPipelineStageFlags flags;
         };
 
         ////////////////////////////////////////////////////////////////
@@ -64,7 +79,7 @@ namespace sol
 
         [[nodiscard]] const std::vector<ITask*>& getDependencies() const noexcept;
 
-        [[nodiscard]] const std::vector<ITask*>& getAwaits() const noexcept;
+        [[nodiscard]] const std::vector<SemaphoreAwait>& getAwaits() const noexcept;
 
         ////////////////////////////////////////////////////////////////
         // Setters.
@@ -72,7 +87,11 @@ namespace sol
 
         void setName(std::string n);
 
-        void addDependency(ITask& t);
+        /**
+         * \brief Add a CPU-side execution dependency to the given source task. This task will not run before the other has finished.
+         * \param src Source task to wait on.
+         */
+        void addDependency(ITask& src);
 
         /**
          * \brief This task will write to the given resource. Used to resolve CPU-side execution dependencies.
@@ -86,9 +105,19 @@ namespace sol
          */
         void addRead(ITaskResource& res);
 
-        void addAwait(ITask& t);
+        /**
+         * \brief Have the work submitted by this task wait for the given source task using a semaphore. Must support Capability::AwaitSemaphore.
+         * \param src Source task to await. Must support Capability::SignalSemaphore.
+         * \param stages Destination stages.
+         */
+        void addAwait(ITask& src, VkPipelineStageFlags stages);
 
-        void addAwait(CommandBufferResource& res);
+        /**
+         * \brief Have the work submitted by this task wait for the completion of the given command buffer. Must support Capability::AwaitSemaphore.
+         * \param src Command buffer to await.
+         * \param stages Destination stages.
+         */
+        void addAwait(CommandBufferResource& src, VkPipelineStageFlags stages);
 
         ////////////////////////////////////////////////////////////////
         // Compile.
@@ -108,8 +137,10 @@ namespace sol
 
         std::string name;
 
+        std::source_location source;
+
         std::vector<ITask*> dependencies;
 
-        std::vector<ITask*> awaits;
+        std::vector<SemaphoreAwait> awaits;
     };
 }  // namespace sol

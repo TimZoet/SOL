@@ -16,6 +16,8 @@ namespace sol
 
     uint32_t IndexProvider::getValue() const noexcept { return value; }
 
+    uint32_t IndexProvider::getRange() const noexcept { return range; }
+
     ////////////////////////////////////////////////////////////////
     // Setters.
     ////////////////////////////////////////////////////////////////

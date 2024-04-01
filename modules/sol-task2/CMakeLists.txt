@@ -13,6 +13,8 @@ set(HEADERS
     ${INCLUDE_DIR}/providers/command_buffer_provider.h
     ${INCLUDE_DIR}/providers/i_provider.h
     ${INCLUDE_DIR}/providers/index_provider.h
+    ${INCLUDE_DIR}/providers/semaphore_provider.h
+    ${INCLUDE_DIR}/providers/timeline_semaphore_provider.h
 
     ${INCLUDE_DIR}/resources/command_buffer_resource.h
     ${INCLUDE_DIR}/resources/i_task_resource.h
@@ -33,6 +35,8 @@ set(SOURCES
     ${SRC_DIR}/providers/command_buffer_provider.cpp
     ${SRC_DIR}/providers/i_provider.cpp
     ${SRC_DIR}/providers/index_provider.cpp
+    ${SRC_DIR}/providers/semaphore_provider.cpp
+    ${SRC_DIR}/providers/timeline_semaphore_provider.cpp
 
     ${SRC_DIR}/resources/command_buffer_resource.cpp
     ${SRC_DIR}/resources/i_task_resource.cpp

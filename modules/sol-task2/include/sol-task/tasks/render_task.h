@@ -71,7 +71,7 @@ namespace sol
                   std::unordered_map<const ITaskResource*, IProvider*>& providerLookup) override;
 
         // TODO: Deprecate.
-        std::function<void(VulkanCommandBuffer&, const uint32_t)> tmpFunction;
+        std::function<void(VulkanCommandBuffer&, uint32_t)> tmpFunction;
         const IndexResource* tmpIndex = nullptr;
 
     private:

@@ -11,10 +11,35 @@
 ////////////////////////////////////////////////////////////////
 
 #include "sol-task/providers/command_buffer_provider.h"
-#include "sol-task/providers/index_provider.h"
+#include "sol-task/providers/semaphore_provider.h"
+#include "sol-task/providers/timeline_semaphore_provider.h"
 
 namespace sol
 {
+    ////////////////////////////////////////////////////////////////
+    // Node.
+    ////////////////////////////////////////////////////////////////
+
+    std::pair<std::vector<VkSemaphore>, std::vector<VkPipelineStageFlags>>
+      CompiledGraph::Node::getAwaitSemaphores() const
+    {
+        std::vector<VkSemaphore>          sems;
+        std::vector<VkPipelineStageFlags> flags;
+        for (const auto& [sem, stages] : awaitSemaphores)
+        {
+            sems.push_back(sem->getSemaphore()->get());
+            flags.push_back(stages);
+        }
+        return {std::move(sems), std::move(flags)};
+    }
+
+    std::vector<VkSemaphore> CompiledGraph::Node::getSignalSemaphores() const
+    {
+        std::vector<VkSemaphore> sems;
+        for (const auto* sem : signalSemaphores) sems.push_back(sem->getSemaphore()->get());
+        return sems;
+    }
+
     ////////////////////////////////////////////////////////////////
     // Constructors.
     ////////////////////////////////////////////////////////////////
@@ -69,7 +94,6 @@ namespace sol
             // This is the final node.
             else
             {
-                //finished.arrive_and_wait();
                 static_cast<void>(finished.arrive());
                 return;
             }
@@ -87,7 +111,9 @@ namespace sol
         // Wait on final node.
         finished.arrive_and_wait();
 
-        for (const auto& cb : resources.commandBuffers) cb->increment();
+        for (const auto& provider : resources.commandBuffers) provider->loop();
+        for (const auto& provider : resources.semaphores) provider->loop();
+        for (const auto& provider : resources.timelineSemaphores) provider->loop();
     }
 
     void CompiledGraph::makeAvailable(Node& node) noexcept

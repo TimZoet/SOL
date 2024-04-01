@@ -7,72 +7,65 @@
 #include <vector>
 
 ////////////////////////////////////////////////////////////////
-// External includes.
+// Module includes.
 ////////////////////////////////////////////////////////////////
 
-#include <vulkan/vulkan.hpp>
+#include "sol-core/fwd.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
 #include "sol-task/fwd.h"
-#include "sol-task/resources/i_task_resource.h"
+#include "sol-task/providers/i_provider.h"
+#include "sol-task/providers/index_provider.h"
 
 namespace sol
 {
-    class CommandBufferResource final : public ITaskResource
+    class SemaphoreProvider final : public IProvider
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        CommandBufferResource() = delete;
+        SemaphoreProvider() = delete;
 
-        explicit CommandBufferResource(TaskGraph& taskGraph);
+        SemaphoreProvider(CompiledGraph& g, uint32_t count);
 
-        CommandBufferResource(const CommandBufferResource&) = delete;
+        SemaphoreProvider(const SemaphoreProvider&) = delete;
 
-        CommandBufferResource(CommandBufferResource&&) = delete;
+        SemaphoreProvider(SemaphoreProvider&&) = delete;
 
-        ~CommandBufferResource() noexcept override;
+        ~SemaphoreProvider() noexcept override;
 
-        CommandBufferResource& operator=(const CommandBufferResource&) = delete;
+        SemaphoreProvider& operator=(const SemaphoreProvider&) = delete;
 
-        CommandBufferResource& operator=(CommandBufferResource&&) = delete;
+        SemaphoreProvider& operator=(SemaphoreProvider&&) = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] ITask& getSubmitter() const;
+        [[nodiscard]] uint32_t getIndex() const;
 
-        [[nodiscard]] const std::vector<std::pair<ITask*, VkPipelineStageFlags>>& getWaiters() const noexcept;
-
-        [[nodiscard]] uint32_t getCount() const noexcept;
+        [[nodiscard]] VulkanSemaphore* getSemaphore() const;
 
         ////////////////////////////////////////////////////////////////
-        // Setters.
+        // Graph setup.
         ////////////////////////////////////////////////////////////////
 
-        void setRecorder(ITask& task);
+        void createResources() override;
 
-        void setSubmitter(ITask& task);
-
-        void addAwait(ITask& task, VkPipelineStageFlags stages);
-
-        void setCount(uint32_t c);
+        void loop();
 
     private:
         ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        ITask* submitter = nullptr;
+        IndexProvider index;
 
-        std::vector<std::pair<ITask*, VkPipelineStageFlags>> waiters;
-
-        uint32_t count = 0;
+        std::vector<VulkanSemaphorePtr> semaphores;
     };
 }  // namespace sol

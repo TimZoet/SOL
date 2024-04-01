@@ -1,12 +1,6 @@
 #include "sol-task/tasks/present_task.h"
 
 ////////////////////////////////////////////////////////////////
-// Standard includes.
-////////////////////////////////////////////////////////////////
-
-#include <ranges>
-
-////////////////////////////////////////////////////////////////
 // Module includes.
 ////////////////////////////////////////////////////////////////
 
@@ -21,6 +15,7 @@
 
 #include "sol-task/providers/command_buffer_provider.h"
 #include "sol-task/providers/index_provider.h"
+#include "sol-task/providers/semaphore_provider.h"
 #include "sol-task/resources/index_resource.h"
 
 namespace sol
@@ -66,10 +61,8 @@ namespace sol
                      indexProvider = static_cast<IndexProvider*>(providerLookup[index]),
                      queue         = this->queue,
                      swapchain     = this->swapchain] {
-            std::vector<VkSemaphore> waitSemaphores;
-            waitSemaphores.push_back(node.tmpwait->getSemaphore()->get());
-
-            const uint32_t imageIndex = indexProvider->getValue();
+            const auto [waitSemaphores, waitStages] = node.getAwaitSemaphores();
+            const uint32_t imageIndex               = indexProvider->getValue();
 
             VkPresentInfoKHR presentInfo{};
             presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -80,8 +73,8 @@ namespace sol
             presentInfo.pImageIndices      = &imageIndex;
 
             // TODO: Handle swapchain changes.
-            const auto result = vkQueuePresentKHR(queue->get(), &presentInfo);
-            if (result == VK_ERROR_OUT_OF_DATE_KHR)  // || result == VK_SUBOPTIMAL_KHR || framebufferResized
+            if (const auto result = vkQueuePresentKHR(queue->get(), &presentInfo);
+                result == VK_ERROR_OUT_OF_DATE_KHR)  // || result == VK_SUBOPTIMAL_KHR || framebufferResized
             {
                 /*vkDeviceWaitIdle(getDevice().get());
                 rSwapchain.recreate();
