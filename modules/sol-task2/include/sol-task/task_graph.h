@@ -6,9 +6,9 @@
 
 #include <atomic>
 #include <barrier>
-#include <functional>
 #include <mutex>
 #include <optional>
+#include <source_location>
 #include <utility>
 #include <vector>
 
@@ -87,13 +87,15 @@ namespace sol
          * \brief Construct a new task of the specified type.
          * \tparam T Task type.
          * \tparam Args Additional constructor parameter types.
+         * \param s Source location of call. Only needs to be specified explicitly when passing additional constructor parameters.
          * \param args Additional constructor parameters.
          * \return Reference to new task.
          */
         template<std::derived_from<ITask> T, typename... Args>
-        [[nodiscard]] T& createTask(Args&&... args)
+        [[nodiscard]] T& createTask(std::source_location s = std::source_location::current(), Args&&... args)
         {
-            auto  task    = std::make_unique<T>(*this, std::forward<Args>(args)...);
+            auto task     = std::make_unique<T>(*this, std::forward<Args>(args)...);
+            task->source  = std::move(s);
             auto& taskRef = *task;
             tasks.emplace_back(std::move(task));
             return taskRef;
@@ -121,7 +123,8 @@ namespace sol
             std::vector<IndexResourcePtr> indices;
 
             std::vector<CommandBufferResourcePtr> commandBuffers;
-        } resources;
 
+            std::vector<ITaskResource*> all;
+        } resources;
     };
 }  // namespace sol
