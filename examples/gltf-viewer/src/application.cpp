@@ -36,19 +36,36 @@
 #include "sol-core/vulkan_semaphore.h"
 #include "sol-core/vulkan_surface.h"
 #include "sol-core/vulkan_swapchain.h"
+#include "sol-descriptor/descriptor_buffer.h"
 #include "sol-descriptor/descriptor_layout.h"
 #include "sol-error/vulkan_error_handler.h"
 #include "sol-material/graphics/graphics_material2.h"
 #include "sol-memory/memory_manager.h"
 #include "sol-memory/transaction_manager.h"
 #include "sol-mesh/geometry_buffer_allocator.h"
+#include "sol-mesh/mesh.h"
 #include "sol-mesh/vertex_buffer.h"
+#include "sol-render/graphics/graphics_renderer.h"
 #include "sol-render/graphics/graphics_rendering_info.h"
+#include "sol-render/graphics/graphics_render_data.h"
+#include "sol-render/graphics/graphics_traverser.h"
+#include "sol-scenegraph/scenegraph.h"
+#include "sol-scenegraph/drawable/mesh_node.h"
+#include "sol-scenegraph/graphics/graphics_dynamic_state_node.h"
+#include "sol-scenegraph/graphics/graphics_material_node.h"
+#include "sol-task/task_graph.h"
+#include "sol-task/resources/command_buffer_resource.h"
+#include "sol-task/resources/index_resource.h"
+#include "sol-task/tasks/acquire_task.h"
+#include "sol-task/tasks/custom_task.h"
+#include "sol-task/tasks/present_task.h"
+#include "sol-task/tasks/render_task.h"
+#include "sol-task/tasks/submit_task.h"
 #include "sol-window/window.h"
 
 namespace
 {
-    std::vector<std::string> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    std::vector<std::string> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
     [[nodiscard]] std::vector<std::byte> loadShaderBytecode(const std::filesystem::path& filename)
     {
@@ -68,7 +85,7 @@ Application::~Application() noexcept = default;
 bool Application::parse(const int argc, char** argv)
 {
     auto       parser = pt::parser(argc, argv);
-    const auto width  = parser.add_value<int32_t>('\0', "width");
+    const auto width = parser.add_value<int32_t>('\0', "width");
     width->set_default(1024);
     const auto height = parser.add_value<int32_t>('\0', "height");
     height->set_default(512);
@@ -85,7 +102,7 @@ bool Application::parse(const int argc, char** argv)
         return false;
     }
 
-    args.width  = width->get_value();
+    args.width = width->get_value();
     args.height = height->get_value();
 
     return true;
@@ -93,7 +110,6 @@ bool Application::parse(const int argc, char** argv)
 
 void Application::initialize()
 {
-
     createWindow();
     createInstance();
     createSurface();
@@ -102,152 +118,69 @@ void Application::initialize()
     createSwapchain();
     createMemoryManager();
     createCommandPools();
-    createSynchronization();
     createRenderingInfo();
-    createCommandBuffers();
     createGeometry();
     createMaterials();
+    createScenegraph();
+    createTaskGraph();
 }
 
 void Application::run()
 {
-    uint32_t imageIndex = 0;
-    uint32_t frameIndex = 0;
-
     while (!glfwWindowShouldClose(window->get()))
     {
         glfwPollEvents();
 
-        // Wait for submit fence.
-        vkWaitForFences(device->get(), 1, &submitFence->get(), VK_TRUE, UINT64_MAX);
-        vkResetFences(device->get(), 1, &submitFence->get());
-
-        // TODO: Traverse.
-
-        // Acquire image from swapchain.
-        {
-            const auto result = vkAcquireNextImageKHR(device->get(),
-                                                      swapchain->get(),
-                                                      std::numeric_limits<uint64_t>::max(),
-                                                      swapchainSemaphore->get(),
-                                                      VK_NULL_HANDLE,
-                                                      &imageIndex);
-
-            // TODO: Add member variable with function to recreate swapchain.
-            if (result == VK_ERROR_OUT_OF_DATE_KHR)  // || result == VK_SUBOPTIMAL_KHR
+        std::atomic_bool done = false;
+        taskGraph->start();
+        const auto runner = [&done, this] {
+            while (!done)
             {
-                /*vkDeviceWaitIdle(taskGraph->getDevice().get());
-                (*swapchain)->recreate();
-                if (recreateFunction) recreateFunction(**swapchain);*/
+                auto task = taskGraph->getNext();
+                if (task)
+                    task->operator()();
+                else
+                    std::this_thread::yield();
             }
-            //if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) handleVulkanError(result);
-        }
-
-        // TODO: Render.
-        {
-            commandBuffers[frameIndex]->resetCommand(VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
-            commandBuffers[frameIndex]->beginOneTimeCommand();
-            renderingInfos[imageIndex]->beginRendering(*commandBuffers[frameIndex]);
-
-            vkCmdBindPipeline(
-              commandBuffers[frameIndex]->get(), VK_PIPELINE_BIND_POINT_GRAPHICS, material->getPipeline().get());
-            const VkViewport viewport{.x        = 0,
-                                      .y        = 0,
-                                      .width    = static_cast<float>(swapchain->getExtent().width),
-                                      .height   = static_cast<float>(swapchain->getExtent().height),
-                                      .minDepth = 0,
-                                      .maxDepth = 1};
-            vkCmdSetViewportWithCount(commandBuffers[frameIndex]->get(), 1, &viewport);
-            const VkRect2D scissor{.offset = VkOffset2D{.x = 0, .y = 0}, .extent = swapchain->getExtent()};
-            vkCmdSetScissorWithCount(commandBuffers[frameIndex]->get(), 1, &scissor);
-
-            auto offset = vertexBuffer->getBufferOffset();
-            vkCmdBindVertexBuffers(commandBuffers[frameIndex]->get(), 0, 1, &vertexBuffer->getBuffer().get(), &offset);
-            vkCmdDraw(commandBuffers[frameIndex]->get(), 3, 1, 0, 0);
-            offset = vertexBuffer->getBufferOffset() + sizeof(math::float2) * 3;
-            vkCmdBindVertexBuffers(commandBuffers[frameIndex]->get(), 0, 1, &vertexBuffer->getBuffer().get(), &offset);
-            vkCmdDraw(commandBuffers[frameIndex]->get(), 3, 1, 0, 0);
-
-            renderingInfos[imageIndex]->endRendering(*commandBuffers[frameIndex]);
-            commandBuffers[frameIndex]->endCommand();
-        }
-
-        // Submit.
-        {
-            const std::array<VkPipelineStageFlags, 1> flags = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-
-            VkSubmitInfo submitInfo{};
-            submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-            submitInfo.waitSemaphoreCount   = 1;
-            submitInfo.pWaitSemaphores      = &swapchainSemaphore->get();
-            submitInfo.pWaitDstStageMask    = flags.data();
-            submitInfo.commandBufferCount   = 1;
-            submitInfo.pCommandBuffers      = &commandBuffers[frameIndex]->get();
-            submitInfo.signalSemaphoreCount = 1;
-            submitInfo.pSignalSemaphores    = &submitSemaphore->get();
-
-            sol::handleVulkanError(
-              vkQueueSubmit(memoryManager->getGraphicsQueue().get(), 1, &submitInfo, submitFence->get()));
-        }
-
-        // Present image.
-        {
-            VkPresentInfoKHR presentInfo{};
-            presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-            // TODO: Wait for submit to finish.
-            presentInfo.waitSemaphoreCount = 1;  // static_cast<uint32_t>(waitSemaphoreHandles.size());
-            presentInfo.pWaitSemaphores    = &submitSemaphore->get();
-            presentInfo.swapchainCount     = 1;
-            presentInfo.pSwapchains        = &swapchain->get();
-            presentInfo.pImageIndices      = &imageIndex;
-
-
-            // TODO: Handle swapchain changes.
-            const auto result = vkQueuePresentKHR(memoryManager->getGraphicsQueue().get(), &presentInfo);
-            if (result == VK_ERROR_OUT_OF_DATE_KHR)  // || result == VK_SUBOPTIMAL_KHR || framebufferResized
-            {
-                /*vkDeviceWaitIdle(getDevice().get());
-                rSwapchain.recreate();
-                if (recreateFunction) recreateFunction(rSwapchain);*/
-            }
-            else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) { sol::handleVulkanError(result); }
-        }
-
-
-        // Increment frame.
-        frameIndex = (frameIndex + 1) % args.maxFrames;
+            };
+        auto future0 = std::async(std::launch::async, runner);
+        auto future1 = std::async(std::launch::async, runner);
+        taskGraph->end();
+        done = true;
+        future0.wait();
+        future1.wait();
     }
 
     vkDeviceWaitIdle(device->get());
 }
 
-std::vector<std::string> Application::getExtensions() { return {VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME}; }
+std::vector<std::string> Application::getExtensions() { return { VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME }; }
 
 void Application::createSupportedFeatures()
 {
     supportedFeatures =
-      std::make_unique<sol::VulkanPhysicalDeviceFeatures2<sol::VulkanPhysicalDeviceVulkan11Features,
-                                                          sol::VulkanPhysicalDeviceVulkan12Features,
-                                                          sol::VulkanPhysicalDeviceVulkan13Features,
-                                                          sol::VulkanPhysicalDeviceMaintenance5FeaturesKHR,
-                                                          sol::VulkanPhysicalDeviceDescriptorBufferFeaturesEXT>>();
+        std::make_unique<sol::VulkanPhysicalDeviceFeatures2<sol::VulkanPhysicalDeviceVulkan11Features,
+        sol::VulkanPhysicalDeviceVulkan12Features,
+        sol::VulkanPhysicalDeviceVulkan13Features,
+        sol::VulkanPhysicalDeviceMaintenance5FeaturesKHR,
+        sol::VulkanPhysicalDeviceDescriptorBufferFeaturesEXT>>();
 }
 
 void Application::createEnabledFeatures()
 {
     enabledFeatures =
-      std::make_unique<sol::VulkanPhysicalDeviceFeatures2<sol::VulkanPhysicalDeviceVulkan11Features,
-                                                          sol::VulkanPhysicalDeviceVulkan12Features,
-                                                          sol::VulkanPhysicalDeviceVulkan13Features,
-                                                          sol::VulkanPhysicalDeviceMaintenance5FeaturesKHR,
-                                                          sol::VulkanPhysicalDeviceDescriptorBufferFeaturesEXT>>();
+        std::make_unique<sol::VulkanPhysicalDeviceFeatures2<sol::VulkanPhysicalDeviceVulkan11Features,
+        sol::VulkanPhysicalDeviceVulkan12Features,
+        sol::VulkanPhysicalDeviceVulkan13Features,
+        sol::VulkanPhysicalDeviceMaintenance5FeaturesKHR,
+        sol::VulkanPhysicalDeviceDescriptorBufferFeaturesEXT>>();
 
-    enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan12Features>()->bufferDeviceAddress         = VK_TRUE;
-    enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan12Features>()->descriptorIndexing          = VK_TRUE;
-    enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan13Features>()->dynamicRendering            = VK_TRUE;
-    enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan12Features>()->timelineSemaphore           = VK_TRUE;
-    enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan13Features>()->synchronization2            = VK_TRUE;
-    enabledFeatures->getAs<sol::VulkanPhysicalDeviceMaintenance5FeaturesKHR>()->maintenance5         = VK_TRUE;
+    enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan12Features>()->bufferDeviceAddress = VK_TRUE;
+    enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan12Features>()->descriptorIndexing = VK_TRUE;
+    enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan13Features>()->dynamicRendering = VK_TRUE;
+    enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan12Features>()->timelineSemaphore = VK_TRUE;
+    enabledFeatures->getAs<sol::VulkanPhysicalDeviceVulkan13Features>()->synchronization2 = VK_TRUE;
+    enabledFeatures->getAs<sol::VulkanPhysicalDeviceMaintenance5FeaturesKHR>()->maintenance5 = VK_TRUE;
     enabledFeatures->getAs<sol::VulkanPhysicalDeviceDescriptorBufferFeaturesEXT>()->descriptorBuffer = VK_TRUE;
 }
 
@@ -260,32 +193,32 @@ std::function<bool(sol::RootVulkanPhysicalDeviceFeatures2&)> Application::getFea
         if (!features.getAs<sol::VulkanPhysicalDeviceVulkan13Features>()->synchronization2) return false;
 
         return true;
-    };
+        };
 }
 
 void Application::createWindow()
 {
     window = std::make_unique<sol::Window>(
-      std::array{static_cast<int32_t>(args.width), static_cast<int32_t>(args.height)}, "Application");
+        std::array{ static_cast<int32_t>(args.width), static_cast<int32_t>(args.height) }, "Application");
 }
 
 void Application::createInstance()
 {
     sol::VulkanInstance::Settings instanceSettings;
     instanceSettings.applicationName = "Application";
-    instanceSettings.extensions      = sol::Window::getRequiredExtensions();
+    instanceSettings.extensions = sol::Window::getRequiredExtensions();
     instanceSettings.extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     instanceSettings.enableDebugging = true;
-    instance                         = sol::VulkanInstance::create(instanceSettings);
+    instance = sol::VulkanInstance::create(instanceSettings);
 }
 
 void Application::createSurface()
 {
     sol::VulkanSurface::Settings surfaceSettings;
     surfaceSettings.instance = instance;
-    surfaceSettings.func     = [this](const sol::VulkanInstance& inst, VkSurfaceKHR* surf) {
+    surfaceSettings.func = [this](const sol::VulkanInstance& inst, VkSurfaceKHR* surf) {
         return glfwCreateWindowSurface(inst.get(), window->get(), nullptr, surf);
-    };
+        };
     surface = sol::VulkanSurface::create(surfaceSettings);
 }
 
@@ -296,16 +229,16 @@ void Application::createPhysicalDevice()
 
     sol::VulkanPhysicalDevice::Settings physicalDeviceSettings;
     physicalDeviceSettings.instance = instance;
-    physicalDeviceSettings.surface  = surface;
+    physicalDeviceSettings.surface = surface;
     physicalDeviceSettings.extensions.assign(deviceExtensions.begin(), deviceExtensions.end());
     physicalDeviceSettings.propertyFilter = [](const VkPhysicalDeviceProperties& props) {
         return props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
-    };
-    physicalDeviceSettings.features          = supportedFeatures.get();
-    physicalDeviceSettings.featureFilter     = getFeatureFilter();
+        };
+    physicalDeviceSettings.features = supportedFeatures.get();
+    physicalDeviceSettings.featureFilter = getFeatureFilter();
     physicalDeviceSettings.queueFamilyFilter = [](const std::vector<sol::VulkanQueueFamily>& queues) {
-        bool hasGraphics          = false;
-        bool hasPresent           = false;
+        bool hasGraphics = false;
+        bool hasPresent = false;
         bool hasDedicatedTransfer = false;
 
         for (const auto& q : queues)
@@ -316,7 +249,7 @@ void Application::createPhysicalDevice()
         }
 
         return hasGraphics && hasPresent && hasDedicatedTransfer;
-    };
+        };
 
     physicalDevice = sol::VulkanPhysicalDevice::create(physicalDeviceSettings);
 }
@@ -327,31 +260,31 @@ void Application::createDevice()
 
     sol::VulkanDevice::Settings deviceSettings;
     deviceSettings.physicalDevice = physicalDevice;
-    deviceSettings.extensions     = physicalDevice->getSettings().extensions;
-    deviceSettings.features       = enabledFeatures.get();
+    deviceSettings.extensions = physicalDevice->getSettings().extensions;
+    deviceSettings.features = enabledFeatures.get();
     deviceSettings.queues.resize(physicalDevice->getQueueFamilies().size());
     std::ranges::fill(deviceSettings.queues.begin(), deviceSettings.queues.end(), 1);
     deviceSettings.threadSafeQueues = true;
-    device                          = sol::VulkanDevice::create(deviceSettings);
+    device = sol::VulkanDevice::create(deviceSettings);
 }
 
 void Application::createSwapchain()
 {
     sol::VulkanSwapchain::Settings swapchainSettings;
-    swapchainSettings.surface        = surface;
+    swapchainSettings.surface = surface;
     swapchainSettings.physicalDevice = physicalDevice;
-    swapchainSettings.device         = device;
-    swapchainSettings.extent         = VkExtent2D{static_cast<uint32_t>(window->getFramebufferSize()[0]),
-                                          static_cast<uint32_t>(window->getFramebufferSize()[1])};
-    swapchain                        = sol::VulkanSwapchain::create(swapchainSettings);
+    swapchainSettings.device = device;
+    swapchainSettings.extent = VkExtent2D{ static_cast<uint32_t>(window->getFramebufferSize()[0]),
+                                          static_cast<uint32_t>(window->getFramebufferSize()[1]) };
+    swapchain = sol::VulkanSwapchain::create(swapchainSettings);
 }
 
 void Application::createMemoryManager()
 {
     sol::VulkanMemoryAllocator::Settings settings;
     settings.device = device;
-    settings.flags  = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
-    memoryManager   = std::make_unique<sol::MemoryManager>(sol::VulkanMemoryAllocator::create(settings));
+    settings.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+    memoryManager = std::make_unique<sol::MemoryManager>(sol::VulkanMemoryAllocator::create(settings));
     // TODO: Handle situation where there is no queue for each family.
     for (auto& queue : device->getQueues())
     {
@@ -366,27 +299,10 @@ void Application::createMemoryManager()
 void Application::createCommandPools()
 {
     sol::VulkanCommandPool::Settings commandPoolSettings;
-    commandPoolSettings.device           = device;
-    commandPoolSettings.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    commandPoolSettings.device = device;
+    commandPoolSettings.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     commandPoolSettings.queueFamilyIndex = memoryManager->getGraphicsQueue().getFamily().getIndex();
-    commandPool                          = sol::VulkanCommandPool::create(commandPoolSettings);
-}
-
-void Application::createSynchronization()
-{
-    {
-        sol::VulkanSemaphore::Settings settings;
-        settings.device = device;
-
-        swapchainSemaphore = sol::VulkanSemaphore::create(settings);
-        submitSemaphore    = sol::VulkanSemaphore::create(settings);
-    }
-    {
-        sol::VulkanFence::Settings settings;
-        settings.device   = device;
-        settings.signaled = true;
-        submitFence       = sol::VulkanFence::create(settings);
-    }
+    commandPool = sol::VulkanCommandPool::create(commandPoolSettings);
 }
 
 void Application::createRenderingInfo()
@@ -397,71 +313,66 @@ void Application::createRenderingInfo()
         info->setRenderArea(0, 0, swapchain->getExtent().width, swapchain->getExtent().height);
         info->setLayerCount(1);
         info->addColorAttachment(*swapchain->getImageViews()[i],
-                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                 VK_ATTACHMENT_LOAD_OP_CLEAR,
-                                 VK_ATTACHMENT_STORE_OP_STORE,
-                                 std::array<uint32_t, 4>{0, 0, 0, 0});
+            VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+            VK_ATTACHMENT_LOAD_OP_CLEAR,
+            VK_ATTACHMENT_STORE_OP_STORE,
+            std::array<uint32_t, 4>{0, 0, 0, 0});
         info->setColorAttachmentPreTransition(0,
-                                              nullptr,
-                                              nullptr,
-                                              VK_IMAGE_LAYOUT_UNDEFINED,
-                                              VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                              VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
-                                              VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                              0,
-                                              VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
+            nullptr,
+            nullptr,
+            VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+            VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
+            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+            0,
+            VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
         info->setColorAttachmentPostTransition(0,
-                                               nullptr,
-                                               nullptr,
-                                               VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                               VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                                               VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                               VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT,
-                                               VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-                                               0);
+            nullptr,
+            nullptr,
+            VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+            VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT,
+            VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+            0);
         renderingInfos.emplace_back(std::move(info));
     }
 }
 
-void Application::createCommandBuffers()
-{
-    sol::VulkanCommandBuffer::Settings settings;
-    settings.commandPool = commandPool;
-    commandBuffers       = sol::VulkanCommandBuffer::create(settings, args.maxFrames);
-}
-
 void Application::createGeometry()
 {
-    const sol::GeometryBufferAllocator::Settings settings{.memoryManager = *memoryManager,
-                                                          .strategy = sol::GeometryBufferAllocator::Strategy::Separate};
+    const sol::GeometryBufferAllocator::Settings settings{ .memoryManager = *memoryManager,
+                                                          .strategy = sol::GeometryBufferAllocator::Strategy::Separate };
     geometryAllocator = sol::GeometryBufferAllocator::create(settings);
 
-    vertexBuffer                 = geometryAllocator->allocateVertexBuffer(6, sizeof(math::float2));
+    vertexBuffer = geometryAllocator->allocateVertexBuffer(6, sizeof(math::float2));
     const auto       transaction = transactionManager->beginTransaction();
-    const std::array vertices    = {math::float2{0.0f, -0.5f},
+    const std::array vertices = { math::float2{0.0f, -0.5f},
                                     math::float2{0.5f, 0.5f},
                                     math::float2{-0.5f, 0.5f},
                                     math::float2{1.0f, 1.0f},
                                     math::float2{-1.0f, 1.0f},
-                                    math::float2{-1.0f, 0.0f}};
+                                    math::float2{-1.0f, 0.0f} };
     const auto       success =
-      vertexBuffer->setVertexData(*transaction,
-                                  vertices.data(),
-                                  6,
-                                  0,
-                                  sol::IBuffer::Barrier{.dstFamily = &memoryManager->getGraphicsQueue().getFamily(),
-                                                        // There were no previous commands yet.
-                                                        .srcStage = VK_PIPELINE_STAGE_2_NONE,
-                                                        // Buffer is going to be used as input for draw commands.
-                                                        .dstStage = VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT,
-                                                        // There were no previous commands yet.
-                                                        .srcAccess = VK_ACCESS_2_NONE,
-                                                        // Buffer is going to be used as input for draw commands.
-                                                        .dstAccess = VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT},
-                                  false);
+        vertexBuffer->setVertexData(*transaction,
+            vertices.data(),
+            6,
+            0,
+            sol::IBuffer::Barrier{ .dstFamily = &memoryManager->getGraphicsQueue().getFamily(),
+            // There were no previous commands yet.
+            .srcStage = VK_PIPELINE_STAGE_2_NONE,
+            // Buffer is going to be used as input for draw commands.
+            .dstStage = VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT,
+            // There were no previous commands yet.
+            .srcAccess = VK_ACCESS_2_NONE,
+            // Buffer is going to be used as input for draw commands.
+            .dstAccess = VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT },
+            false);
     if (!success) throw std::runtime_error("Staging buffer allocation failed.");
     transaction->commit();
     transaction->wait();
+
+    mesh = std::make_unique<sol::Mesh>(std::move(vertexBuffer));
 }
 
 void Application::createMaterials()
@@ -496,7 +407,7 @@ void Application::createMaterials()
     sol::VulkanGraphicsPipelinePreRasterization::Settings preRastSettings;
     preRastSettings.layout = layout;
     preRastSettings.vertexShader.code =
-      loadShaderBytecode(std::filesystem::current_path() / "gltf-viewer/shaders/display.vert.spv");
+        loadShaderBytecode(std::filesystem::current_path() / "gltf-viewer/shaders/display.vert.spv");
     preRastSettings.enabledDynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
     preRastSettings.enabledDynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
     preRastSettings.rasterization.cullMode = VK_CULL_MODE_NONE;
@@ -505,20 +416,20 @@ void Application::createMaterials()
     sol::VulkanGraphicsPipelineFragment::Settings fragmentSettings;
     fragmentSettings.layout = layout;
     fragmentSettings.fragmentShader.code =
-      loadShaderBytecode(std::filesystem::current_path() / "gltf-viewer/shaders/display.frag.spv");
+        loadShaderBytecode(std::filesystem::current_path() / "gltf-viewer/shaders/display.frag.spv");
     fragmentSettings.depthStencil.depthTestEnable = false;
 
     sol::VulkanGraphicsPipelineFragmentOutput::Settings fragOutSettings;
     fragOutSettings.device = device;
     fragOutSettings.colorBlend.attachments.emplace_back(VK_FALSE,
-                                                        VK_BLEND_FACTOR_SRC_ALPHA,
-                                                        VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-                                                        VK_BLEND_OP_ADD,
-                                                        VK_BLEND_FACTOR_ONE,
-                                                        VK_BLEND_FACTOR_ZERO,
-                                                        VK_BLEND_OP_ADD,
-                                                        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                                                          VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT);
+        VK_BLEND_FACTOR_SRC_ALPHA,
+        VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+        VK_BLEND_OP_ADD,
+        VK_BLEND_FACTOR_ONE,
+        VK_BLEND_FACTOR_ZERO,
+        VK_BLEND_OP_ADD,
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+        VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT);
     fragOutSettings.colorAttachmentFormats.push_back(swapchain->getImageViews()[0]->getSettings().format);
     fragOutSettings.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT;
 
@@ -538,12 +449,95 @@ void Application::createMaterials()
     auto pipeline = sol::VulkanGraphicsPipeline2::create(pipelineSettings);
 #else
     sol::VulkanGraphicsPipeline2::Settings2 pipelineSettings;
-    pipelineSettings.vertexInput      = vertexInputSettings;
+    pipelineSettings.vertexInput = vertexInputSettings;
     pipelineSettings.preRasterization = preRastSettings;
-    pipelineSettings.fragment         = fragmentSettings;
-    pipelineSettings.fragmentOutput   = fragOutSettings;
-    auto pipeline                     = sol::VulkanGraphicsPipeline2::create2(pipelineSettings);
+    pipelineSettings.fragment = fragmentSettings;
+    pipelineSettings.fragmentOutput = fragOutSettings;
+    auto pipeline = sol::VulkanGraphicsPipeline2::create2(pipelineSettings);
 #endif
 
-    material = std::make_unique<sol::GraphicsMaterial2>(std::move(pipeline), raw(descriptorLayouts));
+    const sol::DescriptorBuffer::Settings settings{ .memoryManager = memoryManager.get(),
+                                                   .size = 128ULL * 1024 * 1024,
+                                                   .usageflags = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
+                                                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                                                 VK_BUFFER_USAGE_TRANSFER_SRC_BIT };
+
+    descriptorBuffer = sol::DescriptorBuffer::create(settings);
+
+    material = std::make_unique<sol::GraphicsMaterial2>(
+        std::move(pipeline), std::vector<const sol::DescriptorLayout*>{});  //raw(descriptorLayouts)
+    materialInstance = material->createInstance();
+}
+
+void Application::createScenegraph()
+{
+    scenegraph = std::make_unique<sol::Scenegraph>();
+    auto& mtlNode = scenegraph->getRootNode().addChild(std::make_unique<sol::GraphicsMaterialNode>(*materialInstance));
+    auto& stateNode = mtlNode.addChild(std::make_unique<sol::GraphicsDynamicStateNode>());
+    auto  viewport = std::make_unique<sol::Viewport>();
+    auto  scissor = std::make_unique<sol::Scissor>();
+    viewport->values.emplace_back(0.0f,
+        0.0f,
+        static_cast<float>(swapchain->getExtent().width),
+        static_cast<float>(swapchain->getExtent().height),
+        0.0f,
+        1.0f);
+    scissor->values.emplace_back(
+        std::make_pair<int32_t, int32_t>(0, 0),
+        std::pair<uint32_t, uint32_t>(swapchain->getExtent().width, swapchain->getExtent().height));
+    stateNode.getStates().emplace_back(std::move(viewport));
+    stateNode.getStates().emplace_back(std::move(scissor));
+    stateNode.addChild(std::make_unique<sol::MeshNode>(*mesh));
+}
+
+void Application::createTaskGraph()
+{
+    sol::TaskGraph graph(*device, *commandPool);
+
+    auto& acquire = graph.createTask<sol::AcquireTask>();
+    acquire.setName("acquire");
+    acquire.setSwapchain(*swapchain);
+
+    /*auto& traverse = graph.createTask<sol::GraphicsTraverseTask>();
+    traverse.setName("traverse");
+    traverse.setScenegraph(*scenegraph);
+
+    auto& render2 = graph.createTask<sol::GraphicsRenderTask>();
+    render2.addRead(acquire.getImageIndex());
+    render2.setRenderData(traverse.getRenderData());
+    render2.setBufferCount(args.maxFrames);*/
+
+    auto& render = graph.createTask<sol::RenderTask>();
+    render.setName("render");
+    render.addRead(acquire.getImageIndex());
+    render.setBufferCount(args.maxFrames);
+    render.tmpIndex = &acquire.getImageIndex();
+    render.tmpFunction = [this](sol::VulkanCommandBuffer& cb, const uint32_t imageIndex) {
+        cb.resetCommand(VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
+        cb.beginOneTimeCommand();
+        renderingInfos[imageIndex]->beginRendering(cb);
+
+        sol::GraphicsTraverser  traverser;
+        sol::GraphicsRenderer   renderer;
+        sol::GraphicsRenderData renderData;
+        traverser.setRenderData(&renderData);
+        traverser.traverse(scenegraph->getRootNode());
+        renderer.render({ .device = *device, .renderData = renderData, .commandBuffer = cb.get() });
+
+        renderingInfos[imageIndex]->endRendering(cb);
+        cb.endCommand();
+        };
+
+    auto& submit = graph.createTask<sol::SubmitTask>();
+    submit.setName("submit");
+    submit.addAwait(acquire, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    submit.setQueue(memoryManager->getGraphicsQueue());
+    submit.setCommandBuffer(render.getCommandBuffer());
+
+    auto& present = graph.createTask<sol::PresentTask>();
+    present.setName("present");
+    present.addAwait(submit.getCommandBuffer(), 0);
+    present.setQueue(memoryManager->getGraphicsQueue());
+    present.setSwapchain(*swapchain, acquire.getImageIndex());
+    taskGraph = graph.compile();
 }

@@ -27,6 +27,7 @@ set(DEPS_PUBLIC
     sol-mesh
     sol-render
     sol-scenegraph
+    sol-task
     sol-texture
     sol-window
 )

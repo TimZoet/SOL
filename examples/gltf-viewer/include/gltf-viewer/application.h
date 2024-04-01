@@ -11,6 +11,8 @@
 #include "sol-memory/fwd.h"
 #include "sol-mesh/fwd.h"
 #include "sol-render/graphics/fwd.h"
+#include "sol-scenegraph/fwd.h"
+#include "sol-task/compiled_graph.h"
 #include "sol-window/fwd.h"
 
 ////////////////////////////////////////////////////////////////
@@ -64,21 +66,21 @@ protected:
 
     void createCommandPools();
 
-    void createSynchronization();
-
     void createRenderingInfo();
-
-    void createCommandBuffers();
 
     void createGeometry();
 
     void createMaterials();
 
+    void createScenegraph();
+
+    void createTaskGraph();
+
     struct
     {
-        uint32_t width     = 0;
-        uint32_t height    = 0;
-        uint32_t maxFrames = 1;
+        uint32_t width = 0;
+        uint32_t height = 0;
+        uint32_t maxFrames = 2;
     } args;
 
     sol::VulkanPhysicalDeviceFeatures2Ptr supportedFeatures;
@@ -92,14 +94,15 @@ protected:
     sol::VulkanSwapchainPtr                    swapchain;
     sol::MemoryManagerPtr                      memoryManager;
     sol::TransactionManagerPtr                 transactionManager;
-    sol::VulkanSemaphorePtr                    swapchainSemaphore;
-    sol::VulkanSemaphorePtr                    submitSemaphore;
-    sol::VulkanFencePtr                        submitFence;
     std::vector<sol::GraphicsRenderingInfoPtr> renderingInfos;
     sol::VulkanCommandPoolPtr                  commandPool;
-    std::vector<sol::VulkanCommandBufferPtr>   commandBuffers;
     sol::GeometryBufferAllocatorPtr            geometryAllocator;
     sol::VertexBufferPtr                       vertexBuffer;
+    sol::MeshPtr                               mesh;
+    sol::DescriptorBufferPtr                   descriptorBuffer;
     sol::GraphicsMaterial2Ptr                  material;
+    sol::GraphicsMaterialInstance2Ptr          materialInstance;
     std::vector<sol::DescriptorLayoutPtr>      descriptorLayouts;
+    sol::ScenegraphPtr                         scenegraph;
+    sol::CompiledGraphPtr                      taskGraph;
 };
