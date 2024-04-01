@@ -43,7 +43,6 @@ namespace sol
             const VulkanDevice&       device;
             const GraphicsRenderData& renderData;
             VkCommandBuffer           commandBuffer;
-            const uint32_t            index;
         };
 
         ////////////////////////////////////////////////////////////////

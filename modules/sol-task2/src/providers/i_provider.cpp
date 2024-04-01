@@ -9,4 +9,18 @@ namespace sol
     IProvider::IProvider(CompiledGraph& g) : graph(&g) {}
 
     IProvider::~IProvider() noexcept = default;
+
+    ////////////////////////////////////////////////////////////////
+    // Getters.
+    ////////////////////////////////////////////////////////////////
+
+    CompiledGraph& IProvider::getGraph() noexcept { return *graph; }
+
+    const CompiledGraph& IProvider::getGraph() const noexcept { return *graph; }
+
+    ////////////////////////////////////////////////////////////////
+    // Graph setup.
+    ////////////////////////////////////////////////////////////////
+
+    void IProvider::createResources() { }
 }  // namespace sol

@@ -37,7 +37,7 @@ namespace sol
 
     const std::vector<ITask*>& ITask::getDependencies() const noexcept { return dependencies; }
 
-    const std::vector<ITask*>& ITask::getAwaits() const noexcept { return awaits; }
+    const std::vector<ITask::SemaphoreAwait>& ITask::getAwaits() const noexcept { return awaits; }
 
     ////////////////////////////////////////////////////////////////
     // Setters.
@@ -45,27 +45,25 @@ namespace sol
 
     void ITask::setName(std::string n) { name = std::move(n); }
 
-    void ITask::addDependency(ITask& t) { dependencies.push_back(&t); }
+    void ITask::addDependency(ITask& src) { dependencies.push_back(&src); }
 
     void ITask::addWrite(ITaskResource& res) { res.setWriter(*this); }
 
     void ITask::addRead(ITaskResource& res) { res.addReader(*this); }
 
-    void ITask::addAwait(ITask& t)
+    void ITask::addAwait(ITask& src, const VkPipelineStageFlags stages)
     {
         if (!supportsCapability(Capability::AwaitSemaphore))
             throw SolError("Capability::AwaitSemaphore is not supported.");
-        if (!t.supportsCapability(Capability::SignalSemaphore))
+        if (!src.supportsCapability(Capability::SignalSemaphore))
             throw SolError("Capability::SignalSemaphore is not supported.");
-        awaits.push_back(&t);
-        // TODO: If signal can be done using counting semaphore, execution dependency is no longer needed.
-        addDependency(t);
+        awaits.emplace_back(&src, stages);
     }
 
-    void ITask::addAwait(CommandBufferResource& res)
+    void ITask::addAwait(CommandBufferResource& src, const VkPipelineStageFlags stages)
     {
         if (!supportsCapability(Capability::AwaitSemaphore))
             throw SolError("Capability::AwaitSemaphore is not supported.");
-        res.addUsage(*this, CommandBufferResource::Usage::Await);
+        src.addAwait(*this, stages);
     }
 }  // namespace sol

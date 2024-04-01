@@ -51,15 +51,15 @@ namespace sol
 
         [[nodiscard]] VulkanCommandBuffer& get() const;
 
-        [[nodiscard]] VulkanSemaphore* getSemaphore() const;
-
         [[nodiscard]] VulkanFence* getFence() const;
 
         ////////////////////////////////////////////////////////////////
-        // Setters.
+        // Graph setup.
         ////////////////////////////////////////////////////////////////
 
-        void increment();
+        void createResources() override;
+
+        void loop();
 
     private:
         ////////////////////////////////////////////////////////////////
@@ -69,8 +69,6 @@ namespace sol
         IndexProvider index;
 
         std::vector<VulkanCommandBufferPtr> commandBuffers;
-
-        std::vector<VulkanSemaphorePtr> semaphores;
 
         std::vector<VulkanFencePtr> fences;
     };

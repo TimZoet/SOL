@@ -6,7 +6,6 @@
 
 #include "sol-core/vulkan_command_buffer.h"
 #include "sol-core/vulkan_fence.h"
-#include "sol-core/vulkan_semaphore.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
@@ -22,13 +21,10 @@ namespace sol
 
     CommandBufferProvider::CommandBufferProvider(CompiledGraph& g, const uint32_t count) : IProvider(g), index(g, count)
     {
+        // TODO: Creation of actual resoures should be delayed until graph has been fully optimized.
         {
             const VulkanCommandBuffer::Settings settings{.commandPool = g.getCommandPool()};
             commandBuffers = VulkanCommandBuffer::create(settings, count);
-        }
-        {
-            const VulkanSemaphore::Settings settings{.device = g.getDevice()};
-            semaphores = VulkanSemaphore::create(settings, count);
         }
         {
             const VulkanFence::Settings settings{.device = g.getDevice(), .signaled = true};
@@ -46,13 +42,24 @@ namespace sol
 
     VulkanCommandBuffer& CommandBufferProvider::get() const { return *commandBuffers[getIndex()]; }
 
-    VulkanSemaphore* CommandBufferProvider::getSemaphore() const { return semaphores[getIndex()].get(); }
-
     VulkanFence* CommandBufferProvider::getFence() const { return fences[getIndex()].get(); }
 
     ////////////////////////////////////////////////////////////////
-    // Setters.
+    // Graph setup.
     ////////////////////////////////////////////////////////////////
 
-    void CommandBufferProvider::increment() { index.increment(); }
+    void CommandBufferProvider::createResources()
+    {
+        {
+            const VulkanCommandBuffer::Settings settings{.commandPool = getGraph().getCommandPool()};
+            commandBuffers = VulkanCommandBuffer::create(settings, index.getRange());
+        }
+
+        {
+            const VulkanFence::Settings settings{.device = getGraph().getDevice(), .signaled = true};
+            fences = VulkanFence::create(settings, index.getRange());
+        }
+    }
+
+    void CommandBufferProvider::loop() { index.increment(); }
 }  // namespace sol

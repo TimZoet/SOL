@@ -4,75 +4,71 @@
 // Standard includes.
 ////////////////////////////////////////////////////////////////
 
+#include <utility>
 #include <vector>
 
 ////////////////////////////////////////////////////////////////
-// External includes.
+// Module includes.
 ////////////////////////////////////////////////////////////////
 
-#include <vulkan/vulkan.hpp>
+#include "sol-core/fwd.h"
 
 ////////////////////////////////////////////////////////////////
 // Current target includes.
 ////////////////////////////////////////////////////////////////
 
 #include "sol-task/fwd.h"
-#include "sol-task/resources/i_task_resource.h"
+#include "sol-task/providers/i_provider.h"
+#include "sol-task/providers/index_provider.h"
 
 namespace sol
 {
-    class CommandBufferResource final : public ITaskResource
+    class TimelineSemaphoreProvider final : public IProvider
     {
     public:
         ////////////////////////////////////////////////////////////////
         // Constructors.
         ////////////////////////////////////////////////////////////////
 
-        CommandBufferResource() = delete;
+        TimelineSemaphoreProvider() = delete;
 
-        explicit CommandBufferResource(TaskGraph& taskGraph);
+        TimelineSemaphoreProvider(CompiledGraph& g, uint32_t count);
 
-        CommandBufferResource(const CommandBufferResource&) = delete;
+        TimelineSemaphoreProvider(const TimelineSemaphoreProvider&) = delete;
 
-        CommandBufferResource(CommandBufferResource&&) = delete;
+        TimelineSemaphoreProvider(TimelineSemaphoreProvider&&) = delete;
 
-        ~CommandBufferResource() noexcept override;
+        ~TimelineSemaphoreProvider() noexcept override;
 
-        CommandBufferResource& operator=(const CommandBufferResource&) = delete;
+        TimelineSemaphoreProvider& operator=(const TimelineSemaphoreProvider&) = delete;
 
-        CommandBufferResource& operator=(CommandBufferResource&&) = delete;
+        TimelineSemaphoreProvider& operator=(TimelineSemaphoreProvider&&) = delete;
 
         ////////////////////////////////////////////////////////////////
         // Getters.
         ////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] ITask& getSubmitter() const;
+        [[nodiscard]] uint32_t getIndex() const;
 
-        [[nodiscard]] const std::vector<std::pair<ITask*, VkPipelineStageFlags>>& getWaiters() const noexcept;
-
-        [[nodiscard]] uint32_t getCount() const noexcept;
+        [[nodiscard]] std::pair<VulkanTimelineSemaphore*, uint64_t> getSemaphore(bool increment);
 
         ////////////////////////////////////////////////////////////////
-        // Setters.
+        // Graph setup.
         ////////////////////////////////////////////////////////////////
 
-        void setRecorder(ITask& task);
+        void createResources() override;
 
-        void setSubmitter(ITask& task);
-
-        void addAwait(ITask& task, VkPipelineStageFlags stages);
-
-        void setCount(uint32_t c);
+        void loop();
 
     private:
         ////////////////////////////////////////////////////////////////
         // Member variables.
         ////////////////////////////////////////////////////////////////
 
-        ITask* submitter = nullptr;
+        IndexProvider index;
 
-        std::vector<std::pair<ITask*, VkPipelineStageFlags>> waiters;
+        std::vector<VulkanTimelineSemaphorePtr> semaphores;
 
-        uint32_t count = 0;
+        std::vector<uint64_t> counters;
     };
 }  // namespace sol

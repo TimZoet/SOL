@@ -63,9 +63,15 @@ namespace sol
             const auto firstIndex = bindIndexBuffer(params.commandBuffer, *mesh);
             bindVertexBuffers(params.commandBuffer, *mesh);
             if (mesh->hasIndexBuffer())
-                vkCmdDrawIndexed(params.commandBuffer, 0, 1, firstIndex, 0, 0);
+                vkCmdDrawIndexed(params.commandBuffer,
+                                 static_cast<uint32_t>(mesh->getIndexBuffer()->getIndexCount()),
+                                 1,
+                                 firstIndex,
+                                 0,
+                                 0);
             else
-                vkCmdDraw(params.commandBuffer, 0, 1, 0, 0);
+                vkCmdDraw(
+                  params.commandBuffer, static_cast<uint32_t>(mesh->getVertexBuffers()[0]->getVertexCount()), 1, 0, 0);
         }
     }
 
@@ -94,7 +100,7 @@ namespace sol
           std::ranges::to<std::vector>();
 
         // TODO: Verify that activeDescriptorBuffers.size() <= VK_EXT_descriptor_buffer.maxDescriptorBufferBindings.
-
+        if (activeDescriptorBuffers.empty()) return;
         params.device.vkCmdBindDescriptorBuffersEXT(
           params.commandBuffer, static_cast<uint32_t>(activeDescriptorBuffers.size()), infos.data());
     }

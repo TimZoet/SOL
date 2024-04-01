@@ -36,6 +36,8 @@ namespace sol
 
         [[nodiscard]] uint32_t getValue() const noexcept;
 
+        [[nodiscard]] uint32_t getRange() const noexcept;
+
         ////////////////////////////////////////////////////////////////
         // Setters.
         ////////////////////////////////////////////////////////////////

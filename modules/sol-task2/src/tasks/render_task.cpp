@@ -43,7 +43,7 @@ namespace sol
     {
         if (commandBuffer) throw SolError("Cannot set buffer count. It was already set.");
         commandBuffer = &getTaskGraph().createCommandBuffer();
-        commandBuffer->addUsage(*this, CommandBufferResource::Usage::Record);
+        commandBuffer->setRecorder(*this);
         commandBuffer->setCount(count);
     }
 

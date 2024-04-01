@@ -5,7 +5,6 @@
 ////////////////////////////////////////////////////////////////
 
 #include "sol-core/vulkan_device.h"
-#include "sol-core/vulkan_semaphore.h"
 #include "sol-core/vulkan_swapchain.h"
 #include "sol-error/sol_error.h"
 
@@ -15,6 +14,7 @@
 
 #include "sol-task/task_graph.h"
 #include "sol-task/providers/index_provider.h"
+#include "sol-task/providers/semaphore_provider.h"
 #include "sol-task/resources/index_resource.h"
 
 namespace sol
@@ -33,11 +33,7 @@ namespace sol
 
     bool AcquireTask::supportsCapability(const Capability capability) const noexcept
     {
-        switch (capability)
-        {
-        case Capability::SignalSemaphore: return true;
-        default: return false;
-        }
+        return capability == Capability::SignalSemaphore;
     }
 
     IndexResource& AcquireTask::getImageIndex() const
@@ -71,9 +67,11 @@ namespace sol
                      indexProvider = static_cast<IndexProvider*>(providerLookup[index]),
                      queue         = this->queue,
                      swapchain     = this->swapchain] {
-            uint32_t          imageIndex = 0;
-            const VkSemaphore semaphore  = node.signal->get();
-            const auto        result     = vkAcquireNextImageKHR(swapchain->getDevice().get(),
+            uint32_t imageIndex = 0;
+            // TODO: In validation, check there is at most one semaphore signal.
+            const auto signalSemaphores = node.getSignalSemaphores();
+            const auto semaphore        = signalSemaphores.empty() ? VK_NULL_HANDLE : signalSemaphores.front();
+            const auto result           = vkAcquireNextImageKHR(swapchain->getDevice().get(),
                                                       swapchain->get(),
                                                       std::numeric_limits<uint64_t>::max(),
                                                       semaphore,

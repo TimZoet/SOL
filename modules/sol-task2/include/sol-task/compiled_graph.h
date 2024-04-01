@@ -9,7 +9,15 @@
 #include <functional>
 #include <mutex>
 #include <optional>
+#include <set>
+#include <utility>
 #include <vector>
+
+////////////////////////////////////////////////////////////////
+// External includes.
+////////////////////////////////////////////////////////////////
+
+#include <vulkan/vulkan.hpp>
 
 ////////////////////////////////////////////////////////////////
 // Module includes.
@@ -46,26 +54,42 @@ namespace sol
             /**
              * \brief Execution dependencies that must be waited on.
              */
-            std::vector<Node*> dependencies;
+            std::set<Node*> dependencies;
 
             /**
              * \brief Execution dependents that must be notified.
              */
-            std::vector<Node*> dependents;
+            std::set<Node*> dependents;
 
-            // TODO: Could be list.
-            VulkanSemaphore* signal = nullptr;
+            /**
+             * \brief Semaphores that must be signaled.
+             */
+            std::vector<SemaphoreProvider*> signalSemaphores;
 
-            // TODO: Lacking VkPipelineStageFlags and could be list.
-            VulkanSemaphore* await = nullptr;
+            /**
+             * \brief Semaphores that must be awaited.
+             */
+            std::vector<std::pair<SemaphoreProvider*, VkPipelineStageFlags>> awaitSemaphores;
+
+            /**
+             * \brief Semaphores that must be signaled.
+             */
+            std::vector<TimelineSemaphoreProvider*> signalTimelineSemaphores;
+
+            /**
+             * \brief Semaphores that must be awaited.
+             */
+            std::vector<std::pair<TimelineSemaphoreProvider*, VkPipelineStageFlags>> awaitTimelineSemaphores;
 
             /**
              * \brief Counter decremented by each node on which this node depends.
              */
             std::atomic_uint32_t wait;
 
-            // TODO: Terrible.
-            CommandBufferProvider* tmpwait = nullptr;
+            [[nodiscard]] std::pair<std::vector<VkSemaphore>, std::vector<VkPipelineStageFlags>>
+              getAwaitSemaphores() const;
+
+            [[nodiscard]] std::vector<VkSemaphore> getSignalSemaphores() const;
         };
 
         ////////////////////////////////////////////////////////////////
@@ -97,6 +121,8 @@ namespace sol
         [[nodiscard]] VulkanCommandPool& getCommandPool() noexcept;
 
         [[nodiscard]] const VulkanCommandPool& getCommandPool() const noexcept;
+
+        [[nodiscard]] bool isEnded() const noexcept;
 
         ////////////////////////////////////////////////////////////////
         // Run.
@@ -141,7 +167,9 @@ namespace sol
 
             std::vector<CommandBufferProviderPtr> commandBuffers;
 
-            std::vector<VulkanSemaphorePtr> semaphores;
+            std::vector<SemaphoreProviderPtr> semaphores;
+
+            std::vector<TimelineSemaphoreProviderPtr> timelineSemaphores;
         } resources;
 
         std::vector<Node*> available;

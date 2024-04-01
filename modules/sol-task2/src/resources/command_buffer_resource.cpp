@@ -26,7 +26,10 @@ namespace sol
         return *submitter;
     }
 
-    const std::vector<ITask*>& CommandBufferResource::getWaiters() const noexcept { return waiters; }
+    const std::vector<std::pair<ITask*, VkPipelineStageFlags>>& CommandBufferResource::getWaiters() const noexcept
+    {
+        return waiters;
+    }
 
     uint32_t CommandBufferResource::getCount() const noexcept { return count; }
 
@@ -34,25 +37,24 @@ namespace sol
     // Setters.
     ////////////////////////////////////////////////////////////////
 
-    void CommandBufferResource::addUsage(ITask& task, const Usage usage)
+    void CommandBufferResource::setRecorder(ITask& task) { setWriter(task); }
+
+    void CommandBufferResource::setSubmitter(ITask& task)
     {
-        // TODO: Once timeline semaphores are used, the Await does not need to be added as reader anymore.
-        // submitter can also be deprecated, since there will be only one read.
-        switch (usage)
-        {
-        case Usage::Record: setWriter(task); break;
-        case Usage::Submit:
-            if (submitter) throw SolError("Cannot set submitting task. It was already set.");
-            addReader(task);
-            submitter = &task;
-            break;
-        case Usage::Await:
-            addReader(task);
-            waiters.push_back(&task);
-            break;
-        }
+        if (submitter) throw SolError("Cannot set submitting task. It was already set.");
+        // TODO: Once timeline semaphores are used, waits and signals can be done in arbitrary order.
+        // The task does not need to be added as reader anymore then.
+        addReader(task);
+        submitter = &task;
+    }
+
+    void CommandBufferResource::addAwait(ITask& task, const VkPipelineStageFlags stages)
+    {
+        // TODO: Once timeline semaphores are used, waits and signals can be done in arbitrary order.
+        // The task does not need to be added as reader anymore then.
+        addReader(task);
+        waiters.emplace_back(&task, stages);
     }
 
     void CommandBufferResource::setCount(const uint32_t c) { count = c; }
-
 }  // namespace sol
