@@ -57,6 +57,8 @@ namespace sol
              * \brief Fragment output pipeline to link.
              */
             ObjectRefSetting<VulkanGraphicsPipelineFragmentOutput> fragmentOutputPipeline;
+
+            VkPipelineCreateFlags flags = 0;
         };
 
         /**
@@ -64,6 +66,7 @@ namespace sol
          */
         struct Settings2
         {
+            VkPipelineCreateFlags                            flags = 0;
             VulkanGraphicsPipelineVertexInput::Settings      vertexInput;
             VulkanGraphicsPipelinePreRasterization::Settings preRasterization;
             VulkanGraphicsPipelineFragment::Settings         fragment;

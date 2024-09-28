@@ -103,7 +103,7 @@ namespace sol
         VkGraphicsPipelineCreateInfo pipelineInfo{};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipelineInfo.pNext = &linkingInfo;
-        pipelineInfo.flags = VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT;
+        pipelineInfo.flags = settings.flags | VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT;
 
         // Create pipeline.
         VkPipeline pipeline;
@@ -249,7 +249,7 @@ namespace sol
         VkGraphicsPipelineCreateInfo pipelineInfo{};
         pipelineInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipelineInfo.pNext               = &renderingInfo;
-        pipelineInfo.flags               = 0;
+        pipelineInfo.flags               = settings.flags;
         pipelineInfo.pVertexInputState   = &vertexInputInfo;
         pipelineInfo.pInputAssemblyState = &assemblyInfo;
         pipelineInfo.stageCount          = static_cast<uint32_t>(shaderStages.size());

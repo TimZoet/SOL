@@ -78,8 +78,8 @@ protected:
 
     struct
     {
-        uint32_t width = 0;
-        uint32_t height = 0;
+        uint32_t width     = 0;
+        uint32_t height    = 0;
         uint32_t maxFrames = 2;
     } args;
 
@@ -100,8 +100,11 @@ protected:
     sol::VertexBufferPtr                       vertexBuffer;
     sol::MeshPtr                               mesh;
     sol::DescriptorBufferPtr                   descriptorBuffer;
+    sol::VulkanPipelineLayoutPtr               pipelineLayout;
     sol::GraphicsMaterial2Ptr                  material;
     sol::GraphicsMaterialInstance2Ptr          materialInstance;
+    sol::IBufferPtr                            cameraMatrixBuffer;
+    sol::IBufferPtr                            modelMatrixBuffer;
     std::vector<sol::DescriptorLayoutPtr>      descriptorLayouts;
     sol::ScenegraphPtr                         scenegraph;
     sol::CompiledGraphPtr                      taskGraph;

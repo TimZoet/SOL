@@ -51,13 +51,22 @@ add_custom_command(
     OUTPUT
         ${CMAKE_BINARY_DIR}/bin/${NAME}/shaders/display.vert.spv
         ${CMAKE_BINARY_DIR}/bin/${NAME}/shaders/display.frag.spv
+
+        ${CMAKE_BINARY_DIR}/bin/${NAME}/shaders/viewer.vert.spv
+        ${CMAKE_BINARY_DIR}/bin/${NAME}/shaders/viewer.frag.spv
     DEPENDS
         ${CMAKE_CURRENT_SOURCE_DIR}/shaders/display.vert.hlsl
         ${CMAKE_CURRENT_SOURCE_DIR}/shaders/display.frag.hlsl
+        ${CMAKE_CURRENT_SOURCE_DIR}/shaders/viewer.vert.hlsl
+        ${CMAKE_CURRENT_SOURCE_DIR}/shaders/viewer.frag.hlsl
     COMMAND
         ${Vulkan_dxc_EXECUTABLE} -spirv -E main -T vs_6_6 ${CMAKE_CURRENT_SOURCE_DIR}/shaders/display.vert.hlsl -Fo ${CMAKE_BINARY_DIR}/bin/${NAME}/shaders/display.vert.spv
     COMMAND
         ${Vulkan_dxc_EXECUTABLE} -spirv -E main -T ps_6_6 ${CMAKE_CURRENT_SOURCE_DIR}/shaders/display.frag.hlsl -Fo ${CMAKE_BINARY_DIR}/bin/${NAME}/shaders/display.frag.spv
+    COMMAND
+        ${Vulkan_dxc_EXECUTABLE} -spirv -E main -T vs_6_6 ${CMAKE_CURRENT_SOURCE_DIR}/shaders/viewer.vert.hlsl -Fo ${CMAKE_BINARY_DIR}/bin/${NAME}/shaders/viewer.vert.spv
+    COMMAND
+        ${Vulkan_dxc_EXECUTABLE} -spirv -E main -T ps_6_6 ${CMAKE_CURRENT_SOURCE_DIR}/shaders/viewer.frag.hlsl -Fo ${CMAKE_BINARY_DIR}/bin/${NAME}/shaders/viewer.frag.spv
     VERBATIM
 )
 
@@ -66,6 +75,8 @@ add_custom_target(
     DEPENDS
         ${CMAKE_BINARY_DIR}/bin/${NAME}/shaders/display.vert.spv
         ${CMAKE_BINARY_DIR}/bin/${NAME}/shaders/display.frag.spv
+        ${CMAKE_BINARY_DIR}/bin/${NAME}/shaders/viewer.vert.spv
+        ${CMAKE_BINARY_DIR}/bin/${NAME}/shaders/viewer.frag.spv
 )
 
 

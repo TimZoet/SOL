@@ -196,7 +196,7 @@ namespace sol
                                            const size_t             descriptorOffset)
     {
         if (activeDescriptors.size() < material.getDescriptorLayouts().size())
-            activeDescriptors.resize(material.getDescriptorLayouts().size());
+            activeDescriptors.resize(material.getDescriptorLayouts().size(), {~0UL, ~0ULL});
 
         std::vector<uint32_t>     bufferIndices(material.getDescriptorLayouts().size());
         std::vector<VkDeviceSize> offsets(material.getDescriptorLayouts().size());
